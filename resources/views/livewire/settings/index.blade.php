@@ -1,3 +1,172 @@
-<div>
-    {{-- To attain knowledge, add things every day; To attain wisdom, subtract things every day. --}}
+<div class="py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-900">Settings & Administration</h1>
+            <p class="text-sm text-gray-500">Manage users, policies, and templates.</p>
+        </div>
+
+        @if (session('status'))
+            <div class="rounded-md bg-green-50 p-3 text-sm text-green-700">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Users</h2>
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="$toggle('showUserCreate')">Add User</button>
+            </div>
+
+            @if ($showUserCreate)
+                <form wire:submit.prevent="createUser" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div>
+                        <label class="text-xs text-gray-500">Name</label>
+                        <input wire:model="newUser.name" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Email</label>
+                        <input wire:model="newUser.email" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Role</label>
+                        <select wire:model="newUser.role" class="mt-1 w-full rounded-md border-gray-300">
+                            @foreach ($roles as $role)
+                                <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Organization</label>
+                        <select wire:model="newUser.organization_id" class="mt-1 w-full rounded-md border-gray-300">
+                            <option value="">None</option>
+                            @foreach ($organizations as $organization)
+                                <option value="{{ $organization->id }}">{{ $organization->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="md:col-span-4 flex items-center gap-3">
+                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Create</button>
+                        <button type="button" class="px-4 py-2 border border-gray-300 rounded-md" wire:click="resetNewUser">Reset</button>
+                    </div>
+                </form>
+            @endif
+
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organization</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach ($users as $user)
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $user->name }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ $user->email }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ $user->getRoleNames()->first() ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ $user->organization?->name ?? '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            <div class="mt-4">{{ $users->links() }}</div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Service Agreements</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showAgreementCreate')">Add</button>
+                </div>
+                @if ($showAgreementCreate)
+                    <form wire:submit.prevent="createAgreement" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newAgreement.name" class="rounded-md border-gray-300" placeholder="Name" />
+                        <input wire:model="newAgreement.agreement_type" class="rounded-md border-gray-300" placeholder="Type" />
+                        <input type="number" step="0.01" wire:model="newAgreement.monthly_fee" class="rounded-md border-gray-300" placeholder="Monthly Fee" />
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                    </form>
+                @endif
+                <div class="space-y-2 text-sm">
+                    @foreach ($agreements as $agreement)
+                        <div class="flex items-center justify-between">
+                            <span>{{ $agreement->name }}</span>
+                            <span class="text-gray-500">${{ number_format($agreement->monthly_fee, 2) }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Work Order Categories</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showCategoryCreate')">Add</button>
+                </div>
+                @if ($showCategoryCreate)
+                    <form wire:submit.prevent="createCategory" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newCategory.name" class="rounded-md border-gray-300" placeholder="Name" />
+                        <input type="number" wire:model="newCategory.default_estimated_minutes" class="rounded-md border-gray-300" placeholder="Estimated minutes" />
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                    </form>
+                @endif
+                <div class="space-y-2 text-sm">
+                    @foreach ($categories as $category)
+                        <div class="flex items-center justify-between">
+                            <span>{{ $category->name }}</span>
+                            <span class="text-gray-500">{{ $category->default_estimated_minutes ?? '—' }} mins</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Communication Templates</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showTemplateCreate')">Add</button>
+                </div>
+                @if ($showTemplateCreate)
+                    <form wire:submit.prevent="createTemplate" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newTemplate.name" class="rounded-md border-gray-300" placeholder="Name" />
+                        <input wire:model="newTemplate.channel" class="rounded-md border-gray-300" placeholder="Channel" />
+                        <input wire:model="newTemplate.subject" class="rounded-md border-gray-300" placeholder="Subject" />
+                        <textarea wire:model="newTemplate.body" class="rounded-md border-gray-300" rows="2" placeholder="Body"></textarea>
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                    </form>
+                @endif
+                <div class="space-y-2 text-sm">
+                    @foreach ($templates as $template)
+                        <div class="flex items-center justify-between">
+                            <span>{{ $template->name }}</span>
+                            <span class="text-gray-500">{{ $template->channel }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Inventory Locations</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showLocationCreate')">Add</button>
+                </div>
+                @if ($showLocationCreate)
+                    <form wire:submit.prevent="createLocation" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newLocation.name" class="rounded-md border-gray-300" placeholder="Location name" />
+                        <input wire:model="newLocation.address" class="rounded-md border-gray-300" placeholder="Address" />
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                    </form>
+                @endif
+                <div class="space-y-2 text-sm">
+                    @foreach ($locations as $location)
+                        <div class="flex items-center justify-between">
+                            <span>{{ $location->name }}</span>
+                            <span class="text-gray-500">{{ $location->address ?? '—' }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
