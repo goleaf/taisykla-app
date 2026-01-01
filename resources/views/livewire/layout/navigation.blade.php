@@ -28,11 +28,33 @@ new class extends Component
                     </a>
                 </div>
 
+                @php
+                    $user = auth()->user();
+                    $links = [
+                        ['label' => 'Dashboard', 'route' => 'dashboard', 'show' => true],
+                        ['label' => 'Work Orders', 'route' => 'work-orders.index', 'show' => true],
+                        ['label' => 'Equipment', 'route' => 'equipment.index', 'show' => true],
+                        ['label' => 'Schedule', 'route' => 'schedule.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'technician'])],
+                        ['label' => 'Inventory', 'route' => 'inventory.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'technician', 'support'])],
+                        ['label' => 'Clients', 'route' => 'clients.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'support'])],
+                        ['label' => 'Messages', 'route' => 'messages.index', 'show' => true],
+                        ['label' => 'Reports', 'route' => 'reports.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'support'])],
+                        ['label' => 'Billing', 'route' => 'billing.index', 'show' => true],
+                        ['label' => 'Knowledge Base', 'route' => 'knowledge-base.index', 'show' => true],
+                        ['label' => 'Support', 'route' => 'support-tickets.index', 'show' => $user->hasAnyRole(['admin', 'support', 'client'])],
+                        ['label' => 'Settings', 'route' => 'settings.index', 'show' => $user->hasRole('admin')],
+                    ];
+                @endphp
+
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+                    @foreach ($links as $link)
+                        @if ($link['show'])
+                            <x-nav-link :href="route($link['route'])" :active="request()->routeIs($link['route'])" wire:navigate>
+                                {{ __($link['label']) }}
+                            </x-nav-link>
+                        @endif
+                    @endforeach
                 </div>
             </div>
 
@@ -81,9 +103,13 @@ new class extends Component
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            @foreach ($links as $link)
+                @if ($link['show'])
+                    <x-responsive-nav-link :href="route($link['route'])" :active="request()->routeIs($link['route'])" wire:navigate>
+                        {{ __($link['label']) }}
+                    </x-responsive-nav-link>
+                @endif
+            @endforeach
         </div>
 
         <!-- Responsive Settings Options -->
