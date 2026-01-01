@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +22,15 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'organization_id',
+        'phone',
+        'job_title',
+        'address',
+        'timezone',
+        'is_active',
+        'last_seen_at',
+        'current_latitude',
+        'current_longitude',
     ];
 
     /**
@@ -43,6 +53,28 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'last_seen_at' => 'datetime',
         ];
+    }
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function assignedWorkOrders()
+    {
+        return $this->hasMany(WorkOrder::class, 'assigned_to_user_id');
+    }
+
+    public function requestedWorkOrders()
+    {
+        return $this->hasMany(WorkOrder::class, 'requested_by_user_id');
+    }
+
+    public function appointments()
+    {
+        return $this->hasMany(Appointment::class, 'assigned_to_user_id');
     }
 }
