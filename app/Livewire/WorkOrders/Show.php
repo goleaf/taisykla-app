@@ -2,11 +2,16 @@
 
 namespace App\Livewire\WorkOrders;
 
+use App\Models\Message;
+use App\Models\MessageThread;
+use App\Models\MessageThreadParticipant;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderEvent;
+use App\Models\WorkOrderFeedback;
 use App\Services\AutomationService;
 use App\Services\AuditLogger;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -16,6 +21,10 @@ class Show extends Component
     public string $status = '';
     public ?int $assignedToUserId = null;
     public string $note = '';
+    public string $messageBody = '';
+    public string $signatureName = '';
+    public int $feedbackRating = 0;
+    public string $feedbackComments = '';
 
     public array $statusOptions = [
         'submitted',
@@ -29,18 +38,52 @@ class Show extends Component
 
     public function mount(WorkOrder $workOrder): void
     {
+        $user = auth()->user();
+        if (! $this->canViewWorkOrder($user, $workOrder)) {
+            abort(403);
+        }
+
         $this->workOrder = $workOrder->load([
             'organization',
             'equipment',
             'assignedTo',
             'requestedBy',
-            'appointments',
+            'appointments.assignedTo',
             'parts.part',
             'feedback',
             'events.user',
+            'attachments',
         ]);
         $this->status = $this->workOrder->status;
         $this->assignedToUserId = $this->workOrder->assigned_to_user_id;
+        $this->signatureName = $this->workOrder->customer_signature_name ?? '';
+        $this->feedbackRating = (int) ($this->workOrder->feedback?->rating ?? 0);
+        $this->feedbackComments = $this->workOrder->feedback?->comments ?? '';
+    }
+
+    private function canViewWorkOrder(?User $user, WorkOrder $workOrder): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['admin', 'dispatch', 'support'])) {
+            return true;
+        }
+
+        if ($workOrder->requested_by_user_id === $user->id) {
+            return true;
+        }
+
+        if ($user->hasRole('technician')) {
+            return $workOrder->assigned_to_user_id === $user->id;
+        }
+
+        if ($user->hasRole('client')) {
+            return $user->organization_id && $workOrder->organization_id === $user->organization_id;
+        }
+
+        return false;
     }
 
     public function updateStatus(): void
@@ -91,6 +134,330 @@ class Show extends Component
         $this->workOrder->refresh();
     }
 
+    public function sendMessage(): void
+    {
+        $this->validate([
+            'messageBody' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $user = auth()->user();
+        if (! $user) {
+            return;
+        }
+
+        $thread = $this->resolveMessageThread($user);
+
+        Message::create([
+            'thread_id' => $thread->id,
+            'user_id' => $user->id,
+            'body' => $this->messageBody,
+        ]);
+
+        $this->messageBody = '';
+    }
+
+    private function resolveMessageThread(User $user): MessageThread
+    {
+        $existing = MessageThread::where('work_order_id', $this->workOrder->id)
+            ->whereHas('participants', function ($builder) use ($user) {
+                $builder->where('user_id', $user->id);
+            })
+            ->latest()
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $partner = $this->resolveMessagePartner($user);
+
+        $thread = MessageThread::create([
+            'subject' => 'Work Order #' . $this->workOrder->id,
+            'organization_id' => $this->workOrder->organization_id,
+            'work_order_id' => $this->workOrder->id,
+            'created_by_user_id' => $user->id,
+        ]);
+
+        MessageThreadParticipant::create([
+            'thread_id' => $thread->id,
+            'user_id' => $user->id,
+        ]);
+
+        if ($partner && $partner->id !== $user->id) {
+            MessageThreadParticipant::create([
+                'thread_id' => $thread->id,
+                'user_id' => $partner->id,
+            ]);
+        }
+
+        return $thread;
+    }
+
+    private function resolveMessagePartner(User $user): ?User
+    {
+        if ($user->hasRole('client')) {
+            return $this->workOrder->assignedTo
+                ?? User::role('dispatch')->orderBy('name')->first()
+                ?? User::role('admin')->orderBy('name')->first();
+        }
+
+        if ($user->hasRole('technician')) {
+            return $this->workOrder->requestedBy
+                ?? User::role('dispatch')->orderBy('name')->first()
+                ?? User::role('admin')->orderBy('name')->first();
+        }
+
+        return $this->workOrder->requestedBy ?? $this->workOrder->assignedTo;
+    }
+
+    public function submitSignoff(): void
+    {
+        $user = auth()->user();
+        if (! $user || ! $this->canSignOff($user)) {
+            return;
+        }
+
+        $this->validate([
+            'signatureName' => ['required', 'string', 'max:255'],
+        ]);
+
+        $this->workOrder->update([
+            'customer_signature_name' => $this->signatureName,
+            'customer_signature_at' => now(),
+        ]);
+
+        WorkOrderEvent::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => $user->id,
+            'type' => 'customer_signoff',
+            'note' => 'Customer approved the service.',
+        ]);
+
+        app(AuditLogger::class)->log(
+            'work_order.customer_signoff',
+            $this->workOrder,
+            'Customer signed off on service.',
+            ['signature_name' => $this->signatureName]
+        );
+
+        $this->workOrder->refresh();
+    }
+
+    public function submitFeedback(): void
+    {
+        $user = auth()->user();
+        if (! $user || ! $this->canLeaveFeedback($user)) {
+            return;
+        }
+
+        $this->validate([
+            'feedbackRating' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedbackComments' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        WorkOrderFeedback::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => $user->id,
+            'rating' => $this->feedbackRating,
+            'comments' => $this->feedbackComments,
+        ]);
+
+        WorkOrderEvent::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => $user->id,
+            'type' => 'feedback',
+            'note' => 'Customer submitted feedback.',
+        ]);
+
+        app(AuditLogger::class)->log(
+            'work_order.feedback_submitted',
+            $this->workOrder,
+            'Customer submitted feedback.',
+            ['rating' => $this->feedbackRating]
+        );
+
+        $this->workOrder->refresh();
+    }
+
+    private function canSignOff(User $user): bool
+    {
+        if ($this->workOrder->customer_signature_at) {
+            return false;
+        }
+
+        if (! in_array($this->workOrder->status, ['completed', 'closed'], true)) {
+            return false;
+        }
+
+        return $user->hasRole('client') || $this->workOrder->requested_by_user_id === $user->id;
+    }
+
+    private function canLeaveFeedback(User $user): bool
+    {
+        if ($this->workOrder->feedback) {
+            return false;
+        }
+
+        if (! in_array($this->workOrder->status, ['completed', 'closed'], true)) {
+            return false;
+        }
+
+        return $user->hasRole('client') || $this->workOrder->requested_by_user_id === $user->id;
+    }
+
+    private function statusSummary(): array
+    {
+        $status = $this->workOrder->status;
+        $assigned = $this->workOrder->assignedTo?->name;
+        $scheduled = $this->workOrder->scheduled_start_at?->format('M d, H:i');
+        $timeWindow = $this->workOrder->time_window;
+        $arrival = $this->workOrder->arrived_at?->format('M d, H:i');
+
+        return match ($status) {
+            'submitted' => [
+                'title' => 'Request received',
+                'description' => 'Your service request has been received and is awaiting review by our dispatch team.',
+            ],
+            'assigned' => [
+                'title' => 'Technician assigned',
+                'description' => $assigned
+                    ? 'Assigned to ' . $assigned . ($scheduled ? ' with a scheduled visit on ' . $scheduled : '.') . ($timeWindow ? ' (' . $timeWindow . ')' : '')
+                    : 'Your request has been assigned and is being scheduled.',
+            ],
+            'in_progress' => [
+                'title' => 'Service in progress',
+                'description' => $assigned
+                    ? ($arrival ? $assigned . ' arrived at ' . $arrival . ' and is working on your equipment.' : $assigned . ' is on the way or has started service.')
+                    : 'Service is currently in progress.',
+            ],
+            'on_hold' => [
+                'title' => 'On hold',
+                'description' => $this->workOrder->on_hold_reason
+                    ? 'On hold: ' . $this->workOrder->on_hold_reason
+                    : 'Your request is on hold while we await the next step.',
+            ],
+            'completed' => [
+                'title' => 'Service completed',
+                'description' => 'Service has been completed. Please review the report and provide your approval.',
+            ],
+            'closed' => [
+                'title' => 'Request closed',
+                'description' => 'This request has been closed. Thank you for working with us.',
+            ],
+            'canceled' => [
+                'title' => 'Request canceled',
+                'description' => 'This request has been canceled. Contact support if this is unexpected.',
+            ],
+            default => [
+                'title' => Str::headline(str_replace('_', ' ', $status)),
+                'description' => 'Status updated.',
+            ],
+        };
+    }
+
+    private function statusSteps(): array
+    {
+        $steps = [
+            ['key' => 'submitted', 'label' => 'Submitted'],
+            ['key' => 'assigned', 'label' => 'Assigned'],
+            ['key' => 'in_progress', 'label' => 'In Progress'],
+            ['key' => 'completed', 'label' => 'Completed'],
+            ['key' => 'closed', 'label' => 'Closed'],
+        ];
+
+        $order = [];
+        foreach ($steps as $index => $step) {
+            $order[$step['key']] = $index;
+        }
+
+        $currentKey = $this->workOrder->status === 'on_hold' ? 'in_progress' : $this->workOrder->status;
+        if (! array_key_exists($currentKey, $order)) {
+            $currentKey = 'submitted';
+        }
+
+        $currentIndex = $order[$currentKey];
+        $enriched = [];
+
+        foreach ($steps as $index => $step) {
+            $state = $index < $currentIndex ? 'complete' : ($index === $currentIndex ? 'current' : 'upcoming');
+            $enriched[] = [
+                'key' => $step['key'],
+                'label' => $step['label'],
+                'state' => $state,
+            ];
+        }
+
+        return $enriched;
+    }
+
+    private function timeline(): array
+    {
+        return $this->workOrder->events
+            ->sortBy('created_at')
+            ->map(function (WorkOrderEvent $event) {
+                return [
+                    'summary' => $this->formatEvent($event),
+                    'actor' => $event->user?->name ?? 'System',
+                    'timestamp' => $event->created_at,
+                    'type' => $event->type,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function formatEvent(WorkOrderEvent $event): string
+    {
+        if ($event->note) {
+            return $event->note;
+        }
+
+        return match ($event->type) {
+            'status_change' => 'Status changed from ' . $this->friendlyStatus($event->from_status) . ' to ' . $this->friendlyStatus($event->to_status) . '.',
+            'assignment' => 'Assignment updated.',
+            'arrival' => 'Technician arrived on site.',
+            'created' => 'Work order created.',
+            'customer_signoff' => 'Customer approved the service.',
+            'feedback' => 'Customer submitted feedback.',
+            default => Str::headline(str_replace('_', ' ', $event->type)),
+        };
+    }
+
+    private function friendlyStatus(?string $status): string
+    {
+        if (! $status) {
+            return 'unknown';
+        }
+
+        return Str::headline(str_replace('_', ' ', $status));
+    }
+
+    private function serviceMetrics(): array
+    {
+        $started = $this->workOrder->started_at;
+        $completed = $this->workOrder->completed_at;
+
+        return [
+            'arrived_at' => $this->workOrder->arrived_at,
+            'started_at' => $started,
+            'completed_at' => $completed,
+            'duration_minutes' => $started && $completed ? $started->diffInMinutes($completed) : null,
+            'estimated_minutes' => $this->workOrder->estimated_minutes,
+            'labor_minutes' => $this->workOrder->labor_minutes,
+            'travel_minutes' => $this->workOrder->travel_minutes,
+        ];
+    }
+
+    private function messageThreadFor(User $user): ?MessageThread
+    {
+        return MessageThread::where('work_order_id', $this->workOrder->id)
+            ->whereHas('participants', function ($builder) use ($user) {
+                $builder->where('user_id', $user->id);
+            })
+            ->with(['messages.user'])
+            ->latest()
+            ->first();
+    }
     public function assignTechnician(): void
     {
         $previousUserId = $this->workOrder->assigned_to_user_id;
@@ -202,10 +569,26 @@ class Show extends Component
 
     public function render()
     {
+        $user = auth()->user();
         $technicians = User::role('technician')->orderBy('name')->get();
+        $timeline = $this->timeline();
+        $statusSummary = $this->statusSummary();
+        $statusSteps = $this->statusSteps();
+        $serviceMetrics = $this->serviceMetrics();
+        $messageThread = $user ? $this->messageThreadFor($user) : null;
+        $nextAppointment = $this->workOrder->appointments
+            ->sortBy('scheduled_start_at')
+            ->first();
 
         return view('livewire.work-orders.show', [
             'technicians' => $technicians,
+            'viewer' => $user,
+            'timeline' => $timeline,
+            'statusSummary' => $statusSummary,
+            'statusSteps' => $statusSteps,
+            'serviceMetrics' => $serviceMetrics,
+            'messageThread' => $messageThread,
+            'nextAppointment' => $nextAppointment,
         ]);
     }
 }
