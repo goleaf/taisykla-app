@@ -3,6 +3,7 @@
 namespace App\Livewire\Equipment;
 
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -26,6 +27,7 @@ class Index extends Component
         $user = auth()->user();
         $this->new = [
             'organization_id' => $user->organization_id,
+            'equipment_category_id' => null,
             'name' => '',
             'type' => '',
             'manufacturer' => '',
@@ -47,6 +49,7 @@ class Index extends Component
 
         $this->validate([
             'new.organization_id' => ['nullable', 'exists:organizations,id'],
+            'new.equipment_category_id' => ['nullable', 'exists:equipment_categories,id'],
             'new.name' => ['required', 'string', 'max:255'],
             'new.type' => ['required', 'string', 'max:255'],
             'new.manufacturer' => ['nullable', 'string', 'max:255'],
@@ -74,10 +77,12 @@ class Index extends Component
 
         $equipment = $query->latest()->paginate(10);
         $organizations = Organization::orderBy('name')->get();
+        $categories = EquipmentCategory::orderBy('name')->get();
 
         return view('livewire.equipment.index', [
             'equipment' => $equipment,
             'organizations' => $organizations,
+            'categories' => $categories,
             'user' => $user,
         ]);
     }

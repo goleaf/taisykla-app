@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('dashboard', Dashboard::class)->name('dashboard');
     Route::get('work-orders', WorkOrdersIndex::class)->name('work-orders.index');
     Route::get('work-orders/{workOrder}', WorkOrdersShow::class)->name('work-orders.show');

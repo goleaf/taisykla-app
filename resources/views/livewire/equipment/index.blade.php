@@ -30,6 +30,15 @@
                         </div>
                     @endif
                     <div>
+                        <label class="text-xs text-gray-500">Category</label>
+                        <select wire:model="new.equipment_category_id" class="mt-1 w-full rounded-md border-gray-300">
+                            <option value="">Select category</option>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
                         <label class="text-xs text-gray-500">Name</label>
                         <input wire:model="new.name" class="mt-1 w-full rounded-md border-gray-300" />
                         @error('new.name') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
@@ -82,6 +91,7 @@
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organization</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
@@ -92,6 +102,7 @@
                         <tr>
                             <td class="px-4 py-3 text-sm text-gray-900">{{ $item->name }}</td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ $item->type }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ $item->category?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ $item->organization?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ ucfirst(str_replace('_', ' ', $item->status)) }}</td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ $item->location_name ?? '—' }}</td>

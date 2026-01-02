@@ -11,6 +11,7 @@ class Equipment extends Model
 
     protected $fillable = [
         'organization_id',
+        'equipment_category_id',
         'name',
         'type',
         'manufacturer',
@@ -32,6 +33,11 @@ class Equipment extends Model
     public function organization()
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(EquipmentCategory::class, 'equipment_category_id');
     }
 
     public function assignedUser()
