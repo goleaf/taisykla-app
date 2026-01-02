@@ -28,9 +28,18 @@ class Index extends Component
     public string $categoryFilter = '';
     public string $organizationFilter = '';
     public string $technicianFilter = '';
+    public string $sortField = 'requested_at';
+    public string $sortDirection = 'desc';
     public string $search = '';
     public bool $showForm = false;
     public array $form = [];
+    public string $view = 'list';
+    public bool $create = false;
+
+    protected $queryString = [
+        'view' => ['except' => 'list'],
+        'create' => ['except' => false],
+    ];
 
     protected $paginationTheme = 'tailwind';
 
@@ -50,9 +59,34 @@ class Index extends Component
         'urgent',
     ];
 
+    public array $viewOptions = [
+        'list',
+        'calendar',
+        'map',
+        'board',
+    ];
+
+    public array $sortOptions = [
+        'requested_at' => 'Requested date',
+        'scheduled_start_at' => 'Scheduled date',
+        'created_at' => 'Created date',
+        'status' => 'Status',
+        'priority' => 'Priority',
+        'organization' => 'Customer name',
+        'assigned_to_user_id' => 'Assigned technician',
+    ];
+
     public function mount(): void
     {
+        if (! in_array($this->view, $this->viewOptions, true)) {
+            $this->view = 'list';
+        }
+
         $this->resetForm();
+        if ($this->create && $this->canCreate) {
+            $this->view = 'list';
+            $this->showForm = true;
+        }
     }
 
     public function updatedStatusFilter(): void
@@ -85,6 +119,25 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatedSortField(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSortDirection(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedView(): void
+    {
+        if (! in_array($this->view, $this->viewOptions, true)) {
+            $this->view = 'list';
+        }
+
+        $this->resetPage();
+    }
+
     public function clearFilters(): void
     {
         $this->statusFilter = 'all';
@@ -93,6 +146,8 @@ class Index extends Component
         $this->organizationFilter = '';
         $this->technicianFilter = '';
         $this->search = '';
+        $this->sortField = 'requested_at';
+        $this->sortDirection = 'desc';
         $this->resetPage();
     }
 
@@ -119,6 +174,7 @@ class Index extends Component
             return;
         }
 
+        $this->view = 'list';
         $this->resetForm();
         $this->showForm = true;
     }
@@ -365,7 +421,25 @@ class Index extends Component
             $query->where('status', $this->statusFilter);
         }
 
-        $workOrders = $query->orderByDesc('requested_at')->orderByDesc('created_at')->paginate(10);
+        $viewQuery = clone $query;
+        $this->applySort($viewQuery);
+        $workOrders = $viewQuery->paginate(10);
+        $calendarGroups = null;
+        $mapOrders = null;
+        $boardColumns = null;
+
+        if ($this->view !== 'list') {
+            $bulkQuery = clone $query;
+            $bulkOrders = $bulkQuery->orderByDesc('requested_at')->orderByDesc('created_at')->get();
+
+            if ($this->view === 'calendar') {
+                $calendarGroups = $this->calendarGroups($bulkOrders);
+            } elseif ($this->view === 'map') {
+                $mapOrders = $this->mapOrders($bulkOrders);
+            } elseif ($this->view === 'board') {
+                $boardColumns = $this->boardColumns($bulkOrders);
+            }
+        }
         $slaTargets = $this->slaTargets();
         $slaSummaries = $this->buildSlaSummaries($workOrders->items(), $slaTargets);
 
@@ -394,6 +468,9 @@ class Index extends Component
             'canCreate' => $this->canCreate,
             'canUpdateStatus' => $this->canUpdateStatus,
             'canAssign' => $this->canAssign,
+            'calendarGroups' => $calendarGroups,
+            'mapOrders' => $mapOrders,
+            'boardColumns' => $boardColumns,
         ]);
     }
 
@@ -480,6 +557,108 @@ class Index extends Component
                 $builder->orWhere('id', (int) $search);
             }
         });
+    }
+
+    private function applySort(Builder $query): void
+    {
+        $direction = $this->sortDirection === 'asc' ? 'asc' : 'desc';
+
+        match ($this->sortField) {
+            'organization' => $query->orderBy(
+                Organization::select('name')
+                    ->whereColumn('organizations.id', 'work_orders.organization_id'),
+                $direction
+            ),
+            'assigned_to_user_id' => $query->orderBy(
+                User::select('name')
+                    ->whereColumn('users.id', 'work_orders.assigned_to_user_id'),
+                $direction
+            ),
+            'scheduled_start_at' => $query->orderBy('scheduled_start_at', $direction),
+            'created_at' => $query->orderBy('created_at', $direction),
+            'status' => $query->orderBy('status', $direction),
+            'priority' => $query->orderBy('priority', $direction),
+            default => $query->orderBy('requested_at', $direction),
+        };
+    }
+
+    private function calendarGroups($workOrders): array
+    {
+        return $workOrders
+            ->groupBy(function (WorkOrder $workOrder) {
+                $date = $workOrder->scheduled_start_at
+                    ?? $workOrder->requested_at
+                    ?? $workOrder->created_at;
+
+                return $date?->toDateString() ?? 'Unscheduled';
+            })
+            ->map(function ($orders, $date) {
+                return [
+                    'date' => $date,
+                    'items' => $orders->sortBy('scheduled_start_at')->values(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function mapOrders($workOrders): array
+    {
+        return $workOrders->map(function (WorkOrder $workOrder) {
+            $lat = $workOrder->location_latitude;
+            $lng = $workOrder->location_longitude;
+            $hasCoords = $lat !== null && $lng !== null;
+
+            return [
+                'id' => $workOrder->id,
+                'subject' => $workOrder->subject,
+                'status' => $workOrder->status,
+                'priority' => $workOrder->priority,
+                'organization' => $workOrder->organization?->name,
+                'assigned' => $workOrder->assignedTo?->name,
+                'address' => $workOrder->location_address,
+                'location' => $workOrder->location_name,
+                'lat' => $lat,
+                'lng' => $lng,
+                'has_coords' => $hasCoords,
+                'map_url' => $hasCoords ? $this->mapPointUrl($lat, $lng) : null,
+            ];
+        })->all();
+    }
+
+    private function boardColumns($workOrders): array
+    {
+        $columns = [
+            'submitted' => ['label' => 'Submitted', 'items' => collect()],
+            'assigned' => ['label' => 'Assigned', 'items' => collect()],
+            'in_progress' => ['label' => 'In Progress', 'items' => collect()],
+            'on_hold' => ['label' => 'On Hold', 'items' => collect()],
+            'awaiting_approval' => ['label' => 'Awaiting Approval', 'items' => collect()],
+            'completed' => ['label' => 'Completed', 'items' => collect()],
+            'closed' => ['label' => 'Closed', 'items' => collect()],
+        ];
+
+        foreach ($workOrders as $workOrder) {
+            if ($workOrder->status === 'completed' && ! $workOrder->customer_signature_at) {
+                $columns['awaiting_approval']['items']->push($workOrder);
+                continue;
+            }
+
+            if (array_key_exists($workOrder->status, $columns)) {
+                $columns[$workOrder->status]['items']->push($workOrder);
+            }
+        }
+
+        foreach ($columns as $key => $column) {
+            $columns[$key]['items'] = $column['items']->values();
+        }
+
+        return $columns;
+    }
+
+    private function mapPointUrl(float $lat, float $lng): string
+    {
+        return 'https://www.openstreetmap.org/?mlat=' . $lat . '&mlon=' . $lng . '#map=14/' . $lat . '/' . $lng;
     }
 
     private function buildSummary(Builder $query): array

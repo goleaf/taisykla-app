@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Appointment;
 use App\Models\Equipment;
 use App\Models\InventoryItem;
+use App\Models\InventoryTransaction;
 use App\Models\Invoice;
 use App\Models\Message;
 use App\Models\MessageThread;
@@ -354,6 +355,44 @@ class Dashboard extends Component
         $this->quickReplies[$threadId] = '';
     }
 
+    public function reservePart(int $partId, int $quantity = 1): void
+    {
+        $user = auth()->user();
+        if (! $user || $quantity < 1) {
+            return;
+        }
+
+        $item = InventoryItem::query()
+            ->where('part_id', $partId)
+            ->orderByRaw('(quantity - reserved_quantity) desc')
+            ->first();
+
+        if (! $item) {
+            $this->addError('reservePart', 'No inventory found for this part.');
+            return;
+        }
+
+        $available = (int) $item->quantity - (int) $item->reserved_quantity;
+        if ($available <= 0) {
+            $this->addError('reservePart', 'No available stock for this part.');
+            return;
+        }
+
+        $reserveQty = min($available, $quantity);
+        $item->update([
+            'reserved_quantity' => $item->reserved_quantity + $reserveQty,
+        ]);
+
+        InventoryTransaction::create([
+            'part_id' => $partId,
+            'location_id' => $item->location_id,
+            'user_id' => $user->id,
+            'type' => 'reserve',
+            'quantity' => $reserveQty,
+            'note' => 'Reserved from technician dashboard.',
+        ]);
+    }
+
     private function technicianDashboard(User $user, Carbon $today): array
     {
         $appointments = Appointment::query()
@@ -500,6 +539,9 @@ class Dashboard extends Component
 
             $utilization = $scheduledMinutes > 0 ? min(100, (int) round($scheduledMinutes / 480 * 100)) : 0;
             $duration = $durationStats->get($tech->id, ['avg_actual' => null, 'avg_estimated' => null]);
+            $mapUrl = $tech->current_latitude && $tech->current_longitude
+                ? $this->mapPointUrl((float) $tech->current_latitude, (float) $tech->current_longitude)
+                : null;
 
             return [
                 'user' => $tech,
@@ -510,6 +552,7 @@ class Dashboard extends Component
                 'avg_estimated' => $duration['avg_estimated'],
                 'scheduled_minutes' => $scheduledMinutes,
                 'has_overdue' => $hasOverdue,
+                'map_url' => $mapUrl,
             ];
         });
 
@@ -576,10 +619,13 @@ class Dashboard extends Component
         $backupAt = SystemSetting::where('group', 'backup')
             ->where('key', 'last_run_at')
             ->value('value');
+        if (is_array($backupAt)) {
+            $backupAt = $backupAt['value'] ?? null;
+        }
 
-        $auditCount = DB::table('audit_logs')
-            ->where('created_at', '>=', $today->copy()->subDay())
-            ->count();
+        $auditCount = Schema::hasTable('audit_logs')
+            ? DB::table('audit_logs')->where('created_at', '>=', $today->copy()->subDay())->count()
+            : 0;
 
         $compliance = [
             'backup_last_run' => $backupAt,
@@ -888,7 +934,7 @@ class Dashboard extends Component
 
     private function technicianPartsSnapshot(array $workOrderIds, Carbon $today): array
     {
-        $needed = [];
+        $neededRows = collect();
         $neededPartIds = [];
 
         if ($workOrderIds !== []) {
@@ -897,7 +943,7 @@ class Dashboard extends Component
                 ->with('part')
                 ->get();
 
-            $needed = $parts->groupBy('part_id')->map(function ($rows) {
+            $neededRows = $parts->groupBy('part_id')->map(function ($rows) {
                 $part = $rows->first()->part;
 
                 return [
@@ -906,7 +952,7 @@ class Dashboard extends Component
                     'sku' => $part?->sku,
                     'quantity' => $rows->sum('quantity'),
                 ];
-            })->values()->all();
+            })->values();
 
             $neededPartIds = $parts->pluck('part_id')->unique()->values()->all();
         }
@@ -924,6 +970,10 @@ class Dashboard extends Component
         $commonPartIds = $common->pluck('part_id')->unique()->values()->all();
         $allPartIds = array_values(array_unique(array_merge($neededPartIds, $commonPartIds)));
 
+        $partsById = $allPartIds === []
+            ? collect()
+            : Part::query()->whereIn('id', $allPartIds)->get()->keyBy('id');
+
         $inventory = $allPartIds === []
             ? collect()
             : InventoryItem::query()
@@ -933,8 +983,8 @@ class Dashboard extends Component
                 ->get()
                 ->keyBy('part_id');
 
-        $commonParts = $common->map(function ($row) use ($inventory) {
-            $part = Part::find($row->part_id);
+        $commonParts = $common->map(function ($row) use ($inventory, $partsById) {
+            $part = $partsById->get($row->part_id);
             $stock = $inventory->get($row->part_id);
             $available = $stock ? (int) $stock->quantity - (int) $stock->reserved : 0;
 
@@ -948,8 +998,15 @@ class Dashboard extends Component
             ];
         })->all();
 
+        $neededParts = $neededRows->map(function ($row) use ($inventory) {
+            $stock = $inventory->get($row['part_id']);
+            $available = $stock ? (int) $stock->quantity - (int) $stock->reserved : 0;
+            $row['available'] = $available;
+            return $row;
+        })->all();
+
         return [
-            'needed' => $needed,
+            'needed' => $neededParts,
             'common' => $commonParts,
         ];
     }
