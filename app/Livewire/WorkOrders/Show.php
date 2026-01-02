@@ -2,15 +2,14 @@
 
 namespace App\Livewire\WorkOrders;
 
-use App\Models\Message;
 use App\Models\MessageThread;
-use App\Models\MessageThreadParticipant;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderEvent;
 use App\Models\WorkOrderFeedback;
 use App\Services\AutomationService;
 use App\Services\AuditLogger;
+use App\Services\WorkOrderMessagingService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -136,6 +135,8 @@ class Show extends Component
                 'from_status' => $previousStatus,
                 'to_status' => $this->status,
             ]);
+
+            $this->sendStatusUpdateMessage($user, $this->status);
         }
         $this->workOrder->refresh();
     }
@@ -151,69 +152,14 @@ class Show extends Component
             return;
         }
 
-        $thread = $this->resolveMessageThread($user);
-
-        Message::create([
-            'thread_id' => $thread->id,
-            'user_id' => $user->id,
-            'body' => $this->messageBody,
-        ]);
+        app(WorkOrderMessagingService::class)->postMessage(
+            $this->workOrder,
+            $user,
+            $this->messageBody,
+            $this->fallbackParticipantFor($user)
+        );
 
         $this->messageBody = '';
-    }
-
-    private function resolveMessageThread(User $user): MessageThread
-    {
-        $existing = MessageThread::where('work_order_id', $this->workOrder->id)
-            ->whereHas('participants', function ($builder) use ($user) {
-                $builder->where('user_id', $user->id);
-            })
-            ->latest()
-            ->first();
-
-        if ($existing) {
-            return $existing;
-        }
-
-        $partner = $this->resolveMessagePartner($user);
-
-        $thread = MessageThread::create([
-            'subject' => 'Work Order #' . $this->workOrder->id,
-            'organization_id' => $this->workOrder->organization_id,
-            'work_order_id' => $this->workOrder->id,
-            'created_by_user_id' => $user->id,
-        ]);
-
-        MessageThreadParticipant::create([
-            'thread_id' => $thread->id,
-            'user_id' => $user->id,
-        ]);
-
-        if ($partner && $partner->id !== $user->id) {
-            MessageThreadParticipant::create([
-                'thread_id' => $thread->id,
-                'user_id' => $partner->id,
-            ]);
-        }
-
-        return $thread;
-    }
-
-    private function resolveMessagePartner(User $user): ?User
-    {
-        if ($user->hasRole('client')) {
-            return $this->workOrder->assignedTo
-                ?? User::role('dispatch')->orderBy('name')->first()
-                ?? User::role('admin')->orderBy('name')->first();
-        }
-
-        if ($user->hasRole('technician')) {
-            return $this->workOrder->requestedBy
-                ?? User::role('dispatch')->orderBy('name')->first()
-                ?? User::role('admin')->orderBy('name')->first();
-        }
-
-        return $this->workOrder->requestedBy ?? $this->workOrder->assignedTo;
     }
 
     public function submitSignoff(): void
@@ -476,13 +422,86 @@ class Show extends Component
 
     private function messageThreadFor(User $user): ?MessageThread
     {
-        return MessageThread::where('work_order_id', $this->workOrder->id)
-            ->whereHas('participants', function ($builder) use ($user) {
+        $query = MessageThread::where('work_order_id', $this->workOrder->id)
+            ->with(['messages.user']);
+
+        if (! $user->hasAnyRole(['admin', 'dispatch', 'support'])) {
+            $query->whereHas('participants', function ($builder) use ($user) {
                 $builder->where('user_id', $user->id);
-            })
-            ->with(['messages.user'])
-            ->latest()
-            ->first();
+            });
+        }
+
+        return $query->latest()->first();
+    }
+
+    private function fallbackParticipantFor(User $actor): ?User
+    {
+        if ($this->workOrder->assigned_to_user_id) {
+            return null;
+        }
+
+        if ($actor->hasRole('client')) {
+            return User::role('dispatch')->orderBy('name')->first()
+                ?? User::role('admin')->orderBy('name')->first();
+        }
+
+        return null;
+    }
+
+    private function postProgressMessage(User $actor, string $body): void
+    {
+        if (trim($body) === '') {
+            return;
+        }
+
+        app(WorkOrderMessagingService::class)->postMessage(
+            $this->workOrder,
+            $actor,
+            $body,
+            $this->fallbackParticipantFor($actor)
+        );
+    }
+
+    private function sendStatusUpdateMessage(User $actor, string $status): void
+    {
+        $message = match ($status) {
+            'assigned' => $this->assignmentMessage($this->workOrder->assignedTo),
+            'in_progress' => $this->workOrder->arrived_at
+                ? 'Technician has arrived on site and started service.'
+                : 'Service is now in progress.',
+            'on_hold' => $this->workOrder->on_hold_reason
+                ? 'Your request is on hold. ' . $this->workOrder->on_hold_reason
+                : 'Your request is on hold. We will follow up with next steps.',
+            'completed' => 'Service has been completed. Please review the report and provide your approval.',
+            'closed' => 'Your request has been closed. Thank you for working with us.',
+            'canceled' => 'Your request has been canceled. Contact support if this is unexpected.',
+            default => null,
+        };
+
+        if ($message) {
+            $this->postProgressMessage($actor, $message);
+        }
+    }
+
+    private function assignmentMessage(?User $assignedUser): string
+    {
+        if (! $assignedUser) {
+            return 'Your request has been assigned and is being scheduled.';
+        }
+
+        $scheduled = $this->workOrder->scheduled_start_at?->format('M d, H:i');
+        $timeWindow = $this->workOrder->time_window;
+
+        $message = 'Your request has been assigned to ' . $assignedUser->name . '.';
+        if ($scheduled) {
+            $message .= ' Scheduled for ' . $scheduled;
+            if ($timeWindow) {
+                $message .= ' (' . $timeWindow . ')';
+            }
+            $message .= '.';
+        }
+
+        return $message;
     }
 
     private function technicianInsights(): array
@@ -563,6 +582,10 @@ class Show extends Component
         $this->workOrder->update($updates);
 
         if ($previousUserId !== $this->assignedToUserId) {
+            $assignedUser = $this->assignedToUserId
+                ? User::find($this->assignedToUserId)
+                : null;
+
             WorkOrderEvent::create([
                 'work_order_id' => $this->workOrder->id,
                 'user_id' => auth()->id(),
@@ -583,6 +606,11 @@ class Show extends Component
             if ($this->assignedToUserId) {
                 app(AutomationService::class)->runForWorkOrder('work_order_assigned', $this->workOrder);
             }
+
+            $assignmentMessage = $assignedUser
+                ? $this->assignmentMessage($assignedUser)
+                : 'Your request is awaiting technician assignment.';
+            $this->postProgressMessage($user, $assignmentMessage);
         }
 
         $this->workOrder->refresh();
@@ -637,6 +665,7 @@ class Show extends Component
             ]);
         }
 
+        $this->postProgressMessage($user, 'Technician has arrived on site and begun service.');
         $this->workOrder->refresh();
         $this->status = $this->workOrder->status;
     }

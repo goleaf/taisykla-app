@@ -12,6 +12,7 @@ use App\Models\WorkOrderCategory;
 use App\Models\WorkOrderEvent;
 use App\Services\AutomationService;
 use App\Services\AuditLogger;
+use App\Services\WorkOrderMessagingService;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -214,6 +215,11 @@ class Index extends Component
                 'from_status' => $previousStatus,
                 'to_status' => $status,
             ]);
+
+            $user = auth()->user();
+            if ($user) {
+                $this->sendStatusUpdateMessage($workOrder, $user, $status);
+            }
         }
     }
 
@@ -239,6 +245,8 @@ class Index extends Component
         $workOrder->update($updates);
 
         if ($previousUserId !== $userId) {
+            $assignedUser = $userId ? User::find($userId) : null;
+
             WorkOrderEvent::create([
                 'work_order_id' => $workOrder->id,
                 'user_id' => auth()->id(),
@@ -258,6 +266,14 @@ class Index extends Component
 
             if ($userId) {
                 app(AutomationService::class)->runForWorkOrder('work_order_assigned', $workOrder);
+            }
+
+            $actor = auth()->user();
+            if ($actor) {
+                $message = $assignedUser
+                    ? $this->assignmentMessage($workOrder, $assignedUser)
+                    : 'Your request is awaiting technician assignment.';
+                $this->postProgressMessage($workOrder, $actor, $message);
             }
         }
     }
@@ -383,5 +399,56 @@ class Index extends Component
         }
 
         return 0;
+    }
+
+    private function postProgressMessage(WorkOrder $workOrder, User $actor, string $body): void
+    {
+        if (trim($body) === '') {
+            return;
+        }
+
+        app(WorkOrderMessagingService::class)->postMessage($workOrder, $actor, $body);
+    }
+
+    private function sendStatusUpdateMessage(WorkOrder $workOrder, User $actor, string $status): void
+    {
+        $message = match ($status) {
+            'assigned' => $this->assignmentMessage($workOrder, $workOrder->assignedTo),
+            'in_progress' => $workOrder->arrived_at
+                ? 'Technician has arrived on site and started service.'
+                : 'Service is now in progress.',
+            'on_hold' => $workOrder->on_hold_reason
+                ? 'Your request is on hold. ' . $workOrder->on_hold_reason
+                : 'Your request is on hold. We will follow up with next steps.',
+            'completed' => 'Service has been completed. Please review the report and provide your approval.',
+            'closed' => 'Your request has been closed. Thank you for working with us.',
+            'canceled' => 'Your request has been canceled. Contact support if this is unexpected.',
+            default => null,
+        };
+
+        if ($message) {
+            $this->postProgressMessage($workOrder, $actor, $message);
+        }
+    }
+
+    private function assignmentMessage(WorkOrder $workOrder, ?User $assignedUser): string
+    {
+        if (! $assignedUser) {
+            return 'Your request has been assigned and is being scheduled.';
+        }
+
+        $scheduled = $workOrder->scheduled_start_at?->format('M d, H:i');
+        $timeWindow = $workOrder->time_window;
+
+        $message = 'Your request has been assigned to ' . $assignedUser->name . '.';
+        if ($scheduled) {
+            $message .= ' Scheduled for ' . $scheduled;
+            if ($timeWindow) {
+                $message .= ' (' . $timeWindow . ')';
+            }
+            $message .= '.';
+        }
+
+        return $message;
     }
 }
