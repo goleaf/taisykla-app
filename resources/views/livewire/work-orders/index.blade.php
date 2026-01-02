@@ -168,7 +168,9 @@
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ ucfirst($workOrder->priority) }}</td>
                             <td class="px-4 py-3 text-sm">
-                                @php($sla = $slaSummaries[$workOrder->id] ?? null)
+                                @php
+                                    $sla = $slaSummaries[$workOrder->id] ?? null;
+                                @endphp
                                 @if ($sla)
                                     @php
                                         $status = $sla['status'];
