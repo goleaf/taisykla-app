@@ -146,6 +146,16 @@ class DatabaseSeeder extends Seeder
         );
         $clientOwner->assignRole('client');
 
+        $guest = User::firstOrCreate(
+            ['email' => 'guest@example.com'],
+            [
+                'name' => 'Guest User',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+        $guest->assignRole('guest');
+
         $categories = [
             ['name' => 'Hardware Repair', 'default_estimated_minutes' => 180],
             ['name' => 'Software Installation', 'default_estimated_minutes' => 90],

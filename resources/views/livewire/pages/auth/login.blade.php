@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Forms\LoginForm;
+use App\Models\User;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -8,6 +9,30 @@ use Livewire\Volt\Component;
 new #[Layout('layouts.guest')] class extends Component
 {
     public LoginForm $form;
+    public array $demoUsers = [];
+
+    /**
+     * Load demo users for each role.
+     */
+    public function mount(): void
+    {
+        $roles = ['admin', 'dispatch', 'technician', 'support', 'client', 'guest'];
+        $demoUsers = [];
+
+        foreach ($roles as $role) {
+            $user = User::role($role)->orderBy('name')->first();
+
+            $demoUsers[] = [
+                'role' => $role,
+                'name' => $user?->name ?? 'Not seeded',
+                'email' => $user?->email ?? 'Seed to create',
+                'password' => 'password',
+                'missing' => $user === null,
+            ];
+        }
+
+        $this->demoUsers = $demoUsers;
+    }
 
     /**
      * Handle an incoming authentication request.
@@ -68,4 +93,33 @@ new #[Layout('layouts.guest')] class extends Component
             </x-primary-button>
         </div>
     </form>
+
+    <div class="mt-6 border-t border-gray-200 pt-4">
+        <h2 class="text-sm font-semibold text-gray-700">Demo users</h2>
+        <p class="mt-1 text-xs text-gray-500">
+            All demo accounts use the password <span class="font-mono text-gray-700">password</span>.
+        </p>
+
+        <div class="mt-3 space-y-2">
+            @foreach ($demoUsers as $demoUser)
+                <div class="rounded-md border border-gray-200 px-3 py-2 text-xs text-gray-700">
+                    <div class="flex items-center justify-between">
+                        <span class="font-semibold">{{ ucfirst($demoUser['role']) }}</span>
+                        @if ($demoUser['missing'])
+                            <span class="text-xs text-amber-600">Not seeded</span>
+                        @endif
+                    </div>
+                    <div class="mt-1 text-gray-600">
+                        Name: <span class="font-medium text-gray-700">{{ $demoUser['name'] }}</span>
+                    </div>
+                    <div class="text-gray-600">
+                        Email: <span class="font-mono text-gray-700">{{ $demoUser['email'] }}</span>
+                    </div>
+                    <div class="text-gray-600">
+                        Password: <span class="font-mono text-gray-700">{{ $demoUser['password'] }}</span>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
 </div>
