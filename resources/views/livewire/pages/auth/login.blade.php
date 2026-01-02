@@ -102,12 +102,10 @@ new #[Layout('layouts.guest')] class extends Component
 
         <div class="mt-3 space-y-2">
             @foreach ($demoUsers as $demoUser)
+                @continue($demoUser['missing'])
                 <div class="rounded-md border border-gray-200 px-3 py-2 text-xs text-gray-700">
                     <div class="flex items-center justify-between">
                         <span class="font-semibold">{{ ucfirst($demoUser['role']) }}</span>
-                        @if ($demoUser['missing'])
-                            <span class="text-xs text-amber-600">Not seeded</span>
-                        @endif
                     </div>
                     <div class="mt-1 text-gray-600">
                         Name: <span class="font-medium text-gray-700">{{ $demoUser['name'] }}</span>

@@ -181,15 +181,22 @@
                     @endif
                 </div>
 
-                <div id="work-order-messages" class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                <div id="work-order-messages" class="bg-white shadow-sm rounded-lg p-6 border border-gray-100" wire:poll.10s>
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Messages</h2>
                     @if ($messageThread && $messageThread->messages->isNotEmpty())
                         <div class="space-y-3 max-h-64 overflow-y-auto">
                             @foreach ($messageThread->messages->sortBy('created_at') as $message)
-                                <div>
-                                    <p class="text-sm font-medium text-gray-900">{{ $message->user?->name ?? 'User' }}</p>
-                                    <p class="text-sm text-gray-700">{{ $message->body }}</p>
-                                    <p class="text-xs text-gray-400">{{ $message->created_at?->diffForHumans() }}</p>
+                                @php
+                                    $isMine = $viewer && $message->user_id === $viewer->id;
+                                @endphp
+                                <div class="flex {{ $isMine ? 'justify-end' : 'justify-start' }}">
+                                    <div class="max-w-md rounded-lg px-3 py-2 {{ $isMine ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-800' }}">
+                                        <p class="text-xs {{ $isMine ? 'text-indigo-100' : 'text-gray-500' }}">
+                                            {{ $isMine ? 'You' : ($message->user?->name ?? 'User') }}
+                                            • {{ $message->created_at?->format('M d, H:i') ?? '—' }}
+                                        </p>
+                                        <p class="text-sm leading-relaxed">{{ $message->body }}</p>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>

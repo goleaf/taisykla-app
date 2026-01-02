@@ -191,7 +191,11 @@ class Index extends Component
         ];
 
         if ($this->editingId) {
-            $equipment = Equipment::query()->findOrFail($this->editingId);
+            $equipmentQuery = Equipment::query();
+            if ($user->hasRole('client')) {
+                $equipmentQuery->where('organization_id', $user->organization_id);
+            }
+            $equipment = $equipmentQuery->findOrFail($this->editingId);
             $equipment->update($payload);
             app(AuditLogger::class)->log(
                 'equipment.updated',
