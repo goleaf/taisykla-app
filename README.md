@@ -1,59 +1,52 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Taisykla App
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Taisykla App is a computer and equipment maintenance management system that connects service companies, technicians, and customers in one workflow. It replaces ad hoc phone calls and paper work orders with real-time status, automated coordination, and data-backed decisions across the full service lifecycle.
 
-## About Laravel
+## What the system covers
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Service request intake with clear priorities, approvals, and customer context.
+- Dispatch, scheduling, and assignment with route optimization and live status.
+- Technician workflows for diagnostics, documentation, parts usage, and time tracking.
+- Inventory and parts management with usage trends and replenishment signals.
+- Billing, invoicing, payments, and contract or SLA tracking.
+- Customer portal for status visibility, approvals, and service history.
+- Quality assurance, feedback loops, and standardized documentation.
+- Analytics, dashboards, and forecasting for operational and financial insight.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Core principles
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Transparency: real-time visibility for customers, technicians, and managers.
+- Efficiency: automate repeatable steps and reduce manual handoffs.
+- Accountability: every change is logged with standardized documentation.
+- Intelligence: decisions are supported by operational and financial analytics.
+- Flexibility: adaptable workflows for different service models and pricing.
 
-## Learning Laravel
+## Primary user roles
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- System administrators and operations managers
+- Dispatch coordinators and field technicians
+- Parts and inventory specialists
+- Quality assurance and customer success teams
+- Finance, billing, and collections staff
+- Support and help desk agents
+- Customer account admins, business users, and individual consumers
+- Read-only stakeholders and auditors
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Benefits
 
-## Laravel Sponsors
+For service organizations:
+- Real-time operational visibility across active jobs and technician utilization.
+- Faster turnaround through automated intake, assignment, and communication.
+- Consistent quality with enforced documentation and auditability.
+- Better profitability insights by tracking labor, parts, and margins by job.
+- Scalable processes that keep working as volume grows.
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+For customers:
+- Clear expectations with live updates and transparent pricing.
+- Convenience through self-service requests and approvals.
+- Full service history and equipment maintenance records.
+- Reduced downtime from faster scheduling and better preparedness.
 
-### Premium Partners
+## Documentation
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The full user guide and system description lives in `docs/project-description.md`.
