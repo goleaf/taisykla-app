@@ -121,6 +121,120 @@
             </div>
         </div>
 
+        <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">System Settings</h2>
+                <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showSettingCreate')">Add</button>
+            </div>
+
+            @if ($showSettingCreate)
+                <form wire:submit.prevent="createSetting" class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+                    <div>
+                        <label class="text-xs text-gray-500">Group</label>
+                        <input wire:model="newSetting.group" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Key</label>
+                        <input wire:model="newSetting.key" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-xs text-gray-500">Value (JSON or text)</label>
+                        <input wire:model="newSetting.value" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div class="md:col-span-4 flex items-center gap-3">
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                        <button type="button" class="px-3 py-2 border border-gray-300 rounded-md" wire:click="resetNewSetting">Reset</button>
+                    </div>
+                </form>
+            @endif
+
+            <div class="space-y-4 text-sm">
+                @forelse ($systemSettings as $setting)
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-start border border-gray-100 rounded-md p-3">
+                        <div class="text-gray-500">{{ $setting->group }}</div>
+                        <div class="text-gray-900 font-medium">{{ $setting->key }}</div>
+                        <div class="md:col-span-2">
+                            <textarea wire:model="settingValues.{{ $setting->id }}" class="w-full rounded-md border-gray-300" rows="2"></textarea>
+                        </div>
+                        <div class="flex items-center">
+                            <button class="px-3 py-1 border border-gray-300 rounded-md text-xs" wire:click="updateSetting({{ $setting->id }})">Update</button>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500">No settings saved yet.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Equipment Categories</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showEquipmentCategoryCreate')">Add</button>
+                </div>
+                @if ($showEquipmentCategoryCreate)
+                    <form wire:submit.prevent="createEquipmentCategory" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newEquipmentCategory.name" class="rounded-md border-gray-300" placeholder="Name" />
+                        <textarea wire:model="newEquipmentCategory.description" class="rounded-md border-gray-300" rows="2" placeholder="Description"></textarea>
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                    </form>
+                @endif
+                <div class="space-y-2 text-sm">
+                    @foreach ($equipmentCategories as $category)
+                        <div class="flex items-center justify-between">
+                            <span>{{ $category->name }}</span>
+                            <span class="text-gray-500">{{ $category->is_active ? 'Active' : 'Inactive' }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Automation Rules</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showAutomationCreate')">Add</button>
+                </div>
+                @if ($showAutomationCreate)
+                    <form wire:submit.prevent="createAutomationRule" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newAutomation.name" class="rounded-md border-gray-300" placeholder="Name" />
+                        <input wire:model="newAutomation.trigger" class="rounded-md border-gray-300" placeholder="Trigger" />
+                        <textarea wire:model="newAutomation.conditions" class="rounded-md border-gray-300\" rows=\"2\" placeholder=\"Conditions (JSON)\"></textarea>
+                        <textarea wire:model=\"newAutomation.actions\" class=\"rounded-md border-gray-300\" rows=\"2\" placeholder=\"Actions (JSON)\"></textarea>
+                        <div class=\"flex items-center gap-2 text-xs text-gray-500\">
+                            <input type=\"checkbox\" wire:model=\"newAutomation.is_active\" class=\"rounded border-gray-300\" />
+                            <span>Active</span>
+                        </div>
+                        <button class=\"px-3 py-2 bg-indigo-600 text-white rounded-md\">Save</button>
+                    </form>
+                @endif
+                <div class=\"space-y-2 text-sm\">
+                    @foreach ($automationRules as $rule)
+                        <div class=\"flex items-center justify-between\">
+                            <span>{{ $rule->name }}</span>
+                            <span class=\"text-gray-500\">{{ $rule->is_active ? 'Active' : 'Inactive' }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <div class=\"bg-white shadow-sm rounded-lg border border-gray-100 p-6\">
+            <div class=\"flex items-center justify-between mb-4\">
+                <h2 class=\"text-lg font-semibold text-gray-900\">Integration Settings</h2>
+                <button class=\"px-3 py-1 border border-gray-300 rounded-md\" wire:click=\"$toggle('showIntegrationCreate')\">Add</button>
+            </div>
+            @if ($showIntegrationCreate)
+                <form wire:submit.prevent=\"createIntegrationSetting\" class=\"grid grid-cols-1 md:grid-cols-3 gap-3 mb-4\">
+                    <input wire:model=\"newIntegration.provider\" class=\"rounded-md border-gray-300\" placeholder=\"Provider\" />
+                    <input wire:model=\"newIntegration.name\" class=\"rounded-md border-gray-300\" placeholder=\"Name\" />
+                    <input wire:model=\"newIntegration.config\" class=\"rounded-md border-gray-300\" placeholder=\"Config (JSON)\" />
+                    <div class=\"md:col-span-3 flex items-center gap-2 text-xs text-gray-500\">
+                        <input type=\"checkbox\" wire:model=\"newIntegration.is_active\" class=\"rounded border-gray-300\" />
+                        <span>Active</span>
+                    </div>
+                    <div class=\"md:col-span-3\">\n+                        <button class=\"px-3 py-2 bg-indigo-600 text-white rounded-md\">Save</button>\n+                    </div>\n+                </form>
+            @endif\n+            <div class=\"space-y-2 text-sm\">\n+                @foreach ($integrationSettings as $integration)\n+                    <div class=\"flex items-center justify-between\">\n+                        <span>{{ $integration->provider }} {{ $integration->name ? '(' . $integration->name . ')' : '' }}</span>\n+                        <span class=\"text-gray-500\">{{ $integration->is_active ? 'Active' : 'Inactive' }}</span>\n+                    </div>\n+                @endforeach\n+            </div>\n+        </div>\n     </div>\n </div>\n*** End Patch"}))!=""}
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
                 <div class="flex items-center justify-between mb-4">

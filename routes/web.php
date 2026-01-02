@@ -13,6 +13,7 @@ use App\Livewire\Settings\Index as SettingsIndex;
 use App\Livewire\SupportTickets\Index as SupportTicketsIndex;
 use App\Livewire\WorkOrders\Index as WorkOrdersIndex;
 use App\Livewire\WorkOrders\Show as WorkOrdersShow;
+use App\Http\Controllers\ReportExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -27,6 +28,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('inventory', InventoryIndex::class)->name('inventory.index');
     Route::get('messages', MessagesIndex::class)->name('messages.index');
     Route::get('reports', ReportsIndex::class)->name('reports.index');
+    Route::get('reports/{report}/export', ReportExportController::class)->name('reports.export');
     Route::get('billing', BillingIndex::class)->name('billing.index');
     Route::get('knowledge-base', KnowledgeBaseIndex::class)->name('knowledge-base.index');
     Route::get('support-tickets', SupportTicketsIndex::class)->name('support-tickets.index');
