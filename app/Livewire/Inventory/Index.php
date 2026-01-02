@@ -7,6 +7,7 @@ use App\Models\InventoryLocation;
 use App\Models\Part;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Support\Facades\DB;
 
 class Index extends Component
 {
@@ -97,11 +98,19 @@ class Index extends Component
             ->orderByDesc('quantity')
             ->paginate(10, pageName: 'inventory');
         $locations = InventoryLocation::orderBy('name')->get();
+        $lowStockParts = Part::query()
+            ->leftJoin('inventory_items', 'parts.id', '=', 'inventory_items.part_id')
+            ->select('parts.id', 'parts.name', 'parts.reorder_level', DB::raw('COALESCE(SUM(inventory_items.quantity), 0) as on_hand'))
+            ->groupBy('parts.id', 'parts.name', 'parts.reorder_level')
+            ->havingRaw('COALESCE(SUM(inventory_items.quantity), 0) <= parts.reorder_level')
+            ->orderBy('on_hand')
+            ->get();
 
         return view('livewire.inventory.index', [
             'parts' => $parts,
             'inventory' => $inventory,
             'locations' => $locations,
+            'lowStockParts' => $lowStockParts,
         ]);
     }
 }

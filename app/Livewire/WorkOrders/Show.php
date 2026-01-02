@@ -5,6 +5,8 @@ namespace App\Livewire\WorkOrders;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderEvent;
+use App\Services\AutomationService;
+use App\Services\AuditLogger;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -73,6 +75,18 @@ class Show extends Component
                 'from_status' => $previousStatus,
                 'to_status' => $this->status,
             ]);
+
+            app(AuditLogger::class)->log(
+                'work_order.status_changed',
+                $this->workOrder,
+                'Work order status updated.',
+                ['from' => $previousStatus, 'to' => $this->status]
+            );
+
+            app(AutomationService::class)->runForWorkOrder('work_order_status_changed', $this->workOrder, [
+                'from_status' => $previousStatus,
+                'to_status' => $this->status,
+            ]);
         }
         $this->workOrder->refresh();
     }
@@ -82,8 +96,12 @@ class Show extends Component
         $previousUserId = $this->workOrder->assigned_to_user_id;
         $updates = [
             'assigned_to_user_id' => $this->assignedToUserId,
-            'status' => $this->assignedToUserId ? 'assigned' : $this->workOrder->status,
+            'status' => $this->workOrder->status,
         ];
+
+        if ($this->assignedToUserId && $this->workOrder->status === 'submitted') {
+            $updates['status'] = 'assigned';
+        }
 
         if ($this->assignedToUserId && ! $this->workOrder->assigned_at) {
             $updates['assigned_at'] = now();
@@ -101,9 +119,68 @@ class Show extends Component
                     'assigned_to_user_id' => $this->assignedToUserId,
                 ],
             ]);
+
+            app(AuditLogger::class)->log(
+                'work_order.assignment_changed',
+                $this->workOrder,
+                'Work order assignment updated.',
+                ['assigned_to_user_id' => $this->assignedToUserId]
+            );
+
+            if ($this->assignedToUserId) {
+                app(AutomationService::class)->runForWorkOrder('work_order_assigned', $this->workOrder);
+            }
         }
 
         $this->workOrder->refresh();
+    }
+
+    public function markArrived(): void
+    {
+        $previousStatus = $this->workOrder->status;
+        $updates = [];
+
+        if (! $this->workOrder->arrived_at) {
+            $updates['arrived_at'] = now();
+        }
+
+        if (! $this->workOrder->started_at) {
+            $updates['started_at'] = now();
+        }
+
+        if (in_array($this->workOrder->status, ['submitted', 'assigned'], true)) {
+            $updates['status'] = 'in_progress';
+        }
+
+        if ($updates === []) {
+            return;
+        }
+
+        $this->workOrder->update($updates);
+
+        WorkOrderEvent::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => auth()->id(),
+            'type' => 'arrival',
+            'note' => 'Technician arrived on site.',
+        ]);
+
+        app(AuditLogger::class)->log(
+            'work_order.arrived',
+            $this->workOrder,
+            'Work order marked as arrived.',
+            ['status' => $this->workOrder->status]
+        );
+
+        if ($previousStatus !== $this->workOrder->status) {
+            app(AutomationService::class)->runForWorkOrder('work_order_status_changed', $this->workOrder, [
+                'from_status' => $previousStatus,
+                'to_status' => $this->workOrder->status,
+            ]);
+        }
+
+        $this->workOrder->refresh();
+        $this->status = $this->workOrder->status;
     }
 
     public function addNote(): void

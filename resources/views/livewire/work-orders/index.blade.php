@@ -141,6 +141,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organization</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SLA</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Scheduled</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -166,6 +167,28 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ ucfirst($workOrder->priority) }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                @php($sla = $slaSummaries[$workOrder->id] ?? null)
+                                @if ($sla)
+                                    @php
+                                        $status = $sla['status'];
+                                        $color = match ($status) {
+                                            'on_track' => 'text-green-600',
+                                            'at_risk' => 'text-yellow-600',
+                                            'breached' => 'text-red-600',
+                                            default => 'text-gray-500',
+                                        };
+                                    @endphp
+                                    <div class="font-medium {{ $color }}">
+                                        {{ ucfirst(str_replace('_', ' ', $status)) }}
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        {{ $sla['response_minutes'] ?? '—' }} / {{ $sla['target_minutes'] ?? '—' }} min
+                                    </div>
+                                @else
+                                    <span class="text-gray-500">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-sm text-gray-700">
                                 @if ($user->hasAnyRole(['admin', 'dispatch']))
                                     <select class="rounded-md border-gray-300 text-sm" wire:change="assignTo({{ $workOrder->id }}, $event.target.value)">

@@ -5,13 +5,17 @@ namespace App\Livewire\WorkOrders;
 use App\Models\Appointment;
 use App\Models\Equipment;
 use App\Models\Organization;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
 use App\Models\WorkOrderEvent;
+use App\Services\AutomationService;
+use App\Services\AuditLogger;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Carbon\Carbon;
 
 class Index extends Component
 {
@@ -134,6 +138,21 @@ class Index extends Component
             ],
         ]);
 
+        app(AuditLogger::class)->log(
+            'work_order.created',
+            $workOrder,
+            'Work order created.',
+            ['status' => $status, 'assigned_to_user_id' => $this->new['assigned_to_user_id']]
+        );
+
+        app(AutomationService::class)->runForWorkOrder('work_order_created', $workOrder, ['status' => $status]);
+        if ($this->new['assigned_to_user_id']) {
+            app(AutomationService::class)->runForWorkOrder('work_order_assigned', $workOrder);
+        }
+        if ($this->new['priority'] === 'urgent') {
+            app(AutomationService::class)->runForWorkOrder('work_order_priority_urgent', $workOrder);
+        }
+
         if ($this->new['scheduled_start_at']) {
             Appointment::create([
                 'work_order_id' => $workOrder->id,
@@ -183,6 +202,18 @@ class Index extends Component
                 'from_status' => $previousStatus,
                 'to_status' => $status,
             ]);
+
+            app(AuditLogger::class)->log(
+                'work_order.status_changed',
+                $workOrder,
+                'Work order status updated.',
+                ['from' => $previousStatus, 'to' => $status]
+            );
+
+            app(AutomationService::class)->runForWorkOrder('work_order_status_changed', $workOrder, [
+                'from_status' => $previousStatus,
+                'to_status' => $status,
+            ]);
         }
     }
 
@@ -194,8 +225,12 @@ class Index extends Component
 
         $updates = [
             'assigned_to_user_id' => $userId,
-            'status' => $userId ? 'assigned' : $workOrder->status,
+            'status' => $workOrder->status,
         ];
+
+        if ($userId && $workOrder->status === 'submitted') {
+            $updates['status'] = 'assigned';
+        }
 
         if ($userId && ! $workOrder->assigned_at) {
             $updates['assigned_at'] = now();
@@ -213,6 +248,17 @@ class Index extends Component
                     'assigned_to_user_id' => $userId,
                 ],
             ]);
+
+            app(AuditLogger::class)->log(
+                'work_order.assignment_changed',
+                $workOrder,
+                'Work order assignment updated.',
+                ['assigned_to_user_id' => $userId]
+            );
+
+            if ($userId) {
+                app(AutomationService::class)->runForWorkOrder('work_order_assigned', $workOrder);
+            }
         }
     }
 
@@ -220,7 +266,7 @@ class Index extends Component
     {
         $user = auth()->user();
 
-        $query = WorkOrder::query()->with(['organization', 'equipment', 'assignedTo']);
+        $query = WorkOrder::query()->with(['organization.serviceAgreement', 'equipment', 'assignedTo']);
 
         if ($user->hasRole('technician')) {
             $query->where('assigned_to_user_id', $user->id);
@@ -241,6 +287,8 @@ class Index extends Component
         }
 
         $workOrders = $query->latest()->paginate(10);
+        $slaTargets = $this->slaTargets();
+        $slaSummaries = $this->buildSlaSummaries($workOrders->items(), $slaTargets);
 
         $organizations = Organization::orderBy('name')->get();
         $categories = WorkOrderCategory::orderBy('name')->get();
@@ -258,6 +306,82 @@ class Index extends Component
             'technicians' => $technicians,
             'equipment' => $equipment,
             'user' => $user,
+            'slaSummaries' => $slaSummaries,
         ]);
+    }
+
+    private function slaTargets(): array
+    {
+        $settings = SystemSetting::where('group', 'sla')
+            ->pluck('value', 'key')
+            ->toArray();
+
+        $standard = $this->asInteger($settings['standard_response_minutes'] ?? 240);
+        $high = $this->asInteger($settings['high_response_minutes'] ?? 180);
+        $urgent = $this->asInteger($settings['urgent_response_minutes'] ?? 60);
+
+        return [
+            'standard' => $standard,
+            'high' => $high,
+            'urgent' => $urgent,
+        ];
+    }
+
+        private function buildSlaSummaries(array $workOrders, array $targets): array
+    {
+        $summaries = [];
+
+        foreach ($workOrders as $workOrder) {
+            $requestedAt = $workOrder->requested_at ?? $workOrder->created_at;
+            $assignedAt = $workOrder->assigned_at;
+
+            if (! $requestedAt) {
+                $summaries[$workOrder->id] = [
+                    'status' => 'n/a',
+                    'response_minutes' => null,
+                    'target_minutes' => null,
+                ];
+                continue;
+            }
+
+            $reference = $assignedAt ?? Carbon::now();
+            $responseMinutes = $requestedAt->diffInMinutes($reference);
+
+            $agreementTarget = $workOrder->organization?->serviceAgreement?->response_time_minutes;
+            $target = $agreementTarget ?? ($targets[$workOrder->priority] ?? null);
+
+            $status = 'n/a';
+            if ($target) {
+                $threshold = (int) ceil($target * 0.8);
+                if ($responseMinutes >= $target) {
+                    $status = 'breached';
+                } elseif (! $assignedAt && $responseMinutes >= $threshold) {
+                    $status = 'at_risk';
+                } else {
+                    $status = 'on_track';
+                }
+            }
+
+            $summaries[$workOrder->id] = [
+                'status' => $status,
+                'response_minutes' => $responseMinutes,
+                'target_minutes' => $target,
+            ];
+        }
+
+        return $summaries;
+    }
+
+    private function asInteger(mixed $value): int
+    {
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        if (is_array($value)) {
+            return (int) ($value['value'] ?? 0);
+        }
+
+        return 0;
     }
 }

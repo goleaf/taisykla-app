@@ -10,11 +10,34 @@ use App\Models\Organization;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\AuditLogger;
 use Illuminate\Support\Carbon;
 use Livewire\Component;
 
 class Dashboard extends Component
 {
+    public function updateAvailability(string $status): void
+    {
+        $allowed = ['available', 'unavailable', 'offline'];
+        if (! in_array($status, $allowed, true)) {
+            return;
+        }
+
+        $user = auth()->user();
+        $user->update([
+            'availability_status' => $status,
+            'availability_updated_at' => now(),
+            'last_seen_at' => now(),
+        ]);
+
+        app(AuditLogger::class)->log(
+            'user.availability_updated',
+            $user,
+            'Availability updated.',
+            ['status' => $status]
+        );
+    }
+
     public function render()
     {
         $user = auth()->user();

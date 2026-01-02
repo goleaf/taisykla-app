@@ -9,6 +9,7 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
 use App\Models\WorkOrderFeedback;
 use App\Services\ReportService;
+use App\Services\AuditLogger;
 use Livewire\Component;
 
 class Index extends Component
@@ -33,6 +34,7 @@ class Index extends Component
         'first_time_fix' => 'First-Time Fix Rate',
         'response_time' => 'Response Time',
         'schedule_adherence' => 'Schedule Adherence',
+        'sla_compliance' => 'SLA Compliance',
         'equipment_reliability' => 'Equipment Reliability',
         'maintenance_frequency' => 'Maintenance Frequency',
         'parts_usage' => 'Parts Usage',
@@ -94,7 +96,7 @@ class Index extends Component
         $sortBy = $this->parseSortField($this->newReport['sort_by'] ?? '');
         $fields = $this->parseListField($this->newReport['fields'] ?? '');
 
-        Report::create([
+        $report = Report::create([
             'name' => $this->newReport['name'],
             'report_type' => $this->newReport['report_type'],
             'data_source' => $this->newReport['report_type'] === 'custom' ? $this->newReport['data_source'] : null,
@@ -106,6 +108,15 @@ class Index extends Component
             'is_public' => (bool) $this->newReport['is_public'],
             'created_by_user_id' => auth()->id(),
         ]);
+
+        if ($report) {
+            app(AuditLogger::class)->log(
+                'report.created',
+                $report,
+                'Report created.',
+                ['report_type' => $report->report_type]
+            );
+        }
 
         session()->flash('status', 'Report created.');
         $this->resetNewReport();

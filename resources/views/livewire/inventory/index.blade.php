@@ -95,6 +95,35 @@
             </div>
         @endif
 
+        <div class="bg-white shadow-sm rounded-lg border border-gray-100 mb-6">
+            <div class="flex items-center justify-between p-4">
+                <h2 class="text-lg font-semibold text-gray-900">Low Stock Alerts</h2>
+                <span class="text-xs text-gray-500">Below reorder level</span>
+            </div>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Part</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">On Hand</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reorder Level</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @forelse ($lowStockParts as $part)
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ $part->name }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ $part->on_hand }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">{{ $part->reorder_level }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="px-4 py-3 text-sm text-gray-500">No low-stock alerts.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white shadow-sm rounded-lg border border-gray-100">
                 <h2 class="text-lg font-semibold text-gray-900 p-4">Parts</h2>

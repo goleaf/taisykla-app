@@ -12,6 +12,8 @@ class Index extends Component
     use WithPagination;
 
     public bool $showCreate = false;
+    public string $search = '';
+    public string $categoryFilter = '';
     public array $new = [];
 
     protected $paginationTheme = 'tailwind';
@@ -29,6 +31,16 @@ class Index extends Component
             'content' => '',
             'is_published' => false,
         ];
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCategoryFilter(): void
+    {
+        $this->resetPage();
     }
 
     public function createArticle(): void
@@ -60,10 +72,30 @@ class Index extends Component
 
     public function render()
     {
-        $articles = KnowledgeArticle::latest()->paginate(10);
+        $query = KnowledgeArticle::query();
+
+        if ($this->search !== '') {
+            $search = '%' . $this->search . '%';
+            $query->where(function ($builder) use ($search) {
+                $builder->where('title', 'like', $search)
+                    ->orWhere('content', 'like', $search);
+            });
+        }
+
+        if ($this->categoryFilter !== '') {
+            $query->where('category', $this->categoryFilter);
+        }
+
+        $articles = $query->latest()->paginate(10);
+        $categories = KnowledgeArticle::whereNotNull('category')
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
 
         return view('livewire.knowledge-base.index', [
             'articles' => $articles,
+            'categories' => $categories,
         ]);
     }
 }

@@ -202,6 +202,7 @@ class DatabaseSeeder extends Seeder
                 'equipment_id' => $equipment->id,
                 'requested_by_user_id' => $clientOwner->id,
                 'assigned_to_user_id' => $technician->id,
+                'assigned_at' => now()->subHours(1),
                 'category_id' => WorkOrderCategory::first()->id,
                 'priority' => 'high',
                 'status' => 'assigned',
@@ -383,13 +384,21 @@ class DatabaseSeeder extends Seeder
 
         $settings = [
             ['group' => 'company', 'key' => 'name', 'value' => 'Maintenance Manager'],
+            ['group' => 'company', 'key' => 'address', 'value' => '100 Main Street, Suite 200'],
             ['group' => 'company', 'key' => 'support_email', 'value' => 'support@example.com'],
+            ['group' => 'company', 'key' => 'support_phone', 'value' => '+1 555-0101'],
+            ['group' => 'company', 'key' => 'website', 'value' => 'https://example.com'],
+            ['group' => 'company', 'key' => 'hours', 'value' => 'Mon-Fri 08:00-18:00'],
+            ['group' => 'company', 'key' => 'logo_url', 'value' => ''],
+            ['group' => 'company', 'key' => 'primary_color', 'value' => '#4F46E5'],
             ['group' => 'sla', 'key' => 'standard_response_minutes', 'value' => 240],
-            ['group' => 'sla', 'key' => 'premium_response_minutes', 'value' => 120],
+            ['group' => 'sla', 'key' => 'high_response_minutes', 'value' => 180],
+            ['group' => 'sla', 'key' => 'urgent_response_minutes', 'value' => 60],
             ['group' => 'billing', 'key' => 'default_terms', 'value' => 'Net 30'],
             ['group' => 'billing', 'key' => 'tax_rate', 'value' => 0],
             ['group' => 'mobile', 'key' => 'offline_mode', 'value' => true],
             ['group' => 'audit', 'key' => 'track_sensitive_changes', 'value' => true],
+            ['group' => 'backup', 'key' => 'last_run_at', 'value' => now()->subDay()->toDateTimeString()],
         ];
 
         foreach ($settings as $setting) {
@@ -454,6 +463,16 @@ class DatabaseSeeder extends Seeder
                 'definition' => ['fields' => ['status']],
                 'group_by' => ['status'],
                 'is_public' => false,
+                'created_by_user_id' => $admin->id,
+            ]
+        );
+
+        Report::firstOrCreate(
+            ['name' => 'SLA Compliance'],
+            [
+                'report_type' => 'sla_compliance',
+                'description' => 'SLA response compliance by priority.',
+                'is_public' => true,
                 'created_by_user_id' => $admin->id,
             ]
         );

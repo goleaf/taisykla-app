@@ -5,6 +5,7 @@ namespace App\Livewire\Equipment;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
+use App\Services\AuditLogger;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -60,7 +61,13 @@ class Index extends Component
             'new.location_address' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        Equipment::create($this->new);
+        $equipment = Equipment::create($this->new);
+        app(AuditLogger::class)->log(
+            'equipment.created',
+            $equipment,
+            'Equipment created.',
+            ['name' => $equipment->name]
+        );
         session()->flash('status', 'Equipment added.');
         $this->resetNew();
         $this->showCreate = false;

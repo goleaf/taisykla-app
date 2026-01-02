@@ -29,6 +29,8 @@ class User extends Authenticatable
         'timezone',
         'is_active',
         'last_seen_at',
+        'availability_status',
+        'availability_updated_at',
         'current_latitude',
         'current_longitude',
     ];
@@ -55,6 +57,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_seen_at' => 'datetime',
+            'availability_updated_at' => 'datetime',
         ];
     }
 

@@ -6,6 +6,7 @@ use App\Models\Equipment;
 use App\Models\Invoice;
 use App\Models\Part;
 use App\Models\Report;
+use App\Models\SystemSetting;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderFeedback;
 use App\Models\WorkOrderPart;
@@ -38,6 +39,7 @@ class ReportService
             'first_time_fix' => $this->firstTimeFix($filters),
             'response_time' => $this->responseTime($filters),
             'schedule_adherence' => $this->scheduleAdherence($filters),
+            'sla_compliance' => $this->slaCompliance($filters),
             'equipment_reliability' => $this->equipmentReliability($filters),
             'maintenance_frequency' => $this->maintenanceFrequency($filters),
             'parts_usage' => $this->partsUsage($filters),
@@ -528,6 +530,64 @@ class ReportService
         ];
     }
 
+    private function slaCompliance(array $filters): array
+    {
+        [$start, $end] = $this->resolveDateRange($filters, now()->subDays(30)->startOfDay(), now()->endOfDay());
+
+        $targets = $this->slaTargets();
+        $orders = WorkOrder::query()
+            ->with('organization.serviceAgreement')
+            ->whereBetween('requested_at', [$start, $end])
+            ->get(['id', 'priority', 'requested_at', 'assigned_at', 'organization_id']);
+
+        $stats = [];
+
+        foreach ($orders as $order) {
+            $priority = $order->priority ?? 'standard';
+            $target = $order->organization?->serviceAgreement?->response_time_minutes
+                ?? ($targets[$priority] ?? $targets['standard']);
+            $requestedAt = $order->requested_at ?? $order->created_at;
+            $assignedAt = $order->assigned_at;
+
+            if (! $requestedAt) {
+                continue;
+            }
+
+            $responseMinutes = $requestedAt->diffInMinutes($assignedAt ?? now());
+            $status = $this->slaStatus($responseMinutes, $target, $assignedAt !== null);
+
+            $stats[$priority]['on_track'] = ($stats[$priority]['on_track'] ?? 0) + ($status === 'on_track' ? 1 : 0);
+            $stats[$priority]['at_risk'] = ($stats[$priority]['at_risk'] ?? 0) + ($status === 'at_risk' ? 1 : 0);
+            $stats[$priority]['breached'] = ($stats[$priority]['breached'] ?? 0) + ($status === 'breached' ? 1 : 0);
+            $stats[$priority]['total'] = ($stats[$priority]['total'] ?? 0) + 1;
+            $stats[$priority]['response_sum'] = ($stats[$priority]['response_sum'] ?? 0) + $responseMinutes;
+        }
+
+        $columns = ['Priority', 'On Track', 'At Risk', 'Breached', 'Total', 'Avg Response Minutes'];
+        $rows = [];
+
+        foreach ($stats as $priority => $data) {
+            $avg = $data['total'] > 0 ? $data['response_sum'] / $data['total'] : 0;
+            $rows[] = [
+                'Priority' => ucfirst($priority),
+                'On Track' => $data['on_track'] ?? 0,
+                'At Risk' => $data['at_risk'] ?? 0,
+                'Breached' => $data['breached'] ?? 0,
+                'Total' => $data['total'] ?? 0,
+                'Avg Response Minutes' => number_format($avg, 1),
+            ];
+        }
+
+        return [
+            'columns' => $columns,
+            'rows' => $rows,
+            'meta' => [
+                'period_start' => $start->toDateString(),
+                'period_end' => $end->toDateString(),
+            ],
+        ];
+    }
+
     private function equipmentReliability(array $filters): array
     {
         [$start, $end] = $this->resolveDateRange($filters, now()->subYear()->startOfDay(), now()->endOfDay());
@@ -664,6 +724,38 @@ class ReportService
         ];
     }
 
+    private function slaTargets(): array
+    {
+        $settings = SystemSetting::where('group', 'sla')
+            ->pluck('value', 'key')
+            ->toArray();
+
+        $standard = $this->asInteger($settings['standard_response_minutes'] ?? 240);
+        $high = $this->asInteger($settings['high_response_minutes'] ?? 180);
+        $urgent = $this->asInteger($settings['urgent_response_minutes'] ?? 60);
+
+        return [
+            'standard' => $standard,
+            'high' => $high,
+            'urgent' => $urgent,
+        ];
+    }
+
+    private function slaStatus(int $responseMinutes, int $target, bool $assigned): string
+    {
+        $threshold = (int) ceil($target * 0.8);
+
+        if ($responseMinutes >= $target) {
+            return 'breached';
+        }
+
+        if (! $assigned && $responseMinutes >= $threshold) {
+            return 'at_risk';
+        }
+
+        return 'on_track';
+    }
+
     private function monthRange(Carbon $start, Carbon $end): array
     {
         $months = [];
@@ -783,5 +875,18 @@ class ReportService
         }
 
         return $data;
+    }
+
+    private function asInteger(mixed $value): int
+    {
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        if (is_array($value)) {
+            return (int) ($value['value'] ?? 0);
+        }
+
+        return 0;
     }
 }

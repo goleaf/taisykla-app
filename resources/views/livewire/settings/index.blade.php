@@ -124,6 +124,65 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
                 <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Company Profile</h2>
+                </div>
+                <form wire:submit.prevent="updateCompanyProfile" class="grid grid-cols-1 gap-3">
+                    <input wire:model="companyProfile.name" class="rounded-md border-gray-300" placeholder="Company name" />
+                    <input wire:model="companyProfile.address" class="rounded-md border-gray-300" placeholder="Primary address" />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input wire:model="companyProfile.support_email" class="rounded-md border-gray-300" placeholder="Support email" />
+                        <input wire:model="companyProfile.support_phone" class="rounded-md border-gray-300" placeholder="Support phone" />
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input wire:model="companyProfile.website" class="rounded-md border-gray-300" placeholder="Website" />
+                        <input wire:model="companyProfile.hours" class="rounded-md border-gray-300" placeholder="Business hours" />
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input wire:model="companyProfile.logo_url" class="rounded-md border-gray-300" placeholder="Logo URL" />
+                        <input wire:model="companyProfile.primary_color" class="rounded-md border-gray-300" placeholder="Primary color" />
+                    </div>
+                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save Company Profile</button>
+                </form>
+            </div>
+
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">System Status</h2>
+                    <span class="text-xs text-gray-500">Operational overview</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Active Users</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ $activeUsers }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Open Work Orders</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ $openWorkOrders }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Overdue Work Orders</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ $overdueWorkOrders }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Open Support Tickets</p>
+                        <p class="text-lg font-semibold text-gray-900">{{ $openSupportTickets }}</p>
+                    </div>
+                </div>
+                <div class="mt-6 text-sm text-gray-600">
+                    <div class="flex items-center justify-between">
+                        <span>Last backup</span>
+                        <span>{{ $backupLastRunAt ?? 'Not recorded' }}</span>
+                    </div>
+                    <button class="mt-3 px-3 py-1 border border-gray-300 rounded-md text-xs" wire:click="markBackupComplete">
+                        Mark Backup Complete
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
                     <h2 class="text-lg font-semibold text-gray-900">Communication Templates</h2>
                     <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showTemplateCreate')">Add</button>
                 </div>
@@ -292,6 +351,41 @@
                         <span class="text-gray-500">{{ $integration->is_active ? 'Active' : 'Inactive' }}</span>
                     </div>
                 @endforeach
+            </div>
+        </div>
+
+        <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Audit Log</h2>
+                <span class="text-xs text-gray-500">Recent activity</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        @forelse ($auditLogs as $log)
+                            <tr>
+                                <td class="px-3 py-2 text-gray-700">{{ $log->created_at?->format('M d, H:i') }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $log->user?->name ?? 'System' }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ $log->action }}</td>
+                                <td class="px-3 py-2 text-gray-700">{{ class_basename($log->subject_type) }} #{{ $log->subject_id }}</td>
+                                <td class="px-3 py-2 text-gray-600">{{ $log->description ?? '—' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td class="px-3 py-2 text-gray-500" colspan="5">No audit entries yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

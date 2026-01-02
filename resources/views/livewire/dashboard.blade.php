@@ -5,6 +5,32 @@
             <p class="text-sm text-gray-500">Role: {{ ucfirst($role) }} • {{ now()->toDayDateTimeString() }}</p>
         </div>
 
+        @if ($user->hasAnyRole(['technician', 'dispatch']))
+            @php
+                $availability = $user->availability_status ?? 'available';
+                $availabilityColor = match ($availability) {
+                    'available' => 'text-green-600',
+                    'unavailable' => 'text-yellow-600',
+                    'offline' => 'text-gray-500',
+                    default => 'text-gray-500',
+                };
+            @endphp
+            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-xs uppercase tracking-wide text-gray-500">Availability</p>
+                    <p class="text-lg font-semibold {{ $availabilityColor }}">{{ ucfirst($availability) }}</p>
+                    <p class="text-xs text-gray-500">
+                        Updated {{ $user->availability_updated_at?->diffForHumans() ?? 'just now' }}
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm" wire:click="updateAvailability('available')">Available</button>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm" wire:click="updateAvailability('unavailable')">Unavailable</button>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm" wire:click="updateAvailability('offline')">Offline</button>
+                </div>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
             @foreach ($metrics as $label => $value)
                 <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">

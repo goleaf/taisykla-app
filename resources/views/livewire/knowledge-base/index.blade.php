@@ -41,6 +41,24 @@
             </div>
         @endif
 
+        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500">Search</label>
+                    <input wire:model.debounce.300ms="search" class="mt-1 w-full rounded-md border-gray-300" placeholder="Search articles" />
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Category</label>
+                    <select wire:model="categoryFilter" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="">All categories</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category }}">{{ $category }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-white shadow-sm rounded-lg border border-gray-100">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">

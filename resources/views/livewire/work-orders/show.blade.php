@@ -104,6 +104,14 @@
                             @endforeach
                         </select>
                         <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="updateStatus">Update Status</button>
+                        @if (auth()->user()->hasAnyRole(['technician', 'dispatch']))
+                            <button class="w-full px-4 py-2 border border-gray-300 rounded-md" wire:click="markArrived" @disabled($workOrder->arrived_at)>
+                                {{ $workOrder->arrived_at ? 'Arrived Recorded' : 'Mark Arrived' }}
+                            </button>
+                            <p class="text-xs text-gray-500">
+                                Arrival: {{ $workOrder->arrived_at?->format('M d, H:i') ?? 'Not recorded' }}
+                            </p>
+                        @endif
                     </div>
                 </div>
 

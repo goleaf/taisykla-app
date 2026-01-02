@@ -3,6 +3,7 @@
 namespace App\Livewire\Settings;
 
 use App\Models\CommunicationTemplate;
+use App\Models\AuditLog;
 use App\Models\AutomationRule;
 use App\Models\InventoryLocation;
 use App\Models\Organization;
@@ -10,8 +11,11 @@ use App\Models\ServiceAgreement;
 use App\Models\EquipmentCategory;
 use App\Models\IntegrationSetting;
 use App\Models\SystemSetting;
+use App\Models\SupportTicket;
 use App\Models\User;
+use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
+use App\Services\AuditLogger;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -41,6 +45,8 @@ class Index extends Component
     public array $newAutomation = [];
     public array $newIntegration = [];
     public array $settingValues = [];
+    public array $companyProfile = [];
+    public ?string $backupLastRunAt = null;
 
     protected $paginationTheme = 'tailwind';
 
@@ -56,6 +62,8 @@ class Index extends Component
         $this->resetNewAutomation();
         $this->resetNewIntegration();
         $this->loadSettingValues();
+        $this->loadCompanyProfile();
+        $this->backupLastRunAt = $this->loadBackupTimestamp();
     }
 
     public function resetNewUser(): void
@@ -169,6 +177,84 @@ class Index extends Component
             ->toArray();
     }
 
+    public function loadCompanyProfile(): void
+    {
+        $defaults = [
+            'name' => '',
+            'address' => '',
+            'support_email' => '',
+            'support_phone' => '',
+            'website' => '',
+            'hours' => '',
+            'logo_url' => '',
+            'primary_color' => '',
+        ];
+
+        $stored = SystemSetting::where('group', 'company')
+            ->pluck('value', 'key')
+            ->toArray();
+
+        $this->companyProfile = array_merge($defaults, $stored);
+    }
+
+    public function updateCompanyProfile(): void
+    {
+        $this->validate([
+            'companyProfile.name' => ['nullable', 'string', 'max:255'],
+            'companyProfile.address' => ['nullable', 'string', 'max:500'],
+            'companyProfile.support_email' => ['nullable', 'email', 'max:255'],
+            'companyProfile.support_phone' => ['nullable', 'string', 'max:50'],
+            'companyProfile.website' => ['nullable', 'string', 'max:255'],
+            'companyProfile.hours' => ['nullable', 'string', 'max:255'],
+            'companyProfile.logo_url' => ['nullable', 'string', 'max:255'],
+            'companyProfile.primary_color' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        foreach ($this->companyProfile as $key => $value) {
+            $setting = SystemSetting::updateOrCreate(
+                ['group' => 'company', 'key' => $key],
+                ['value' => $value]
+            );
+
+            app(AuditLogger::class)->log(
+                'company_profile.updated',
+                $setting,
+                'Company profile updated.',
+                ['key' => $key]
+            );
+        }
+
+        session()->flash('status', 'Company profile updated.');
+        $this->loadCompanyProfile();
+    }
+
+    public function markBackupComplete(): void
+    {
+        $now = now()->toDateTimeString();
+        $setting = SystemSetting::updateOrCreate(
+            ['group' => 'backup', 'key' => 'last_run_at'],
+            ['value' => $now]
+        );
+
+        $this->backupLastRunAt = $now;
+
+        app(AuditLogger::class)->log(
+            'backup.completed',
+            $setting,
+            'Backup marked as completed.',
+            ['timestamp' => $now]
+        );
+
+        session()->flash('status', 'Backup timestamp updated.');
+    }
+
+    private function loadBackupTimestamp(): ?string
+    {
+        return SystemSetting::where('group', 'backup')
+            ->where('key', 'last_run_at')
+            ->value('value');
+    }
+
     public function createUser(): void
     {
         $this->validate([
@@ -271,6 +357,19 @@ class Index extends Component
             ['value' => $value]
         );
 
+        $setting = SystemSetting::where('group', $this->newSetting['group'])
+            ->where('key', $this->newSetting['key'])
+            ->first();
+
+        if ($setting) {
+            app(AuditLogger::class)->log(
+                'setting.updated',
+                $setting,
+                'System setting saved.',
+                ['group' => $setting->group, 'key' => $setting->key]
+            );
+        }
+
         session()->flash('status', 'System setting saved.');
         $this->resetNewSetting();
         $this->loadSettingValues();
@@ -282,6 +381,13 @@ class Index extends Component
         $setting = SystemSetting::findOrFail($settingId);
         $value = $this->parseSettingValue($this->settingValues[$settingId] ?? '');
         $setting->update(['value' => $value]);
+
+        app(AuditLogger::class)->log(
+            'setting.updated',
+            $setting,
+            'System setting updated.',
+            ['group' => $setting->group, 'key' => $setting->key]
+        );
 
         session()->flash('status', 'Setting updated.');
         $this->loadSettingValues();
@@ -295,6 +401,17 @@ class Index extends Component
         ]);
 
         EquipmentCategory::create($this->newEquipmentCategory);
+
+        $category = EquipmentCategory::where('name', $this->newEquipmentCategory['name'])->latest('id')->first();
+        if ($category) {
+            app(AuditLogger::class)->log(
+                'equipment_category.created',
+                $category,
+                'Equipment category created.',
+                ['name' => $category->name]
+            );
+        }
+
         session()->flash('status', 'Equipment category created.');
         $this->resetNewEquipmentCategory();
         $this->showEquipmentCategoryCreate = false;
@@ -315,6 +432,16 @@ class Index extends Component
             'is_active' => (bool) $this->newAutomation['is_active'],
         ]);
 
+        $rule = AutomationRule::where('name', $this->newAutomation['name'])->latest('id')->first();
+        if ($rule) {
+            app(AuditLogger::class)->log(
+                'automation_rule.created',
+                $rule,
+                'Automation rule created.',
+                ['trigger' => $rule->trigger]
+            );
+        }
+
         session()->flash('status', 'Automation rule created.');
         $this->resetNewAutomation();
         $this->showAutomationCreate = false;
@@ -333,6 +460,20 @@ class Index extends Component
             'config' => $this->decodeJsonField($this->newIntegration['config']),
             'is_active' => (bool) $this->newIntegration['is_active'],
         ]);
+
+        $integration = IntegrationSetting::where('provider', $this->newIntegration['provider'])
+            ->where('name', $this->newIntegration['name'])
+            ->latest('id')
+            ->first();
+
+        if ($integration) {
+            app(AuditLogger::class)->log(
+                'integration_setting.created',
+                $integration,
+                'Integration setting saved.',
+                ['provider' => $integration->provider]
+            );
+        }
 
         session()->flash('status', 'Integration setting saved.');
         $this->resetNewIntegration();
@@ -382,6 +523,14 @@ class Index extends Component
         $equipmentCategories = EquipmentCategory::orderBy('name')->get();
         $automationRules = AutomationRule::orderBy('name')->get();
         $integrationSettings = IntegrationSetting::orderBy('provider')->orderBy('name')->get();
+        $auditLogs = AuditLog::with('user')->latest()->limit(50)->get();
+        $activeUsers = User::where('is_active', true)->count();
+        $openWorkOrders = WorkOrder::whereNotIn('status', ['completed', 'closed', 'canceled'])->count();
+        $overdueWorkOrders = WorkOrder::whereNotIn('status', ['completed', 'closed', 'canceled'])
+            ->whereNotNull('scheduled_end_at')
+            ->where('scheduled_end_at', '<', now())
+            ->count();
+        $openSupportTickets = SupportTicket::whereNotIn('status', ['resolved', 'closed'])->count();
 
         return view('livewire.settings.index', [
             'users' => $users,
@@ -395,6 +544,11 @@ class Index extends Component
             'equipmentCategories' => $equipmentCategories,
             'automationRules' => $automationRules,
             'integrationSettings' => $integrationSettings,
+            'auditLogs' => $auditLogs,
+            'activeUsers' => $activeUsers,
+            'openWorkOrders' => $openWorkOrders,
+            'overdueWorkOrders' => $overdueWorkOrders,
+            'openSupportTickets' => $openSupportTickets,
         ]);
     }
 }
