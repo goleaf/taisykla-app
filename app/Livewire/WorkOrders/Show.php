@@ -54,11 +54,7 @@ class Show extends Component
             'events.user',
             'attachments',
         ]);
-        $this->status = $this->workOrder->status;
-        $this->assignedToUserId = $this->workOrder->assigned_to_user_id;
-        $this->signatureName = $this->workOrder->customer_signature_name ?? '';
-        $this->feedbackRating = (int) ($this->workOrder->feedback?->rating ?? 0);
-        $this->feedbackComments = $this->workOrder->feedback?->comments ?? '';
+        $this->syncFromWorkOrder();
     }
 
     private function canViewWorkOrder(?User $user, WorkOrder $workOrder): bool
@@ -86,10 +82,98 @@ class Show extends Component
         return false;
     }
 
+    private function canUpdateStatus(User $user): bool
+    {
+        return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
+    }
+
+    private function canAssign(User $user): bool
+    {
+        return $user->hasAnyRole(['admin', 'dispatch']);
+    }
+
+    private function canMarkArrived(User $user): bool
+    {
+        return $user->hasAnyRole(['technician', 'dispatch']);
+    }
+
+    private function canAddNote(User $user): bool
+    {
+        return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
+    }
+
+    private function syncFromWorkOrder(): void
+    {
+        $this->status = $this->workOrder->status;
+        $this->assignedToUserId = $this->workOrder->assigned_to_user_id;
+        $this->signatureName = $this->workOrder->customer_signature_name ?? '';
+        $this->feedbackRating = (int) ($this->workOrder->feedback?->rating ?? 0);
+        $this->feedbackComments = $this->workOrder->feedback?->comments ?? '';
+    }
+
+    private function refreshWorkOrder(): void
+    {
+        $this->workOrder->refresh();
+        $this->syncFromWorkOrder();
+    }
+
+    private function statusUpdates(WorkOrder $workOrder, string $status): array
+    {
+        $updates = ['status' => $status];
+        if ($status === 'assigned' && ! $workOrder->assigned_at) {
+            $updates['assigned_at'] = now();
+        }
+        if ($status === 'in_progress' && ! $workOrder->started_at) {
+            $updates['started_at'] = now();
+        }
+        if ($status === 'completed' && ! $workOrder->completed_at) {
+            $updates['completed_at'] = now();
+        }
+        if ($status === 'canceled' && ! $workOrder->canceled_at) {
+            $updates['canceled_at'] = now();
+        }
+
+        return $updates;
+    }
+
+    private function recordStatusChange(User $user, string $previousStatus, string $newStatus): void
+    {
+        WorkOrderEvent::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => $user->id,
+            'type' => 'status_change',
+            'from_status' => $previousStatus,
+            'to_status' => $newStatus,
+        ]);
+
+        app(AuditLogger::class)->log(
+            'work_order.status_changed',
+            $this->workOrder,
+            'Work order status updated.',
+            ['from' => $previousStatus, 'to' => $newStatus]
+        );
+
+        app(AutomationService::class)->runForWorkOrder('work_order_status_changed', $this->workOrder, [
+            'from_status' => $previousStatus,
+            'to_status' => $newStatus,
+        ]);
+
+        $this->sendStatusUpdateMessage($user, $newStatus);
+    }
+
+    private function normalizeId(mixed $value): ?int
+    {
+        if ($value === '' || $value === null) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
     public function updateStatus(): void
     {
         $user = auth()->user();
-        if (! $user || ! $user->hasAnyRole(['admin', 'dispatch', 'technician'])) {
+        if (! $user || ! $this->canUpdateStatus($user)) {
             return;
         }
 
@@ -98,47 +182,13 @@ class Show extends Component
         ]);
 
         $previousStatus = $this->workOrder->status;
-
-        $updates = ['status' => $this->status];
-        if ($this->status === 'assigned' && ! $this->workOrder->assigned_at) {
-            $updates['assigned_at'] = now();
-        }
-        if ($this->status === 'in_progress' && ! $this->workOrder->started_at) {
-            $updates['started_at'] = now();
-        }
-        if ($this->status === 'completed' && ! $this->workOrder->completed_at) {
-            $updates['completed_at'] = now();
-        }
-        if ($this->status === 'canceled' && ! $this->workOrder->canceled_at) {
-            $updates['canceled_at'] = now();
-        }
-
+        $updates = $this->statusUpdates($this->workOrder, $this->status);
         $this->workOrder->update($updates);
 
         if ($previousStatus !== $this->status) {
-            WorkOrderEvent::create([
-                'work_order_id' => $this->workOrder->id,
-                'user_id' => auth()->id(),
-                'type' => 'status_change',
-                'from_status' => $previousStatus,
-                'to_status' => $this->status,
-            ]);
-
-            app(AuditLogger::class)->log(
-                'work_order.status_changed',
-                $this->workOrder,
-                'Work order status updated.',
-                ['from' => $previousStatus, 'to' => $this->status]
-            );
-
-            app(AutomationService::class)->runForWorkOrder('work_order_status_changed', $this->workOrder, [
-                'from_status' => $previousStatus,
-                'to_status' => $this->status,
-            ]);
-
-            $this->sendStatusUpdateMessage($user, $this->status);
+            $this->recordStatusChange($user, $previousStatus, $this->status);
         }
-        $this->workOrder->refresh();
+        $this->refreshWorkOrder();
     }
 
     public function sendMessage(): void
@@ -192,7 +242,7 @@ class Show extends Component
             ['signature_name' => $this->signatureName]
         );
 
-        $this->workOrder->refresh();
+        $this->refreshWorkOrder();
     }
 
     public function submitFeedback(): void
@@ -228,7 +278,7 @@ class Show extends Component
             ['rating' => $this->feedbackRating]
         );
 
-        $this->workOrder->refresh();
+        $this->refreshWorkOrder();
     }
 
     private function canSignOff(User $user): bool
@@ -561,29 +611,31 @@ class Show extends Component
     public function assignTechnician(): void
     {
         $user = auth()->user();
-        if (! $user || ! $user->hasAnyRole(['admin', 'dispatch'])) {
+        if (! $user || ! $this->canAssign($user)) {
             return;
         }
 
         $previousUserId = $this->workOrder->assigned_to_user_id;
+        $assignedUserId = $this->normalizeId($this->assignedToUserId);
+        $this->assignedToUserId = $assignedUserId;
         $updates = [
-            'assigned_to_user_id' => $this->assignedToUserId,
+            'assigned_to_user_id' => $assignedUserId,
             'status' => $this->workOrder->status,
         ];
 
-        if ($this->assignedToUserId && $this->workOrder->status === 'submitted') {
+        if ($assignedUserId && $this->workOrder->status === 'submitted') {
             $updates['status'] = 'assigned';
         }
 
-        if ($this->assignedToUserId && ! $this->workOrder->assigned_at) {
+        if ($assignedUserId && ! $this->workOrder->assigned_at) {
             $updates['assigned_at'] = now();
         }
 
         $this->workOrder->update($updates);
 
-        if ($previousUserId !== $this->assignedToUserId) {
-            $assignedUser = $this->assignedToUserId
-                ? User::find($this->assignedToUserId)
+        if ($previousUserId !== $assignedUserId) {
+            $assignedUser = $assignedUserId
+                ? User::find($assignedUserId)
                 : null;
 
             WorkOrderEvent::create([
@@ -600,10 +652,10 @@ class Show extends Component
                 'work_order.assignment_changed',
                 $this->workOrder,
                 'Work order assignment updated.',
-                ['assigned_to_user_id' => $this->assignedToUserId]
+                ['assigned_to_user_id' => $assignedUserId]
             );
 
-            if ($this->assignedToUserId) {
+            if ($assignedUserId) {
                 app(AutomationService::class)->runForWorkOrder('work_order_assigned', $this->workOrder);
             }
 
@@ -613,13 +665,13 @@ class Show extends Component
             $this->postProgressMessage($user, $assignmentMessage);
         }
 
-        $this->workOrder->refresh();
+        $this->refreshWorkOrder();
     }
 
     public function markArrived(): void
     {
         $user = auth()->user();
-        if (! $user || ! $user->hasAnyRole(['technician', 'dispatch'])) {
+        if (! $user || ! $this->canMarkArrived($user)) {
             return;
         }
 
@@ -666,14 +718,13 @@ class Show extends Component
         }
 
         $this->postProgressMessage($user, 'Technician has arrived on site and begun service.');
-        $this->workOrder->refresh();
-        $this->status = $this->workOrder->status;
+        $this->refreshWorkOrder();
     }
 
     public function addNote(): void
     {
         $user = auth()->user();
-        if (! $user || ! $user->hasAnyRole(['admin', 'dispatch', 'technician'])) {
+        if (! $user || ! $this->canAddNote($user)) {
             return;
         }
 
@@ -689,7 +740,7 @@ class Show extends Component
         ]);
 
         $this->note = '';
-        $this->workOrder->refresh();
+        $this->refreshWorkOrder();
     }
 
     public function render()
@@ -701,6 +752,12 @@ class Show extends Component
         $statusSteps = $this->statusSteps();
         $serviceMetrics = $this->serviceMetrics();
         $messageThread = $user ? $this->messageThreadFor($user) : null;
+        $canUpdateStatus = $user ? $this->canUpdateStatus($user) : false;
+        $canMarkArrived = $user ? $this->canMarkArrived($user) : false;
+        $canAssign = $user ? $this->canAssign($user) : false;
+        $canAddNote = $user ? $this->canAddNote($user) : false;
+        $canSignOff = $user ? $this->canSignOff($user) : false;
+        $canLeaveFeedback = $user ? $this->canLeaveFeedback($user) : false;
         $nextAppointment = $this->workOrder->appointments
             ->sortBy('scheduled_start_at')
             ->first();
@@ -715,6 +772,12 @@ class Show extends Component
         return view('livewire.work-orders.show', [
             'technicians' => $technicians,
             'viewer' => $user,
+            'canUpdateStatus' => $canUpdateStatus,
+            'canMarkArrived' => $canMarkArrived,
+            'canAssign' => $canAssign,
+            'canAddNote' => $canAddNote,
+            'canSignOff' => $canSignOff,
+            'canLeaveFeedback' => $canLeaveFeedback,
             'timeline' => $timeline,
             'statusSummary' => $statusSummary,
             'statusSteps' => $statusSteps,
