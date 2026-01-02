@@ -13,6 +13,7 @@ Efficiency: Every manual process that can be automated is automated. Every redun
 Accountability: Every action is tracked. Every decision is recorded. Every change is logged. This creates a system where quality is maintained and problems can be traced back to their source.
 Intelligence: The system doesn't just store data—it analyzes it, learns from it, and provides insights that help everyone make better decisions.
 Flexibility: Different organizations work differently. The system adapts to various business models, service types, pricing structures, and workflows.
+
 1.2 Who Uses This System and What Are Their Roles?
 The system serves multiple distinct user groups, each with specific needs, permissions, and workflows:
 Service Company Personnel:
@@ -39,6 +40,7 @@ Individual Consumers and Residential Customers:
 These are people using the system for personal equipment maintenance. They manage their own devices, request service when needed, track technician arrival and progress, review and pay invoices, and access their service history.
 Read-Only or Guest Users:
 These are individuals who need to see information but cannot make changes or submit requests. They might be executives reviewing performance data, auditors examining records for compliance, or authorized third parties checking warranty information.
+
 1.3 Comprehensive Benefits and Value Proposition
 For Service Organizations:
 Operational Visibility and Control:
