@@ -3,8 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Appointment;
+use App\Models\AutomationRule;
 use App\Models\CommunicationTemplate;
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
+use App\Models\IntegrationSetting;
 use App\Models\InventoryItem;
 use App\Models\InventoryLocation;
 use App\Models\Invoice;
@@ -17,8 +20,10 @@ use App\Models\Organization;
 use App\Models\Part;
 use App\Models\Quote;
 use App\Models\QuoteItem;
+use App\Models\Report;
 use App\Models\ServiceAgreement;
 use App\Models\SupportTicket;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\Warranty;
 use App\Models\WarrantyClaim;
@@ -152,9 +157,23 @@ class DatabaseSeeder extends Seeder
             WorkOrderCategory::firstOrCreate(['name' => $category['name']], $category);
         }
 
+        $equipmentCategoryRows = [
+            ['name' => 'Printers', 'description' => 'Office printers, copiers, and multifunction devices.'],
+            ['name' => 'Desktops', 'description' => 'Workstation and desktop computer assets.'],
+            ['name' => 'Laptops', 'description' => 'Portable laptops and notebooks.'],
+            ['name' => 'Network', 'description' => 'Routers, switches, and network appliances.'],
+        ];
+
+        foreach ($equipmentCategoryRows as $row) {
+            EquipmentCategory::firstOrCreate(['name' => $row['name']], $row);
+        }
+
+        $printerCategory = EquipmentCategory::where('name', 'Printers')->first();
+
         $equipment = Equipment::firstOrCreate(
             ['name' => 'Conference Room Printer', 'organization_id' => $organization->id],
             [
+                'equipment_category_id' => $printerCategory?->id,
                 'type' => 'Printer',
                 'manufacturer' => 'HP',
                 'model' => 'LaserJet Pro',
@@ -358,6 +377,83 @@ class DatabaseSeeder extends Seeder
                 'subject' => 'We received your service request',
                 'body' => 'Thanks for reaching out. We will respond within the SLA window.',
                 'is_active' => true,
+                'created_by_user_id' => $admin->id,
+            ]
+        );
+
+        $settings = [
+            ['group' => 'company', 'key' => 'name', 'value' => 'Maintenance Manager'],
+            ['group' => 'company', 'key' => 'support_email', 'value' => 'support@example.com'],
+            ['group' => 'sla', 'key' => 'standard_response_minutes', 'value' => 240],
+            ['group' => 'sla', 'key' => 'premium_response_minutes', 'value' => 120],
+            ['group' => 'billing', 'key' => 'default_terms', 'value' => 'Net 30'],
+            ['group' => 'billing', 'key' => 'tax_rate', 'value' => 0],
+            ['group' => 'mobile', 'key' => 'offline_mode', 'value' => true],
+            ['group' => 'audit', 'key' => 'track_sensitive_changes', 'value' => true],
+        ];
+
+        foreach ($settings as $setting) {
+            SystemSetting::updateOrCreate(
+                ['group' => $setting['group'], 'key' => $setting['key']],
+                ['value' => $setting['value']]
+            );
+        }
+
+        AutomationRule::firstOrCreate(
+            ['name' => 'Urgent Work Order Alert'],
+            [
+                'trigger' => 'work_order_priority_urgent',
+                'conditions' => [
+                    ['field' => 'priority', 'operator' => '=', 'value' => 'urgent'],
+                ],
+                'actions' => [
+                    ['type' => 'notify', 'channel' => 'email', 'recipient' => 'dispatch@example.com'],
+                ],
+                'is_active' => true,
+            ]
+        );
+
+        IntegrationSetting::firstOrCreate(
+            ['provider' => 'stripe'],
+            [
+                'name' => 'Stripe Payments',
+                'config' => [
+                    'mode' => 'test',
+                    'currency' => 'USD',
+                ],
+                'is_active' => false,
+            ]
+        );
+
+        Report::firstOrCreate(
+            ['name' => 'Weekly Productivity'],
+            [
+                'report_type' => 'weekly_productivity',
+                'description' => 'Weekly technician output and time tracking.',
+                'is_public' => true,
+                'created_by_user_id' => $admin->id,
+            ]
+        );
+
+        Report::firstOrCreate(
+            ['name' => 'Revenue Trends'],
+            [
+                'report_type' => 'revenue',
+                'description' => 'Monthly revenue totals for completed invoices.',
+                'is_public' => true,
+                'created_by_user_id' => $admin->id,
+            ]
+        );
+
+        Report::firstOrCreate(
+            ['name' => 'Custom Work Order Status'],
+            [
+                'report_type' => 'custom',
+                'data_source' => 'work_orders',
+                'description' => 'Group work orders by status.',
+                'definition' => ['fields' => ['status']],
+                'group_by' => ['status'],
+                'is_public' => false,
                 'created_by_user_id' => $admin->id,
             ]
         );

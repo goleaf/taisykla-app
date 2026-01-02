@@ -47,16 +47,61 @@ class Show extends Component
             'status' => ['required', Rule::in($this->statusOptions)],
         ]);
 
-        $this->workOrder->update(['status' => $this->status]);
+        $previousStatus = $this->workOrder->status;
+
+        $updates = ['status' => $this->status];
+        if ($this->status === 'assigned' && ! $this->workOrder->assigned_at) {
+            $updates['assigned_at'] = now();
+        }
+        if ($this->status === 'in_progress' && ! $this->workOrder->started_at) {
+            $updates['started_at'] = now();
+        }
+        if ($this->status === 'completed' && ! $this->workOrder->completed_at) {
+            $updates['completed_at'] = now();
+        }
+        if ($this->status === 'canceled' && ! $this->workOrder->canceled_at) {
+            $updates['canceled_at'] = now();
+        }
+
+        $this->workOrder->update($updates);
+
+        if ($previousStatus !== $this->status) {
+            WorkOrderEvent::create([
+                'work_order_id' => $this->workOrder->id,
+                'user_id' => auth()->id(),
+                'type' => 'status_change',
+                'from_status' => $previousStatus,
+                'to_status' => $this->status,
+            ]);
+        }
         $this->workOrder->refresh();
     }
 
     public function assignTechnician(): void
     {
-        $this->workOrder->update([
+        $previousUserId = $this->workOrder->assigned_to_user_id;
+        $updates = [
             'assigned_to_user_id' => $this->assignedToUserId,
             'status' => $this->assignedToUserId ? 'assigned' : $this->workOrder->status,
-        ]);
+        ];
+
+        if ($this->assignedToUserId && ! $this->workOrder->assigned_at) {
+            $updates['assigned_at'] = now();
+        }
+
+        $this->workOrder->update($updates);
+
+        if ($previousUserId !== $this->assignedToUserId) {
+            WorkOrderEvent::create([
+                'work_order_id' => $this->workOrder->id,
+                'user_id' => auth()->id(),
+                'type' => 'assignment',
+                'note' => $this->assignedToUserId ? 'Assigned technician.' : 'Unassigned technician.',
+                'meta' => [
+                    'assigned_to_user_id' => $this->assignedToUserId,
+                ],
+            ]);
+        }
 
         $this->workOrder->refresh();
     }

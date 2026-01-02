@@ -121,6 +121,54 @@
             </div>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Communication Templates</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showTemplateCreate')">Add</button>
+                </div>
+                @if ($showTemplateCreate)
+                    <form wire:submit.prevent="createTemplate" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newTemplate.name" class="rounded-md border-gray-300" placeholder="Name" />
+                        <input wire:model="newTemplate.channel" class="rounded-md border-gray-300" placeholder="Channel" />
+                        <input wire:model="newTemplate.subject" class="rounded-md border-gray-300" placeholder="Subject" />
+                        <textarea wire:model="newTemplate.body" class="rounded-md border-gray-300" rows="2" placeholder="Body"></textarea>
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                    </form>
+                @endif
+                <div class="space-y-2 text-sm">
+                    @foreach ($templates as $template)
+                        <div class="flex items-center justify-between">
+                            <span>{{ $template->name }}</span>
+                            <span class="text-gray-500">{{ $template->channel }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Inventory Locations</h2>
+                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showLocationCreate')">Add</button>
+                </div>
+                @if ($showLocationCreate)
+                    <form wire:submit.prevent="createLocation" class="grid grid-cols-1 gap-3 mb-4">
+                        <input wire:model="newLocation.name" class="rounded-md border-gray-300" placeholder="Location name" />
+                        <input wire:model="newLocation.address" class="rounded-md border-gray-300" placeholder="Address" />
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                    </form>
+                @endif
+                <div class="space-y-2 text-sm">
+                    @foreach ($locations as $location)
+                        <div class="flex items-center justify-between">
+                            <span>{{ $location->name }}</span>
+                            <span class="text-gray-500">{{ $location->address ?? '—' }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
         <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-lg font-semibold text-gray-900">System Settings</h2>
@@ -198,88 +246,52 @@
                     <form wire:submit.prevent="createAutomationRule" class="grid grid-cols-1 gap-3 mb-4">
                         <input wire:model="newAutomation.name" class="rounded-md border-gray-300" placeholder="Name" />
                         <input wire:model="newAutomation.trigger" class="rounded-md border-gray-300" placeholder="Trigger" />
-                        <textarea wire:model="newAutomation.conditions" class="rounded-md border-gray-300\" rows=\"2\" placeholder=\"Conditions (JSON)\"></textarea>
-                        <textarea wire:model=\"newAutomation.actions\" class=\"rounded-md border-gray-300\" rows=\"2\" placeholder=\"Actions (JSON)\"></textarea>
-                        <div class=\"flex items-center gap-2 text-xs text-gray-500\">
-                            <input type=\"checkbox\" wire:model=\"newAutomation.is_active\" class=\"rounded border-gray-300\" />
+                        <textarea wire:model="newAutomation.conditions" class="rounded-md border-gray-300" rows="2" placeholder="Conditions (JSON)"></textarea>
+                        <textarea wire:model="newAutomation.actions" class="rounded-md border-gray-300" rows="2" placeholder="Actions (JSON)"></textarea>
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <input type="checkbox" wire:model="newAutomation.is_active" class="rounded border-gray-300" />
                             <span>Active</span>
                         </div>
-                        <button class=\"px-3 py-2 bg-indigo-600 text-white rounded-md\">Save</button>
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
                     </form>
                 @endif
-                <div class=\"space-y-2 text-sm\">
+                <div class="space-y-2 text-sm">
                     @foreach ($automationRules as $rule)
-                        <div class=\"flex items-center justify-between\">
+                        <div class="flex items-center justify-between">
                             <span>{{ $rule->name }}</span>
-                            <span class=\"text-gray-500\">{{ $rule->is_active ? 'Active' : 'Inactive' }}</span>
+                            <span class="text-gray-500">{{ $rule->is_active ? 'Active' : 'Inactive' }}</span>
                         </div>
                     @endforeach
                 </div>
             </div>
         </div>
 
-        <div class=\"bg-white shadow-sm rounded-lg border border-gray-100 p-6\">
-            <div class=\"flex items-center justify-between mb-4\">
-                <h2 class=\"text-lg font-semibold text-gray-900\">Integration Settings</h2>
-                <button class=\"px-3 py-1 border border-gray-300 rounded-md\" wire:click=\"$toggle('showIntegrationCreate')\">Add</button>
+        <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Integration Settings</h2>
+                <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showIntegrationCreate')">Add</button>
             </div>
             @if ($showIntegrationCreate)
-                <form wire:submit.prevent=\"createIntegrationSetting\" class=\"grid grid-cols-1 md:grid-cols-3 gap-3 mb-4\">
-                    <input wire:model=\"newIntegration.provider\" class=\"rounded-md border-gray-300\" placeholder=\"Provider\" />
-                    <input wire:model=\"newIntegration.name\" class=\"rounded-md border-gray-300\" placeholder=\"Name\" />
-                    <input wire:model=\"newIntegration.config\" class=\"rounded-md border-gray-300\" placeholder=\"Config (JSON)\" />
-                    <div class=\"md:col-span-3 flex items-center gap-2 text-xs text-gray-500\">
-                        <input type=\"checkbox\" wire:model=\"newIntegration.is_active\" class=\"rounded border-gray-300\" />
+                <form wire:submit.prevent="createIntegrationSetting" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    <input wire:model="newIntegration.provider" class="rounded-md border-gray-300" placeholder="Provider" />
+                    <input wire:model="newIntegration.name" class="rounded-md border-gray-300" placeholder="Name" />
+                    <input wire:model="newIntegration.config" class="rounded-md border-gray-300" placeholder="Config (JSON)" />
+                    <div class="md:col-span-3 flex items-center gap-2 text-xs text-gray-500">
+                        <input type="checkbox" wire:model="newIntegration.is_active" class="rounded border-gray-300" />
                         <span>Active</span>
                     </div>
-                    <div class=\"md:col-span-3\">\n+                        <button class=\"px-3 py-2 bg-indigo-600 text-white rounded-md\">Save</button>\n+                    </div>\n+                </form>
-            @endif\n+            <div class=\"space-y-2 text-sm\">\n+                @foreach ($integrationSettings as $integration)\n+                    <div class=\"flex items-center justify-between\">\n+                        <span>{{ $integration->provider }} {{ $integration->name ? '(' . $integration->name . ')' : '' }}</span>\n+                        <span class=\"text-gray-500\">{{ $integration->is_active ? 'Active' : 'Inactive' }}</span>\n+                    </div>\n+                @endforeach\n+            </div>\n+        </div>\n     </div>\n </div>\n*** End Patch"}))!=""}
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Communication Templates</h2>
-                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showTemplateCreate')">Add</button>
-                </div>
-                @if ($showTemplateCreate)
-                    <form wire:submit.prevent="createTemplate" class="grid grid-cols-1 gap-3 mb-4">
-                        <input wire:model="newTemplate.name" class="rounded-md border-gray-300" placeholder="Name" />
-                        <input wire:model="newTemplate.channel" class="rounded-md border-gray-300" placeholder="Channel" />
-                        <input wire:model="newTemplate.subject" class="rounded-md border-gray-300" placeholder="Subject" />
-                        <textarea wire:model="newTemplate.body" class="rounded-md border-gray-300" rows="2" placeholder="Body"></textarea>
+                    <div class="md:col-span-3">
                         <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
-                    </form>
-                @endif
-                <div class="space-y-2 text-sm">
-                    @foreach ($templates as $template)
-                        <div class="flex items-center justify-between">
-                            <span>{{ $template->name }}</span>
-                            <span class="text-gray-500">{{ $template->channel }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-900">Inventory Locations</h2>
-                    <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showLocationCreate')">Add</button>
-                </div>
-                @if ($showLocationCreate)
-                    <form wire:submit.prevent="createLocation" class="grid grid-cols-1 gap-3 mb-4">
-                        <input wire:model="newLocation.name" class="rounded-md border-gray-300" placeholder="Location name" />
-                        <input wire:model="newLocation.address" class="rounded-md border-gray-300" placeholder="Address" />
-                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
-                    </form>
-                @endif
-                <div class="space-y-2 text-sm">
-                    @foreach ($locations as $location)
-                        <div class="flex items-center justify-between">
-                            <span>{{ $location->name }}</span>
-                            <span class="text-gray-500">{{ $location->address ?? '—' }}</span>
-                        </div>
-                    @endforeach
-                </div>
+                    </div>
+                </form>
+            @endif
+            <div class="space-y-2 text-sm">
+                @foreach ($integrationSettings as $integration)
+                    <div class="flex items-center justify-between">
+                        <span>{{ $integration->provider }} {{ $integration->name ? '(' . $integration->name . ')' : '' }}</span>
+                        <span class="text-gray-500">{{ $integration->is_active ? 'Active' : 'Inactive' }}</span>
+                    </div>
+                @endforeach
             </div>
         </div>
     </div>

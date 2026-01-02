@@ -8,6 +8,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
+use App\Models\WorkOrderEvent;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -103,11 +104,14 @@ class Index extends Component
 
         $status = $this->new['assigned_to_user_id'] ? 'assigned' : 'submitted';
 
+        $assignedAt = $this->new['assigned_to_user_id'] ? now() : null;
+
         $workOrder = WorkOrder::create([
             'organization_id' => $this->new['organization_id'],
             'equipment_id' => $this->new['equipment_id'],
             'category_id' => $this->new['category_id'],
             'assigned_to_user_id' => $this->new['assigned_to_user_id'],
+            'assigned_at' => $assignedAt,
             'requested_by_user_id' => $user->id,
             'priority' => $this->new['priority'],
             'status' => $status,
@@ -117,6 +121,17 @@ class Index extends Component
             'scheduled_start_at' => $this->new['scheduled_start_at'],
             'scheduled_end_at' => $this->new['scheduled_end_at'],
             'time_window' => $this->new['time_window'],
+        ]);
+
+        WorkOrderEvent::create([
+            'work_order_id' => $workOrder->id,
+            'user_id' => $user->id,
+            'type' => 'created',
+            'to_status' => $status,
+            'note' => 'Work order created.',
+            'meta' => [
+                'assigned_to_user_id' => $this->new['assigned_to_user_id'],
+            ],
         ]);
 
         if ($this->new['scheduled_start_at']) {
@@ -142,17 +157,63 @@ class Index extends Component
         }
 
         $workOrder = WorkOrder::findOrFail($workOrderId);
-        $workOrder->update(['status' => $status]);
+        $previousStatus = $workOrder->status;
+
+        $updates = ['status' => $status];
+        if ($status === 'assigned' && ! $workOrder->assigned_at) {
+            $updates['assigned_at'] = now();
+        }
+        if ($status === 'in_progress' && ! $workOrder->started_at) {
+            $updates['started_at'] = now();
+        }
+        if ($status === 'completed' && ! $workOrder->completed_at) {
+            $updates['completed_at'] = now();
+        }
+        if ($status === 'canceled' && ! $workOrder->canceled_at) {
+            $updates['canceled_at'] = now();
+        }
+
+        $workOrder->update($updates);
+
+        if ($previousStatus !== $status) {
+            WorkOrderEvent::create([
+                'work_order_id' => $workOrder->id,
+                'user_id' => auth()->id(),
+                'type' => 'status_change',
+                'from_status' => $previousStatus,
+                'to_status' => $status,
+            ]);
+        }
     }
 
     public function assignTo(int $workOrderId, ?int $userId): void
     {
         $userId = $userId ?: null;
         $workOrder = WorkOrder::findOrFail($workOrderId);
-        $workOrder->update([
+        $previousUserId = $workOrder->assigned_to_user_id;
+
+        $updates = [
             'assigned_to_user_id' => $userId,
             'status' => $userId ? 'assigned' : $workOrder->status,
-        ]);
+        ];
+
+        if ($userId && ! $workOrder->assigned_at) {
+            $updates['assigned_at'] = now();
+        }
+
+        $workOrder->update($updates);
+
+        if ($previousUserId !== $userId) {
+            WorkOrderEvent::create([
+                'work_order_id' => $workOrder->id,
+                'user_id' => auth()->id(),
+                'type' => 'assignment',
+                'note' => $userId ? 'Assigned technician.' : 'Unassigned technician.',
+                'meta' => [
+                    'assigned_to_user_id' => $userId,
+                ],
+            ]);
+        }
     }
 
     public function render()
