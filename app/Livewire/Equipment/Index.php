@@ -5,6 +5,7 @@ namespace App\Livewire\Equipment;
 use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
+use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
@@ -22,6 +23,10 @@ class Index extends Component
     public string $statusFilter = 'all';
     public string $categoryFilter = '';
     public string $organizationFilter = '';
+    public string $typeFilter = '';
+    public string $locationFilter = '';
+    public string $sortField = 'last_service_at';
+    public string $sortDirection = 'desc';
 
     protected $paginationTheme = 'tailwind';
 
@@ -78,12 +83,36 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatedTypeFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedLocationFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSortField(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSortDirection(): void
+    {
+        $this->resetPage();
+    }
+
     public function clearFilters(): void
     {
         $this->search = '';
         $this->statusFilter = 'all';
         $this->categoryFilter = '';
         $this->organizationFilter = '';
+        $this->typeFilter = '';
+        $this->locationFilter = '';
+        $this->sortField = 'last_service_at';
+        $this->sortDirection = 'desc';
         $this->resetPage();
     }
 
@@ -226,7 +255,12 @@ class Index extends Component
         $user = auth()->user();
         $isClient = $user->hasRole('client');
 
-        $query = Equipment::query()->with(['organization', 'category']);
+        $query = Equipment::query()
+            ->with(['organization', 'category'])
+            ->withMax(['workOrders as last_service_at' => function (Builder $builder) {
+                $builder->whereNotNull('completed_at')
+                    ->whereIn('status', ['completed', 'closed']);
+            }], 'completed_at');
         if ($isClient) {
             $query->where('organization_id', $user->organization_id);
         }
@@ -239,6 +273,14 @@ class Index extends Component
             $query->where('equipment_category_id', $this->categoryFilter);
         }
 
+        if ($this->typeFilter !== '') {
+            $query->where('type', $this->typeFilter);
+        }
+
+        if ($this->locationFilter !== '') {
+            $query->where('location_name', $this->locationFilter);
+        }
+
         if ($this->search !== '') {
             $this->applySearch($query, $this->search);
         }
@@ -249,9 +291,12 @@ class Index extends Component
             $query->where('status', $this->statusFilter);
         }
 
-        $equipment = $query->orderByDesc('updated_at')->paginate(10);
+        $this->applySort($query);
+        $equipment = $query->paginate(10);
         $organizations = $isClient ? collect() : Organization::orderBy('name')->get();
         $categories = EquipmentCategory::orderBy('name')->get();
+        $types = $this->availableTypes($user);
+        $locations = $this->availableLocations($user);
 
         return view('livewire.equipment.index', [
             'equipment' => $equipment,
@@ -261,6 +306,8 @@ class Index extends Component
             'isClient' => $isClient,
             'summary' => $summary,
             'canManage' => $this->canManage,
+            'types' => $types,
+            'locations' => $locations,
         ]);
     }
 
@@ -310,6 +357,42 @@ class Index extends Component
                 $builder->orWhere('id', (int) $search);
             }
         });
+    }
+
+    private function applySort(Builder $query): void
+    {
+        $direction = $this->sortDirection === 'asc' ? 'asc' : 'desc';
+
+        match ($this->sortField) {
+            'name' => $query->orderBy('name', $direction),
+            'type' => $query->orderBy('type', $direction),
+            'location_name' => $query->orderBy('location_name', $direction),
+            'status' => $query->orderBy('status', $direction),
+            'last_service_at' => $query->orderBy('last_service_at', $direction),
+            default => $query->orderByDesc('updated_at'),
+        };
+    }
+
+    private function availableTypes(User $user)
+    {
+        return Equipment::query()
+            ->when($user->hasRole('client'), fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->whereNotNull('type')
+            ->select('type')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type');
+    }
+
+    private function availableLocations(User $user)
+    {
+        return Equipment::query()
+            ->when($user->hasRole('client'), fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->whereNotNull('location_name')
+            ->select('location_name')
+            ->distinct()
+            ->orderBy('location_name')
+            ->pluck('location_name');
     }
 
     private function buildSummary(Builder $query): array

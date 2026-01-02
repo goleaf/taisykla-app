@@ -15,8 +15,11 @@ use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
+use App\Notifications\FirstLoginNotification;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
@@ -73,6 +76,10 @@ class Index extends Component
             'email' => '',
             'role' => 'client',
             'organization_id' => null,
+            'phone' => '',
+            'job_title' => '',
+            'department' => '',
+            'employee_id' => '',
         ];
     }
 
@@ -262,19 +269,34 @@ class Index extends Component
             'newUser.email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'newUser.role' => ['required', 'string', 'exists:roles,name'],
             'newUser.organization_id' => ['nullable', 'exists:organizations,id'],
+            'newUser.phone' => ['nullable', 'string', 'max:50'],
+            'newUser.job_title' => ['nullable', 'string', 'max:255'],
+            'newUser.department' => ['nullable', 'string', 'max:255'],
+            'newUser.employee_id' => ['nullable', 'string', 'max:255'],
         ]);
 
+        $password = Str::random(32);
         $user = User::create([
             'name' => $this->newUser['name'],
             'email' => $this->newUser['email'],
-            'password' => Hash::make('password'),
+            'password' => Hash::make($password),
             'organization_id' => $this->newUser['organization_id'],
+            'phone' => $this->newUser['phone'] ?: null,
+            'job_title' => $this->newUser['job_title'] ?: null,
+            'department' => $this->newUser['department'] ?: null,
+            'employee_id' => $this->newUser['employee_id'] ?: null,
             'is_active' => true,
         ]);
 
         $user->assignRole($this->newUser['role']);
 
-        session()->flash('status', 'User created with default password: password');
+        $user->passwordHistories()->create(['password_hash' => $user->password]);
+
+        $token = Password::createToken($user);
+        $resetUrl = route('password.reset', ['token' => $token, 'email' => $user->email]);
+        $user->notify(new FirstLoginNotification($resetUrl));
+
+        session()->flash('status', 'User created. Password setup email sent.');
         $this->resetNewUser();
         $this->showUserCreate = false;
     }

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Livewire\Volt\Component;
+use App\Rules\NotFromPasswordHistory;
 
 new class extends Component
 {
@@ -20,7 +21,13 @@ new class extends Component
         try {
             $validated = $this->validate([
                 'current_password' => ['required', 'string', 'current_password'],
-                'password' => ['required', 'string', Password::defaults(), 'confirmed'],
+                'password' => [
+                    'required',
+                    'string',
+                    Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised(),
+                    new NotFromPasswordHistory(Auth::user()),
+                    'confirmed',
+                ],
             ]);
         } catch (ValidationException $e) {
             $this->reset('current_password', 'password', 'password_confirmation');
@@ -31,6 +38,8 @@ new class extends Component
         Auth::user()->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        Auth::user()->passwordHistories()->create(['password_hash' => Auth::user()->password]);
 
         $this->reset('current_password', 'password', 'password_confirmation');
 

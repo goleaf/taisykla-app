@@ -13,7 +13,17 @@ class WorkOrderFeedback extends Model
         'work_order_id',
         'user_id',
         'rating',
+        'professionalism_rating',
+        'knowledge_rating',
+        'communication_rating',
+        'timeliness_rating',
+        'quality_rating',
+        'would_recommend',
         'comments',
+    ];
+
+    protected $casts = [
+        'would_recommend' => 'boolean',
     ];
 
     public function workOrder()

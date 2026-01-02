@@ -2,6 +2,7 @@
 
 use App\Livewire\Forms\LoginForm;
 use App\Models\User;
+use App\Services\MfaService;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -41,7 +42,19 @@ new #[Layout('layouts.guest')] class extends Component
     {
         $this->validate();
 
-        $this->form->authenticate();
+        $user = $this->form->authenticate();
+        $mfa = app(MfaService::class);
+        if ($mfa->requiresMfa($user)) {
+            $mfa->initiate($user);
+            session([
+                'mfa_user_id' => $user->id,
+                'mfa_remember' => $this->form->remember,
+            ]);
+            $this->redirectRoute('mfa.challenge', navigate: true);
+            return;
+        }
+
+        $this->form->login($user);
 
         Session::regenerate();
 

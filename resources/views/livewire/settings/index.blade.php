@@ -44,6 +44,22 @@
                             @endforeach
                         </select>
                     </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Phone</label>
+                        <input wire:model="newUser.phone" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Job Title</label>
+                        <input wire:model="newUser.job_title" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Department</label>
+                        <input wire:model="newUser.department" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Employee ID</label>
+                        <input wire:model="newUser.employee_id" class="mt-1 w-full rounded-md border-gray-300" />
+                    </div>
                     <div class="md:col-span-4 flex items-center gap-3">
                         <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Create</button>
                         <button type="button" class="px-4 py-2 border border-gray-300 rounded-md" wire:click="resetNewUser">Reset</button>

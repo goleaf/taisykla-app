@@ -28,6 +28,7 @@ class Equipment extends Model
 
     protected $casts = [
         'purchase_date' => 'date',
+        'last_service_at' => 'datetime',
     ];
 
     public function organization()

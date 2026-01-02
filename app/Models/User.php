@@ -25,6 +25,8 @@ class User extends Authenticatable
         'organization_id',
         'phone',
         'job_title',
+        'department',
+        'employee_id',
         'address',
         'timezone',
         'is_active',
@@ -33,6 +35,12 @@ class User extends Authenticatable
         'availability_updated_at',
         'current_latitude',
         'current_longitude',
+        'mfa_enabled',
+        'mfa_method',
+        'mfa_phone',
+        'mfa_email',
+        'mfa_secret',
+        'mfa_confirmed_at',
     ];
 
     /**
@@ -43,6 +51,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'mfa_secret',
     ];
 
     /**
@@ -58,6 +67,9 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'last_seen_at' => 'datetime',
             'availability_updated_at' => 'datetime',
+            'mfa_enabled' => 'boolean',
+            'mfa_confirmed_at' => 'datetime',
+            'mfa_secret' => 'encrypted',
         ];
     }
 
@@ -79,5 +91,15 @@ class User extends Authenticatable
     public function appointments()
     {
         return $this->hasMany(Appointment::class, 'assigned_to_user_id');
+    }
+
+    public function passwordHistories()
+    {
+        return $this->hasMany(PasswordHistory::class);
+    }
+
+    public function mfaChallenges()
+    {
+        return $this->hasMany(MfaChallenge::class);
     }
 }

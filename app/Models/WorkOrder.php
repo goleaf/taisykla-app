@@ -40,6 +40,10 @@ class WorkOrder extends Model
         'canceled_at',
         'customer_signature_name',
         'customer_signature_at',
+        'customer_signoff_functional',
+        'customer_signoff_professional',
+        'customer_signoff_satisfied',
+        'customer_signoff_comments',
     ];
 
     protected $casts = [
@@ -53,6 +57,9 @@ class WorkOrder extends Model
         'canceled_at' => 'datetime',
         'customer_signature_at' => 'datetime',
         'is_warranty' => 'boolean',
+        'customer_signoff_functional' => 'boolean',
+        'customer_signoff_professional' => 'boolean',
+        'customer_signoff_satisfied' => 'boolean',
     ];
 
     public function organization()
@@ -98,6 +105,11 @@ class WorkOrder extends Model
     public function feedback()
     {
         return $this->hasOne(WorkOrderFeedback::class);
+    }
+
+    public function report()
+    {
+        return $this->hasOne(WorkOrderReport::class);
     }
 
     public function quotes()

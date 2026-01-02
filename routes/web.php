@@ -4,6 +4,7 @@ use App\Livewire\Billing\Index as BillingIndex;
 use App\Livewire\Clients\Index as ClientsIndex;
 use App\Livewire\Dashboard;
 use App\Livewire\Equipment\Index as EquipmentIndex;
+use App\Livewire\Equipment\Show as EquipmentShow;
 use App\Livewire\Inventory\Index as InventoryIndex;
 use App\Livewire\KnowledgeBase\Index as KnowledgeBaseIndex;
 use App\Livewire\Messages\Index as MessagesIndex;
@@ -23,6 +24,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('work-orders', WorkOrdersIndex::class)->name('work-orders.index');
     Route::get('work-orders/{workOrder}', WorkOrdersShow::class)->name('work-orders.show');
     Route::get('equipment', EquipmentIndex::class)->name('equipment.index');
+    Route::get('equipment/{equipment}', EquipmentShow::class)->name('equipment.show');
     Route::get('clients', ClientsIndex::class)->name('clients.index');
     Route::get('schedule', ScheduleIndex::class)->name('schedule.index');
     Route::get('inventory', InventoryIndex::class)->name('inventory.index');

@@ -40,7 +40,7 @@
         </div>
 
         <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div class="lg:col-span-2">
                     <label class="text-xs text-gray-500">Search</label>
                     <input wire:model.debounce.300ms="search" class="mt-1 w-full rounded-md border-gray-300" placeholder="Name, model, serial, location" />
@@ -62,6 +62,24 @@
                         @endforeach
                     </select>
                 </div>
+                <div>
+                    <label class="text-xs text-gray-500">Type</label>
+                    <select wire:model="typeFilter" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="">All types</option>
+                        @foreach ($types as $type)
+                            <option value="{{ $type }}">{{ $type }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Location</label>
+                    <select wire:model="locationFilter" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="">All locations</option>
+                        @foreach ($locations as $location)
+                            <option value="{{ $location }}">{{ $location }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 @if (! $isClient)
                     <div>
                         <label class="text-xs text-gray-500">Organization</label>
@@ -73,6 +91,23 @@
                         </select>
                     </div>
                 @endif
+                <div>
+                    <label class="text-xs text-gray-500">Sort By</label>
+                    <select wire:model="sortField" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="last_service_at">Last serviced</option>
+                        <option value="name">Name</option>
+                        <option value="type">Type</option>
+                        <option value="location_name">Location</option>
+                        <option value="status">Status</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Direction</label>
+                    <select wire:model="sortDirection" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="desc">Newest</option>
+                        <option value="asc">Oldest</option>
+                    </select>
+                </div>
             </div>
             <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                 <button type="button" class="text-indigo-600" wire:click="clearFilters">Clear filters</button>
@@ -118,6 +153,7 @@
                                             @if ($item->purchase_date)
                                                 <span>Purchased: {{ $item->purchase_date->format('M d, Y') }}</span>
                                             @endif
+                                            <span>Last serviced: {{ $item->last_service_at?->format('M d, Y') ?? '—' }}</span>
                                         </div>
                                         <div class="text-xs text-gray-500">
                                             Location: {{ $item->location_name ?? '—' }}
@@ -131,7 +167,12 @@
                                     </div>
                                     @if ($canManage)
                                         <div class="flex items-center gap-2">
+                                            <a class="px-3 py-1 text-xs border border-gray-300 rounded-md" href="{{ route('equipment.show', $item) }}" wire:navigate>View</a>
                                             <button class="px-3 py-1 text-xs border border-gray-300 rounded-md" wire:click="editEquipment({{ $item->id }})">Edit</button>
+                                        </div>
+                                    @else
+                                        <div class="flex items-center gap-2">
+                                            <a class="px-3 py-1 text-xs border border-gray-300 rounded-md" href="{{ route('equipment.show', $item) }}" wire:navigate>View</a>
                                         </div>
                                     @endif
                                 </div>

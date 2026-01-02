@@ -10,14 +10,27 @@ new class extends Component
 {
     public string $name = '';
     public string $email = '';
+    public string $phone = '';
+    public string $job_title = '';
+    public string $department = '';
+    public string $employee_id = '';
+    public array $roles = [];
+    public array $permissions = [];
 
     /**
      * Mount the component.
      */
     public function mount(): void
     {
-        $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
+        $user = Auth::user();
+        $this->name = $user->name;
+        $this->email = $user->email;
+        $this->phone = $user->phone ?? '';
+        $this->job_title = $user->job_title ?? '';
+        $this->department = $user->department ?? '';
+        $this->employee_id = $user->employee_id ?? '';
+        $this->roles = $user->getRoleNames()->values()->all();
+        $this->permissions = $user->getAllPermissions()->pluck('name')->values()->all();
     }
 
     /**
@@ -30,6 +43,10 @@ new class extends Component
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($user->id)],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'job_title' => ['nullable', 'string', 'max:255'],
+            'department' => ['nullable', 'string', 'max:255'],
+            'employee_id' => ['nullable', 'string', 'max:255'],
         ]);
 
         $user->fill($validated);
@@ -39,6 +56,9 @@ new class extends Component
         }
 
         $user->save();
+
+        $this->roles = $user->getRoleNames()->values()->all();
+        $this->permissions = $user->getAllPermissions()->pluck('name')->values()->all();
 
         $this->dispatch('profile-updated', name: $user->name);
     }
@@ -102,6 +122,35 @@ new class extends Component
                     @endif
                 </div>
             @endif
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <x-input-label for="phone" :value="__('Phone')" />
+                <x-text-input wire:model="phone" id="phone" name="phone" type="text" class="mt-1 block w-full" autocomplete="tel" />
+                <x-input-error class="mt-2" :messages="$errors->get('phone')" />
+            </div>
+            <div>
+                <x-input-label for="job_title" :value="__('Job Title')" />
+                <x-text-input wire:model="job_title" id="job_title" name="job_title" type="text" class="mt-1 block w-full" />
+                <x-input-error class="mt-2" :messages="$errors->get('job_title')" />
+            </div>
+            <div>
+                <x-input-label for="department" :value="__('Department')" />
+                <x-text-input wire:model="department" id="department" name="department" type="text" class="mt-1 block w-full" />
+                <x-input-error class="mt-2" :messages="$errors->get('department')" />
+            </div>
+            <div>
+                <x-input-label for="employee_id" :value="__('Employee ID')" />
+                <x-text-input wire:model="employee_id" id="employee_id" name="employee_id" type="text" class="mt-1 block w-full" />
+                <x-input-error class="mt-2" :messages="$errors->get('employee_id')" />
+            </div>
+        </div>
+
+        <div class="rounded-md bg-gray-50 p-3 text-sm text-gray-600">
+            <p class="font-medium text-gray-800">Access & Permissions</p>
+            <p class="mt-1">Roles: {{ $roles ? implode(', ', $roles) : 'None' }}</p>
+            <p class="mt-1">Permissions: {{ $permissions ? implode(', ', $permissions) : 'None' }}</p>
         </div>
 
         <div class="flex items-center gap-4">

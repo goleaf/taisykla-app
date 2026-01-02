@@ -1,11 +1,13 @@
 <?php
 
+use App\Models\User;
+use App\Rules\NotFromPasswordHistory;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Volt\Component;
@@ -36,7 +38,13 @@ new #[Layout('layouts.guest')] class extends Component
         $this->validate([
             'token' => ['required'],
             'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                PasswordRule::min(12)->mixedCase()->numbers()->symbols()->uncompromised(),
+                new NotFromPasswordHistory(User::where('email', $this->email)->first()),
+            ],
         ]);
 
         // Here we will attempt to reset the user's password. If it is successful we
@@ -49,6 +57,8 @@ new #[Layout('layouts.guest')] class extends Component
                     'password' => Hash::make($this->password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                $user->passwordHistories()->create(['password_hash' => $user->password]);
 
                 event(new PasswordReset($user));
             }

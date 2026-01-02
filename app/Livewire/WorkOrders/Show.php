@@ -7,23 +7,30 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderEvent;
 use App\Models\WorkOrderFeedback;
+use App\Models\SupportTicket;
 use App\Services\AutomationService;
 use App\Services\AuditLogger;
 use App\Services\WorkOrderMessagingService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class Show extends Component
 {
+    use WithFileUploads;
+
     public WorkOrder $workOrder;
     public string $status = '';
     public ?int $assignedToUserId = null;
     public string $note = '';
     public string $messageBody = '';
     public string $signatureName = '';
-    public int $feedbackRating = 0;
-    public string $feedbackComments = '';
+    public array $signoff = [];
+    public array $feedback = [];
+    public array $reportForm = [];
+    public array $reportPhotos = [];
+    public string $reportPhotoKind = 'before';
 
     public array $statusOptions = [
         'submitted',
@@ -51,6 +58,7 @@ class Show extends Component
             'appointments.assignedTo',
             'parts.part',
             'feedback',
+            'report',
             'events.user',
             'attachments',
         ]);
@@ -102,18 +110,59 @@ class Show extends Component
         return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
     }
 
+    private function canManageReport(User $user): bool
+    {
+        return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
+    }
+
     private function syncFromWorkOrder(): void
     {
         $this->status = $this->workOrder->status;
         $this->assignedToUserId = $this->workOrder->assigned_to_user_id;
         $this->signatureName = $this->workOrder->customer_signature_name ?? '';
-        $this->feedbackRating = (int) ($this->workOrder->feedback?->rating ?? 0);
-        $this->feedbackComments = $this->workOrder->feedback?->comments ?? '';
+        $this->signoff = [
+            'functional' => $this->workOrder->customer_signoff_functional,
+            'professional' => $this->workOrder->customer_signoff_professional,
+            'satisfied' => $this->workOrder->customer_signoff_satisfied,
+            'comments' => $this->workOrder->customer_signoff_comments ?? '',
+        ];
+        $this->feedback = [
+            'overall' => (int) ($this->workOrder->feedback?->rating ?? 0),
+            'professionalism' => (int) ($this->workOrder->feedback?->professionalism_rating ?? 0),
+            'knowledge' => (int) ($this->workOrder->feedback?->knowledge_rating ?? 0),
+            'communication' => (int) ($this->workOrder->feedback?->communication_rating ?? 0),
+            'timeliness' => (int) ($this->workOrder->feedback?->timeliness_rating ?? 0),
+            'quality' => (int) ($this->workOrder->feedback?->quality_rating ?? 0),
+            'would_recommend' => $this->workOrder->feedback?->would_recommend,
+            'comments' => $this->workOrder->feedback?->comments ?? '',
+        ];
+        $this->reportForm = [
+            'diagnosis_summary' => $this->workOrder->report?->diagnosis_summary ?? '',
+            'work_performed' => $this->workOrder->report?->work_performed ?? '',
+            'test_results' => $this->workOrder->report?->test_results ?? '',
+            'recommendations' => $this->workOrder->report?->recommendations ?? '',
+            'diagnostic_minutes' => $this->workOrder->report?->diagnostic_minutes ?? null,
+            'repair_minutes' => $this->workOrder->report?->repair_minutes ?? null,
+            'testing_minutes' => $this->workOrder->report?->testing_minutes ?? null,
+        ];
     }
 
     private function refreshWorkOrder(): void
     {
         $this->workOrder->refresh();
+        $this->workOrder->load([
+            'organization',
+            'equipment',
+            'category',
+            'assignedTo',
+            'requestedBy',
+            'appointments.assignedTo',
+            'parts.part',
+            'feedback',
+            'report',
+            'events.user',
+            'attachments',
+        ]);
         $this->syncFromWorkOrder();
     }
 
@@ -212,6 +261,100 @@ class Show extends Component
         $this->messageBody = '';
     }
 
+    public function saveReport(): void
+    {
+        $user = auth()->user();
+        if (! $user || ! $this->canManageReport($user)) {
+            return;
+        }
+
+        $this->validate([
+            'reportForm.diagnosis_summary' => ['required', 'string', 'max:2000'],
+            'reportForm.work_performed' => ['required', 'string', 'max:4000'],
+            'reportForm.test_results' => ['nullable', 'string', 'max:2000'],
+            'reportForm.recommendations' => ['nullable', 'string', 'max:2000'],
+            'reportForm.diagnostic_minutes' => ['nullable', 'integer', 'min:0'],
+            'reportForm.repair_minutes' => ['nullable', 'integer', 'min:0'],
+            'reportForm.testing_minutes' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $payload = [
+            'diagnosis_summary' => $this->reportForm['diagnosis_summary'],
+            'work_performed' => $this->reportForm['work_performed'],
+            'test_results' => $this->reportForm['test_results'],
+            'recommendations' => $this->reportForm['recommendations'],
+            'diagnostic_minutes' => $this->reportForm['diagnostic_minutes'],
+            'repair_minutes' => $this->reportForm['repair_minutes'],
+            'testing_minutes' => $this->reportForm['testing_minutes'],
+        ];
+
+        if ($this->workOrder->report) {
+            $this->workOrder->report->update($payload);
+            $action = 'work_order.report_updated';
+            $note = 'Service report updated.';
+        } else {
+            $this->workOrder->report()->create(array_merge($payload, [
+                'created_by_user_id' => $user->id,
+            ]));
+            $action = 'work_order.report_created';
+            $note = 'Service report created.';
+        }
+
+        WorkOrderEvent::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => $user->id,
+            'type' => 'service_report',
+            'note' => $note,
+        ]);
+
+        app(AuditLogger::class)->log(
+            $action,
+            $this->workOrder,
+            $note,
+            ['work_order_id' => $this->workOrder->id]
+        );
+
+        $this->refreshWorkOrder();
+    }
+
+    public function uploadReportPhotos(): void
+    {
+        $user = auth()->user();
+        if (! $user || ! $this->canManageReport($user)) {
+            return;
+        }
+
+        $this->validate([
+            'reportPhotoKind' => ['required', Rule::in(['before', 'during', 'after', 'report'])],
+            'reportPhotos' => ['required', 'array', 'min:1'],
+            'reportPhotos.*' => ['image', 'max:5120'],
+        ]);
+
+        foreach ($this->reportPhotos as $photo) {
+            $path = $photo->storePublicly('work-orders/'.$this->workOrder->id.'/report', 'public');
+
+            $this->workOrder->attachments()->create([
+                'uploaded_by_user_id' => $user->id,
+                'label' => ucfirst($this->reportPhotoKind).' photo',
+                'file_name' => $photo->getClientOriginalName(),
+                'file_path' => $path,
+                'file_size' => $photo->getSize(),
+                'mime_type' => $photo->getMimeType(),
+                'kind' => $this->reportPhotoKind,
+            ]);
+        }
+
+        WorkOrderEvent::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => $user->id,
+            'type' => 'photo_upload',
+            'note' => ucfirst($this->reportPhotoKind) . ' photos uploaded.',
+        ]);
+
+        $this->reportPhotos = [];
+        $this->refreshWorkOrder();
+    }
+
     public function submitSignoff(): void
     {
         $user = auth()->user();
@@ -221,11 +364,19 @@ class Show extends Component
 
         $this->validate([
             'signatureName' => ['required', 'string', 'max:255'],
+            'signoff.functional' => ['required', 'boolean'],
+            'signoff.professional' => ['required', 'boolean'],
+            'signoff.satisfied' => ['required', 'boolean'],
+            'signoff.comments' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $this->workOrder->update([
             'customer_signature_name' => $this->signatureName,
             'customer_signature_at' => now(),
+            'customer_signoff_functional' => $this->signoff['functional'],
+            'customer_signoff_professional' => $this->signoff['professional'],
+            'customer_signoff_satisfied' => $this->signoff['satisfied'],
+            'customer_signoff_comments' => $this->signoff['comments'],
         ]);
 
         WorkOrderEvent::create([
@@ -242,6 +393,10 @@ class Show extends Component
             ['signature_name' => $this->signatureName]
         );
 
+        if (! $this->signoff['functional'] || ! $this->signoff['professional'] || ! $this->signoff['satisfied']) {
+            $this->createFollowUpTicket($user, $this->signoff['comments'] ?: 'Customer sign-off flagged concerns.');
+        }
+
         $this->refreshWorkOrder();
     }
 
@@ -253,15 +408,27 @@ class Show extends Component
         }
 
         $this->validate([
-            'feedbackRating' => ['required', 'integer', 'min:1', 'max:5'],
-            'feedbackComments' => ['nullable', 'string', 'max:1000'],
+            'feedback.overall' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedback.professionalism' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedback.knowledge' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedback.communication' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedback.timeliness' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedback.quality' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedback.would_recommend' => ['required', 'boolean'],
+            'feedback.comments' => ['nullable', 'string', 'max:1000'],
         ]);
 
         WorkOrderFeedback::create([
             'work_order_id' => $this->workOrder->id,
             'user_id' => $user->id,
-            'rating' => $this->feedbackRating,
-            'comments' => $this->feedbackComments,
+            'rating' => $this->feedback['overall'],
+            'professionalism_rating' => $this->feedback['professionalism'],
+            'knowledge_rating' => $this->feedback['knowledge'],
+            'communication_rating' => $this->feedback['communication'],
+            'timeliness_rating' => $this->feedback['timeliness'],
+            'quality_rating' => $this->feedback['quality'],
+            'would_recommend' => $this->feedback['would_recommend'],
+            'comments' => $this->feedback['comments'],
         ]);
 
         WorkOrderEvent::create([
@@ -275,10 +442,42 @@ class Show extends Component
             'work_order.feedback_submitted',
             $this->workOrder,
             'Customer submitted feedback.',
-            ['rating' => $this->feedbackRating]
+            ['rating' => $this->feedback['overall']]
         );
 
+        if ($this->feedback['overall'] <= 2 || ! $this->feedback['would_recommend']) {
+            $this->createFollowUpTicket($user, $this->feedback['comments'] ?: 'Customer reported dissatisfaction.');
+        }
+
         $this->refreshWorkOrder();
+    }
+
+    private function createFollowUpTicket(User $user, string $description): void
+    {
+        $existing = SupportTicket::where('work_order_id', $this->workOrder->id)
+            ->whereIn('status', ['open', 'in_review'])
+            ->first();
+
+        if ($existing) {
+            return;
+        }
+
+        SupportTicket::create([
+            'organization_id' => $this->workOrder->organization_id,
+            'work_order_id' => $this->workOrder->id,
+            'submitted_by_user_id' => $user->id,
+            'status' => 'open',
+            'priority' => 'high',
+            'subject' => 'Customer feedback follow-up for Work Order #' . $this->workOrder->id,
+            'description' => $description,
+        ]);
+
+        WorkOrderEvent::create([
+            'work_order_id' => $this->workOrder->id,
+            'user_id' => $user->id,
+            'type' => 'feedback_followup',
+            'note' => 'Escalated feedback for follow-up.',
+        ]);
     }
 
     private function canSignOff(User $user): bool
@@ -441,6 +640,9 @@ class Show extends Component
             'created' => 'Request submitted.',
             'customer_signoff' => 'Customer approved the service.',
             'feedback' => 'Customer submitted feedback.',
+            'service_report' => 'Service report updated.',
+            'photo_upload' => 'Service photos uploaded.',
+            'feedback_followup' => 'Feedback escalated for follow-up.',
             default => Str::headline(str_replace('_', ' ', $event->type)),
         };
     }
@@ -756,6 +958,7 @@ class Show extends Component
         $canMarkArrived = $user ? $this->canMarkArrived($user) : false;
         $canAssign = $user ? $this->canAssign($user) : false;
         $canAddNote = $user ? $this->canAddNote($user) : false;
+        $canManageReport = $user ? $this->canManageReport($user) : false;
         $canSignOff = $user ? $this->canSignOff($user) : false;
         $canLeaveFeedback = $user ? $this->canLeaveFeedback($user) : false;
         $nextAppointment = $this->workOrder->appointments
@@ -768,6 +971,7 @@ class Show extends Component
         $estimatedDuration = $serviceMetrics['estimated_minutes'] ?? $appointmentDuration ?? $serviceMetrics['labor_minutes'];
         $technicianInsights = $this->technicianInsights();
         $tracking = $this->trackingSnapshot();
+        $photoGroups = $this->workOrder->attachments->groupBy('kind');
 
         return view('livewire.work-orders.show', [
             'technicians' => $technicians,
@@ -776,6 +980,7 @@ class Show extends Component
             'canMarkArrived' => $canMarkArrived,
             'canAssign' => $canAssign,
             'canAddNote' => $canAddNote,
+            'canManageReport' => $canManageReport,
             'canSignOff' => $canSignOff,
             'canLeaveFeedback' => $canLeaveFeedback,
             'timeline' => $timeline,
@@ -788,6 +993,7 @@ class Show extends Component
             'estimatedDuration' => $estimatedDuration,
             'technicianInsights' => $technicianInsights,
             'tracking' => $tracking,
+            'photoGroups' => $photoGroups,
         ]);
     }
 }
