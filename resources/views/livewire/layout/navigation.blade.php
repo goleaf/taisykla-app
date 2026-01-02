@@ -1,10 +1,15 @@
 <?php
 
 use App\Livewire\Actions\Logout;
+use App\Models\User;
+use App\Models\WorkOrder;
 use Livewire\Volt\Component;
 
 new class extends Component
 {
+    public string $trackTicket = '';
+    public ?string $trackError = null;
+
     /**
      * Log the current user out of the application.
      */
@@ -13,6 +18,60 @@ new class extends Component
         $logout();
 
         $this->redirect('/', navigate: true);
+    }
+
+    public function trackRequest(): void
+    {
+        $this->trackError = null;
+        $ticket = trim($this->trackTicket);
+
+        if ($ticket === '') {
+            return;
+        }
+
+        if (! ctype_digit($ticket)) {
+            $this->trackError = 'Enter a valid ticket number.';
+            return;
+        }
+
+        $workOrder = WorkOrder::find((int) $ticket);
+        if (! $workOrder) {
+            $this->trackError = 'Ticket not found.';
+            return;
+        }
+
+        $user = auth()->user();
+        if (! $this->canViewWorkOrder($user, $workOrder)) {
+            $this->trackError = 'Access denied.';
+            return;
+        }
+
+        $this->redirectRoute('work-orders.show', ['workOrder' => $workOrder->id], navigate: true);
+    }
+
+    private function canViewWorkOrder(?User $user, WorkOrder $workOrder): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['admin', 'dispatch', 'support'])) {
+            return true;
+        }
+
+        if ($workOrder->requested_by_user_id === $user->id) {
+            return true;
+        }
+
+        if ($user->hasRole('technician')) {
+            return $workOrder->assigned_to_user_id === $user->id;
+        }
+
+        if ($user->hasRole('client')) {
+            return $user->organization_id && $workOrder->organization_id === $user->organization_id;
+        }
+
+        return false;
     }
 }; ?>
 
@@ -59,7 +118,19 @@ new class extends Component
             </div>
 
             <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <div class="hidden sm:flex sm:items-center sm:ms-6 gap-3">
+                <form wire:submit.prevent="trackRequest" class="flex items-center gap-2">
+                    <input
+                        type="text"
+                        wire:model.defer="trackTicket"
+                        class="rounded-md border border-gray-300 text-sm px-2 py-1 w-36"
+                        placeholder="Track request #"
+                    />
+                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm">Track</button>
+                    @if ($trackError)
+                        <span class="text-xs text-red-600 max-w-32 truncate" title="{{ $trackError }}">{{ $trackError }}</span>
+                    @endif
+                </form>
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -103,6 +174,20 @@ new class extends Component
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
+            <div class="px-4 pb-3">
+                <form wire:submit.prevent="trackRequest" class="flex items-center gap-2">
+                    <input
+                        type="text"
+                        wire:model.defer="trackTicket"
+                        class="flex-1 rounded-md border border-gray-300 text-sm px-2 py-1"
+                        placeholder="Track request #"
+                    />
+                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm">Track</button>
+                </form>
+                @if ($trackError)
+                    <p class="mt-1 text-xs text-red-600">{{ $trackError }}</p>
+                @endif
+            </div>
             @foreach ($links as $link)
                 @if ($link['show'])
                     <x-responsive-nav-link :href="route($link['route'])" :active="request()->routeIs($link['route'])" wire:navigate>

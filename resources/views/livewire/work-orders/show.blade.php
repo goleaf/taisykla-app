@@ -165,7 +165,7 @@
                         @forelse ($timeline as $entry)
                             <div>
                                 <p class="text-sm text-gray-700">{{ $entry['summary'] }}</p>
-                                <p class="text-xs text-gray-500">{{ $entry['actor'] }} • {{ $entry['timestamp']?->diffForHumans() }}</p>
+                                <p class="text-xs text-gray-500">{{ $entry['actor'] }} • {{ $entry['timestamp']?->format('M d, Y H:i') ?? '—' }}</p>
                             </div>
                         @empty
                             <p class="text-sm text-gray-500">No updates yet.</p>
@@ -181,11 +181,11 @@
                     @endif
                 </div>
 
-                <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                <div id="work-order-messages" class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Messages</h2>
                     @if ($messageThread && $messageThread->messages->isNotEmpty())
                         <div class="space-y-3 max-h-64 overflow-y-auto">
-                            @foreach ($messageThread->messages as $message)
+                            @foreach ($messageThread->messages->sortBy('created_at') as $message)
                                 <div>
                                     <p class="text-sm font-medium text-gray-900">{{ $message->user?->name ?? 'User' }}</p>
                                     <p class="text-sm text-gray-700">{{ $message->body }}</p>
@@ -208,15 +208,43 @@
                 <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Assigned Technician</h2>
                     @if ($workOrder->assignedTo)
-                        <p class="text-sm font-medium text-gray-900">{{ $workOrder->assignedTo->name }}</p>
-                        <p class="text-xs text-gray-500">{{ $workOrder->assignedTo->job_title ?? 'Technician' }}</p>
+                        @php
+                            $nameParts = preg_split('/\s+/', trim($workOrder->assignedTo->name));
+                            $initials = '';
+                            foreach ($nameParts as $part) {
+                                if ($part !== '') {
+                                    $initials .= strtoupper(substr($part, 0, 1));
+                                }
+                            }
+                            $initials = substr($initials, 0, 2);
+                        @endphp
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold">
+                                {{ $initials }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $workOrder->assignedTo->name }}</p>
+                                <p class="text-xs text-gray-500">Role: {{ $workOrder->assignedTo->job_title ?? 'Technician' }}</p>
+                            </div>
+                        </div>
                         <div class="mt-3 space-y-1 text-sm text-gray-700">
                             <p>Phone: {{ $workOrder->assignedTo->phone ?? '—' }}</p>
                             <p>Email: {{ $workOrder->assignedTo->email }}</p>
                         </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <p>Service Specialty: {{ $workOrder->category?->name ?? 'General service' }}</p>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            @if ($technicianInsights['rating'])
+                                Rating: {{ number_format($technicianInsights['rating'], 1) }} / 5 ({{ $technicianInsights['rating_count'] }} reviews)
+                            @else
+                                No ratings yet
+                            @endif
+                        </div>
                         <p class="mt-2 text-xs text-gray-500">
                             Availability: {{ ucfirst($workOrder->assignedTo->availability_status ?? 'unknown') }}
                         </p>
+                        <a href="#work-order-messages" class="mt-3 inline-block text-sm text-indigo-600">Message technician</a>
                     @else
                         <p class="text-sm text-gray-500">No technician assigned yet.</p>
                     @endif
@@ -232,8 +260,23 @@
                             {{ ucfirst($nextAppointment->status) }}{{ $nextAppointment->time_window ? ' • '.$nextAppointment->time_window : '' }}
                         </p>
                         <p class="text-xs text-gray-500">
+                            Estimated duration: {{ $estimatedDuration ? $estimatedDuration.' minutes' : '—' }}
+                        </p>
+                        <p class="text-xs text-gray-500">
                             {{ $nextAppointment->assignedTo?->name ?? 'Unassigned' }}
                         </p>
+                        @if ($tracking['eta_minutes'])
+                            <p class="mt-2 text-xs text-gray-500">Estimated travel time: {{ $tracking['eta_minutes'] }} minutes</p>
+                        @endif
+                        @if ($tracking['map_url'])
+                            <div class="mt-3 text-xs text-gray-500">
+                                <p>Last known technician location: {{ $tracking['technician_coords']['lat'] }}, {{ $tracking['technician_coords']['lng'] }}</p>
+                                <p>Service location: {{ $tracking['site_coords']['lat'] }}, {{ $tracking['site_coords']['lng'] }}</p>
+                                <a class="text-indigo-600" href="{{ $tracking['map_url'] }}" target="_blank" rel="noreferrer">Open map</a>
+                            </div>
+                        @else
+                            <p class="mt-2 text-xs text-gray-500">Live location tracking not available.</p>
+                        @endif
                     @else
                         <p class="text-sm text-gray-500">No appointment scheduled yet.</p>
                     @endif

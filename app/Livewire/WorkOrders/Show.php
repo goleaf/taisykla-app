@@ -46,6 +46,7 @@ class Show extends Component
         $this->workOrder = $workOrder->load([
             'organization',
             'equipment',
+            'category',
             'assignedTo',
             'requestedBy',
             'appointments.assignedTo',
@@ -88,6 +89,11 @@ class Show extends Component
 
     public function updateStatus(): void
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['admin', 'dispatch', 'technician'])) {
+            return;
+        }
+
         $this->validate([
             'status' => ['required', Rule::in($this->statusOptions)],
         ]);
@@ -412,11 +418,31 @@ class Show extends Component
             return $event->note;
         }
 
+        if ($event->type === 'status_change') {
+            return match ($event->to_status) {
+                'assigned' => 'Dispatch assigned your request.',
+                'in_progress' => 'Service started.',
+                'on_hold' => 'Request placed on hold.',
+                'completed' => 'Service completed.',
+                'closed' => 'Request closed.',
+                'canceled' => 'Request canceled.',
+                default => 'Status changed from ' . $this->friendlyStatus($event->from_status) . ' to ' . $this->friendlyStatus($event->to_status) . '.',
+            };
+        }
+
+        if ($event->type === 'assignment') {
+            $assignedId = $event->meta['assigned_to_user_id'] ?? null;
+            if ($assignedId) {
+                $assignedName = User::find($assignedId)?->name;
+                return $assignedName ? 'Assigned to ' . $assignedName . '.' : 'Technician assigned.';
+            }
+
+            return 'Technician unassigned.';
+        }
+
         return match ($event->type) {
-            'status_change' => 'Status changed from ' . $this->friendlyStatus($event->from_status) . ' to ' . $this->friendlyStatus($event->to_status) . '.',
-            'assignment' => 'Assignment updated.',
             'arrival' => 'Technician arrived on site.',
-            'created' => 'Work order created.',
+            'created' => 'Request submitted.',
             'customer_signoff' => 'Customer approved the service.',
             'feedback' => 'Customer submitted feedback.',
             default => Str::headline(str_replace('_', ' ', $event->type)),
@@ -458,8 +484,68 @@ class Show extends Component
             ->latest()
             ->first();
     }
+
+    private function technicianInsights(): array
+    {
+        $technician = $this->workOrder->assignedTo;
+        if (! $technician) {
+            return [
+                'rating' => null,
+                'rating_count' => 0,
+            ];
+        }
+
+        $ratings = WorkOrderFeedback::query()
+            ->whereHas('workOrder', function ($builder) use ($technician) {
+                $builder->where('assigned_to_user_id', $technician->id);
+            })
+            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total')
+            ->first();
+
+        return [
+            'rating' => $ratings?->avg_rating ? round((float) $ratings->avg_rating, 1) : null,
+            'rating_count' => (int) ($ratings->total ?? 0),
+        ];
+    }
+
+    private function trackingSnapshot(): array
+    {
+        $technician = $this->workOrder->assignedTo;
+        $siteLat = $this->workOrder->location_latitude;
+        $siteLng = $this->workOrder->location_longitude;
+        $techLat = $technician?->current_latitude;
+        $techLng = $technician?->current_longitude;
+
+        $hasCoords = $siteLat !== null && $siteLng !== null && $techLat !== null && $techLng !== null;
+
+        $etaMinutes = null;
+        if (! $this->workOrder->arrived_at && in_array($this->workOrder->status, ['assigned', 'in_progress'], true)) {
+            $etaMinutes = $this->workOrder->travel_minutes;
+        }
+
+        return [
+            'has_coords' => $hasCoords,
+            'map_url' => $hasCoords ? $this->mapRouteUrl($techLat, $techLng, $siteLat, $siteLng) : null,
+            'eta_minutes' => $etaMinutes,
+            'technician_coords' => $hasCoords ? ['lat' => $techLat, 'lng' => $techLng] : null,
+            'site_coords' => $hasCoords ? ['lat' => $siteLat, 'lng' => $siteLng] : null,
+        ];
+    }
+
+    private function mapRouteUrl(float $techLat, float $techLng, float $siteLat, float $siteLng): string
+    {
+        $origin = $techLat . ',' . $techLng;
+        $destination = $siteLat . ',' . $siteLng;
+
+        return 'https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=' . $origin . ';' . $destination;
+    }
     public function assignTechnician(): void
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['admin', 'dispatch'])) {
+            return;
+        }
+
         $previousUserId = $this->workOrder->assigned_to_user_id;
         $updates = [
             'assigned_to_user_id' => $this->assignedToUserId,
@@ -504,6 +590,11 @@ class Show extends Component
 
     public function markArrived(): void
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['technician', 'dispatch'])) {
+            return;
+        }
+
         $previousStatus = $this->workOrder->status;
         $updates = [];
 
@@ -552,6 +643,11 @@ class Show extends Component
 
     public function addNote(): void
     {
+        $user = auth()->user();
+        if (! $user || ! $user->hasAnyRole(['admin', 'dispatch', 'technician'])) {
+            return;
+        }
+
         $this->validate([
             'note' => ['required', 'string', 'max:1000'],
         ]);
@@ -579,6 +675,13 @@ class Show extends Component
         $nextAppointment = $this->workOrder->appointments
             ->sortBy('scheduled_start_at')
             ->first();
+        $appointmentDuration = null;
+        if ($nextAppointment?->scheduled_start_at && $nextAppointment?->scheduled_end_at) {
+            $appointmentDuration = $nextAppointment->scheduled_start_at->diffInMinutes($nextAppointment->scheduled_end_at);
+        }
+        $estimatedDuration = $serviceMetrics['estimated_minutes'] ?? $appointmentDuration ?? $serviceMetrics['labor_minutes'];
+        $technicianInsights = $this->technicianInsights();
+        $tracking = $this->trackingSnapshot();
 
         return view('livewire.work-orders.show', [
             'technicians' => $technicians,
@@ -589,6 +692,10 @@ class Show extends Component
             'serviceMetrics' => $serviceMetrics,
             'messageThread' => $messageThread,
             'nextAppointment' => $nextAppointment,
+            'appointmentDuration' => $appointmentDuration,
+            'estimatedDuration' => $estimatedDuration,
+            'technicianInsights' => $technicianInsights,
+            'tracking' => $tracking,
         ]);
     }
 }
