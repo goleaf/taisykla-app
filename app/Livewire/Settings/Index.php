@@ -3,6 +3,10 @@
 namespace App\Livewire\Settings;
 
 use App\Models\CommunicationTemplate;
+use App\Models\CustomField;
+use App\Models\CustomStatus;
+use App\Models\CustomStatusTransition;
+use App\Models\LabelOverride;
 use App\Models\AuditLog;
 use App\Models\AutomationRule;
 use App\Models\InventoryLocation;
@@ -17,11 +21,14 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
 use App\Notifications\FirstLoginNotification;
 use App\Services\AuditLogger;
+use App\Support\LabelCatalog;
 use App\Support\RoleCatalog;
+use App\Support\StatusCatalog;
 use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
@@ -39,6 +46,9 @@ class Index extends Component
     public bool $showEquipmentCategoryCreate = false;
     public bool $showAutomationCreate = false;
     public bool $showIntegrationCreate = false;
+    public bool $showCustomFieldForm = false;
+    public bool $showCustomStatusForm = false;
+    public bool $showLabelForm = false;
 
     public array $newUser = [];
     public array $newAgreement = [];
@@ -49,9 +59,74 @@ class Index extends Component
     public array $newEquipmentCategory = [];
     public array $newAutomation = [];
     public array $newIntegration = [];
+    public array $customFieldForm = [];
+    public array $customStatusForm = [];
+    public array $labelForm = [];
     public array $settingValues = [];
     public array $companyProfile = [];
     public ?string $backupLastRunAt = null;
+    public ?int $editingCustomFieldId = null;
+    public ?int $editingStatusId = null;
+    public ?int $editingLabelId = null;
+    public bool $customStatusKeyLocked = false;
+    public array $statusTransitions = [];
+
+    public array $customFieldTypeOptions = [
+        'text' => 'Text',
+        'textarea' => 'Long text',
+        'number' => 'Number',
+        'date' => 'Date',
+        'dropdown' => 'Dropdown',
+        'checkbox' => 'Checkbox',
+    ];
+
+    public array $customFieldEntityOptions = [
+        'work_order' => 'Work Orders',
+        'equipment' => 'Equipment',
+    ];
+
+    public array $statusContextOptions = [
+        'work_order' => 'Work Orders',
+        'equipment' => 'Equipment',
+    ];
+
+    public array $workOrderStateOptions = [
+        'submitted' => 'Submitted',
+        'assigned' => 'Assigned',
+        'in_progress' => 'In Progress',
+        'on_hold' => 'On Hold',
+        'completed' => 'Completed',
+        'closed' => 'Closed',
+        'canceled' => 'Canceled',
+    ];
+
+    public array $equipmentStateOptions = [
+        'operational' => 'Operational',
+        'needs_attention' => 'Needs Attention',
+        'in_repair' => 'In Repair',
+        'retired' => 'Retired',
+    ];
+
+    public array $statusIconOptions = [
+        'clipboard' => 'Clipboard',
+        'user-check' => 'User Check',
+        'progress' => 'Progress',
+        'pause' => 'Pause',
+        'check-circle' => 'Check Circle',
+        'lock' => 'Lock',
+        'x-circle' => 'X Circle',
+        'check' => 'Check',
+        'alert' => 'Alert',
+        'tool' => 'Tool',
+        'archive' => 'Archive',
+    ];
+
+    public array $labelGroupOptions = [
+        'menu' => 'Menu',
+        'field' => 'Field',
+        'button' => 'Button',
+        'misc' => 'Misc',
+    ];
 
     protected $paginationTheme = 'tailwind';
 
@@ -68,6 +143,10 @@ class Index extends Component
         $this->resetNewEquipmentCategory();
         $this->resetNewAutomation();
         $this->resetNewIntegration();
+        $this->resetCustomFieldForm();
+        $this->resetStatusForm();
+        $this->resetLabelForm();
+        $this->loadStatusTransitions();
         $this->loadSettingValues();
         $this->loadCompanyProfile();
         $this->backupLastRunAt = $this->loadBackupTimestamp();
@@ -171,6 +250,68 @@ class Index extends Component
             'config' => '',
             'is_active' => false,
         ];
+    }
+
+    public function resetCustomFieldForm(): void
+    {
+        $this->customFieldForm = [
+            'entity_type' => 'work_order',
+            'label' => '',
+            'key' => '',
+            'type' => 'text',
+            'is_required' => false,
+            'default_value' => '',
+            'validation_rules' => '',
+            'options' => '',
+            'display_order' => 0,
+            'is_active' => true,
+        ];
+        $this->editingCustomFieldId = null;
+    }
+
+    public function resetStatusForm(?string $context = null): void
+    {
+        $context = $context ?: 'work_order';
+        $state = $context === 'equipment' ? 'operational' : 'submitted';
+        $defaultColor = $context === 'equipment' ? '#DCFCE7' : '#F3F4F6';
+        $defaultTextColor = $context === 'equipment' ? '#166534' : '#374151';
+
+        $this->customStatusForm = [
+            'context' => $context,
+            'key' => '',
+            'label' => '',
+            'state' => $state,
+            'color' => $defaultColor,
+            'text_color' => $defaultTextColor,
+            'icon' => '',
+            'is_default' => false,
+            'is_terminal' => false,
+            'sort_order' => 50,
+            'is_active' => true,
+        ];
+        $this->editingStatusId = null;
+        $this->customStatusKeyLocked = false;
+    }
+
+    public function resetLabelForm(): void
+    {
+        $this->labelForm = [
+            'key' => '',
+            'locale' => app()->getLocale(),
+            'value' => '',
+            'group' => 'menu',
+            'description' => '',
+        ];
+        $this->editingLabelId = null;
+    }
+
+    private function loadStatusTransitions(): void
+    {
+        $this->statusTransitions = CustomStatusTransition::query()
+            ->get()
+            ->groupBy('from_status_id')
+            ->map(fn ($rows) => $rows->pluck('to_status_id')->map(fn ($id) => (int) $id)->values()->all())
+            ->toArray();
     }
 
     public function loadSettingValues(): void
