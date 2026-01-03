@@ -2,6 +2,7 @@
 
 namespace App\Livewire\SupportTickets;
 
+use App\Models\KnowledgeArticle;
 use App\Models\Organization;
 use App\Models\SupportTicket;
 use App\Models\User;
@@ -17,6 +18,7 @@ class Index extends Component
 
     public bool $showCreate = false;
     public array $new = [];
+    public array $suggestedArticleIds = [];
 
     protected $paginationTheme = 'tailwind';
 
@@ -39,6 +41,7 @@ class Index extends Component
             'subject' => '',
             'description' => '',
         ];
+        $this->suggestedArticleIds = [];
     }
 
     public function createTicket(): void
@@ -61,7 +64,7 @@ class Index extends Component
             'new.description' => ['nullable', 'string'],
         ]);
 
-        SupportTicket::create([
+        $ticket = SupportTicket::create([
             'organization_id' => $this->new['organization_id'],
             'work_order_id' => $this->new['work_order_id'],
             'submitted_by_user_id' => $user->id,
@@ -73,6 +76,13 @@ class Index extends Component
             'description' => $this->new['description'],
             'status' => 'open',
         ]);
+
+        foreach ($this->suggestedArticleIds as $articleId) {
+            $ticket->knowledgeArticles()->attach($articleId, [
+                'context' => 'attached',
+                'added_by_user_id' => $user->id,
+            ]);
+        }
 
         session()->flash('status', 'Support ticket created.');
         $this->resetNew();
@@ -115,6 +125,7 @@ class Index extends Component
             'organizations' => $organizations,
             'workOrders' => $workOrders,
             'supportManagers' => $supportManagers,
+            'suggestedArticles' => $this->suggestedArticles,
             'user' => $user,
             'canCreate' => $this->canCreate,
             'canManage' => $this->canManage,
@@ -157,7 +168,7 @@ class Index extends Component
 
     private function ticketQueryFor(User $user): Builder
     {
-        $query = SupportTicket::query()->with(['organization', 'workOrder', 'assignedTo']);
+        $query = SupportTicket::query()->with(['organization', 'workOrder', 'assignedTo', 'knowledgeArticles']);
 
         if ($user->can(PermissionCatalog::SUPPORT_VIEW_ALL)) {
             return $query;
@@ -214,5 +225,37 @@ class Index extends Component
         }
 
         return $query;
+    }
+
+    public function getSuggestedArticlesProperty()
+    {
+        $user = auth()->user();
+        $queryText = trim(($this->new['subject'] ?? '') . ' ' . ($this->new['description'] ?? ''));
+        if ($queryText === '') {
+            return collect();
+        }
+
+        $terms = collect(preg_split('/\s+/', $queryText))
+            ->filter(fn ($term) => strlen($term) > 3)
+            ->take(5);
+
+        if ($terms->isEmpty()) {
+            return collect();
+        }
+
+        $query = KnowledgeArticle::query()
+            ->visibleTo($user)
+            ->where('is_published', true);
+
+        $query->where(function ($builder) use ($terms) {
+            foreach ($terms as $term) {
+                $like = '%' . $term . '%';
+                $builder->orWhere('title', 'like', $like)
+                    ->orWhere('summary', 'like', $like)
+                    ->orWhere('content', 'like', $like);
+            }
+        });
+
+        return $query->orderByDesc('view_count')->take(5)->get();
     }
 }

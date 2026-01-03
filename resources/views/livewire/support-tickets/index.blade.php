@@ -67,6 +67,23 @@
                         <label class="text-xs text-gray-500">Description</label>
                         <textarea wire:model="new.description" class="mt-1 w-full rounded-md border-gray-300" rows="3"></textarea>
                     </div>
+                    @if ($suggestedArticles->isNotEmpty())
+                        <div class="md:col-span-2 bg-gray-50 border border-gray-100 rounded-lg p-4">
+                            <h3 class="text-sm font-semibold text-gray-900">Before you submit, check these articles</h3>
+                            <p class="text-xs text-gray-500">Suggested based on your subject and description.</p>
+                            <div class="mt-3 space-y-2 text-sm">
+                                @foreach ($suggestedArticles as $article)
+                                    <div class="flex items-center justify-between">
+                                        <label class="inline-flex items-center gap-2">
+                                            <input type="checkbox" wire:model="suggestedArticleIds" value="{{ $article->id }}" class="rounded border-gray-300" />
+                                            <span>{{ $article->title }}</span>
+                                        </label>
+                                        <a class="text-xs text-indigo-600" href="{{ route('knowledge-base.show', $article) }}" target="_blank" rel="noreferrer">Open</a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                     <div class="md:col-span-2">
                         <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Create</button>
                     </div>
@@ -82,6 +99,7 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organization</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Knowledge Base</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned</th>
                     </tr>
                 </thead>
@@ -100,6 +118,19 @@
                                     </select>
                                 @else
                                     {{ ucfirst(str_replace('_', ' ', $ticket->status)) }}
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-700">
+                                @if ($ticket->knowledgeArticles->isNotEmpty())
+                                    <div class="space-y-1 text-xs">
+                                        @foreach ($ticket->knowledgeArticles as $article)
+                                            <a class="text-indigo-600" href="{{ route('knowledge-base.show', $article) }}" target="_blank" rel="noreferrer">
+                                                {{ Str::limit($article->title, 32) }}
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-xs text-gray-400">—</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ $ticket->assignedTo?->name ?? 'Unassigned' }}</td>

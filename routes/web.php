@@ -7,6 +7,7 @@ use App\Livewire\Equipment\Index as EquipmentIndex;
 use App\Livewire\Equipment\Show as EquipmentShow;
 use App\Livewire\Inventory\Index as InventoryIndex;
 use App\Livewire\KnowledgeBase\Index as KnowledgeBaseIndex;
+use App\Livewire\KnowledgeBase\Show as KnowledgeBaseShow;
 use App\Livewire\Messages\Index as MessagesIndex;
 use App\Livewire\Reports\Index as ReportsIndex;
 use App\Livewire\Schedule\Index as ScheduleIndex;
@@ -61,6 +62,9 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('knowledge-base', KnowledgeBaseIndex::class)
         ->middleware('can:' . PermissionCatalog::KNOWLEDGE_BASE_VIEW)
         ->name('knowledge-base.index');
+    Route::get('knowledge-base/{article:slug}', KnowledgeBaseShow::class)
+        ->middleware('can:' . PermissionCatalog::KNOWLEDGE_BASE_VIEW)
+        ->name('knowledge-base.show');
     Route::get('support-tickets', SupportTicketsIndex::class)
         ->middleware('can:' . PermissionCatalog::SUPPORT_VIEW)
         ->name('support-tickets.index');
