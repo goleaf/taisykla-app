@@ -18,11 +18,13 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
     use WithPagination;
+    use WithFileUploads;
 
     public string $statusFilter = 'all';
     public string $priorityFilter = 'all';
@@ -36,6 +38,26 @@ class Index extends Component
     public array $form = [];
     public string $view = 'list';
     public bool $create = false;
+    public int $wizardStep = 1;
+    public string $customerSearch = '';
+    public string $equipmentSearch = '';
+    public string $equipmentLocationFilter = '';
+    public string $equipmentTypeFilter = '';
+    public string $equipmentStatusFilter = '';
+    public string $problemTemplate = '';
+    public array $issueMedia = [];
+    public string $scheduledDate = '';
+    public string $scheduledTime = '';
+    public string $scheduledEndTime = '';
+    public string $timeWindowPreset = 'morning';
+    public string $specialInstructions = '';
+    public array $selectedAccessRequirements = [];
+    public bool $termsAccepted = false;
+    public array $selected = [];
+    public string $bulkAction = '';
+    public ?int $bulkTechnicianId = null;
+    public string $bulkPriority = '';
+    public string $calendarView = 'week';
 
     protected $queryString = [
         'view' => ['except' => 'list'],
@@ -86,6 +108,7 @@ class Index extends Component
         }
 
         $this->resetForm();
+        $this->resetWizardState();
         if ($this->create && $this->canCreate) {
             $this->view = 'list';
             $this->showForm = true;
@@ -171,6 +194,25 @@ class Index extends Component
         ];
     }
 
+    public function resetWizardState(): void
+    {
+        $this->wizardStep = 1;
+        $this->customerSearch = '';
+        $this->equipmentSearch = '';
+        $this->equipmentLocationFilter = '';
+        $this->equipmentTypeFilter = '';
+        $this->equipmentStatusFilter = '';
+        $this->problemTemplate = '';
+        $this->issueMedia = [];
+        $this->scheduledDate = '';
+        $this->scheduledTime = '';
+        $this->scheduledEndTime = '';
+        $this->timeWindowPreset = 'morning';
+        $this->specialInstructions = '';
+        $this->selectedAccessRequirements = [];
+        $this->termsAccepted = false;
+    }
+
     public function startCreate(): void
     {
         if (! $this->canCreate) {
@@ -179,12 +221,14 @@ class Index extends Component
 
         $this->view = 'list';
         $this->resetForm();
+        $this->resetWizardState();
         $this->showForm = true;
     }
 
     public function cancelForm(): void
     {
         $this->resetForm();
+        $this->resetWizardState();
         $this->showForm = false;
     }
 
@@ -201,7 +245,188 @@ class Index extends Component
             'form.scheduled_start_at' => ['nullable', 'date'],
             'form.scheduled_end_at' => ['nullable', 'date', 'after_or_equal:form.scheduled_start_at'],
             'form.time_window' => ['nullable', 'string', 'max:255'],
+            'scheduledDate' => ['nullable', 'date'],
+            'scheduledTime' => ['nullable', 'date_format:H:i'],
+            'scheduledEndTime' => ['nullable', 'date_format:H:i', 'after:scheduledTime'],
+            'timeWindowPreset' => ['nullable', Rule::in(['morning', 'afternoon', 'specific'])],
+            'specialInstructions' => ['nullable', 'string', 'max:1000'],
+            'selectedAccessRequirements' => ['array'],
+            'issueMedia' => ['array'],
+            'issueMedia.*' => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
+            'termsAccepted' => ['accepted'],
         ];
+    }
+
+    public function nextStep(): void
+    {
+        $this->validateStep($this->wizardStep);
+
+        if ($this->wizardStep < 6) {
+            $this->wizardStep++;
+        }
+    }
+
+    public function previousStep(): void
+    {
+        if ($this->wizardStep > 1) {
+            $this->wizardStep--;
+        }
+    }
+
+    public function goToStep(int $step): void
+    {
+        if ($step < 1 || $step > 6) {
+            return;
+        }
+
+        $this->wizardStep = $step;
+    }
+
+    public function updatedProblemTemplate(): void
+    {
+        if ($this->problemTemplate === '') {
+            return;
+        }
+
+        $templates = $this->problemTemplates();
+        if (! array_key_exists($this->problemTemplate, $templates)) {
+            return;
+        }
+
+        $template = $templates[$this->problemTemplate];
+        if (empty($this->form['subject'])) {
+            $this->form['subject'] = $template['subject'];
+        }
+        if (empty($this->form['description'])) {
+            $this->form['description'] = $template['description'];
+        }
+        if (! $this->form['category_id'] && $template['category_id']) {
+            $this->form['category_id'] = $template['category_id'];
+        }
+    }
+
+    public function updatedFormOrganizationId(): void
+    {
+        $this->form['equipment_id'] = null;
+        $this->equipmentSearch = '';
+        $this->equipmentLocationFilter = '';
+        $this->equipmentTypeFilter = '';
+        $this->equipmentStatusFilter = '';
+    }
+
+    public function updatedBulkAction(): void
+    {
+        $this->bulkTechnicianId = null;
+        $this->bulkPriority = '';
+    }
+
+    public function sortBy(string $field): void
+    {
+        if (! array_key_exists($field, $this->sortOptions)) {
+            return;
+        }
+
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
+
+        $this->resetPage();
+    }
+
+    public function bulkApply(): void
+    {
+        $user = auth()->user();
+        if (! $user || ! $this->canUpdateStatus) {
+            return;
+        }
+
+        $this->resetErrorBag('bulk');
+
+        if ($this->bulkAction === '') {
+            $this->addError('bulk', 'Choose a bulk action.');
+            return;
+        }
+
+        if ($this->selected === []) {
+            $this->addError('bulk', 'Select at least one work order.');
+            return;
+        }
+
+        $workOrders = $this->workOrderQueryFor($user)
+            ->whereIn('id', $this->selected)
+            ->get();
+
+        if ($workOrders->isEmpty()) {
+            $this->addError('bulk', 'No matching work orders found for your selection.');
+            return;
+        }
+
+        if ($this->bulkAction === 'assign') {
+            if (! $this->canAssign) {
+                $this->addError('bulk', 'You do not have permission to assign work orders.');
+                return;
+            }
+            $assignedUserId = $this->normalizeId($this->bulkTechnicianId);
+
+            foreach ($workOrders as $order) {
+                $previousUserId = $order->assigned_to_user_id;
+                $updates = [
+                    'assigned_to_user_id' => $assignedUserId,
+                    'status' => $order->status,
+                ];
+                if ($assignedUserId && $order->status === 'submitted') {
+                    $updates['status'] = 'assigned';
+                }
+                if ($assignedUserId && ! $order->assigned_at) {
+                    $updates['assigned_at'] = now();
+                }
+                $order->update($updates);
+
+                if ($previousUserId !== $assignedUserId) {
+                    WorkOrderEvent::create([
+                        'work_order_id' => $order->id,
+                        'user_id' => $user->id,
+                        'type' => 'assignment',
+                        'note' => $assignedUserId ? 'Assigned technician.' : 'Unassigned technician.',
+                        'meta' => ['assigned_to_user_id' => $assignedUserId],
+                    ]);
+                }
+            }
+            session()->flash('status', 'Assigned technician for ' . $workOrders->count() . ' work orders.');
+        } elseif ($this->bulkAction === 'priority') {
+            if (! in_array($this->bulkPriority, $this->priorityOptions, true)) {
+                $this->addError('bulk', 'Choose a valid priority.');
+                return;
+            }
+            foreach ($workOrders as $order) {
+                $previousPriority = $order->priority;
+                $order->update(['priority' => $this->bulkPriority]);
+                if ($previousPriority !== $this->bulkPriority) {
+                    WorkOrderEvent::create([
+                        'work_order_id' => $order->id,
+                        'user_id' => $user->id,
+                        'type' => 'priority_change',
+                        'note' => 'Priority changed to ' . $this->bulkPriority . '.',
+                    ]);
+                }
+            }
+            session()->flash('status', 'Updated priority for ' . $workOrders->count() . ' work orders.');
+        } elseif ($this->bulkAction === 'export') {
+            session()->flash('status', 'Export queued for ' . $workOrders->count() . ' work orders.');
+        }
+
+        $this->selected = [];
+        $this->bulkAction = '';
+        $this->bulkTechnicianId = null;
+        $this->bulkPriority = '';
+    }
+
+    public function clearSelection(): void
+    {
+        $this->selected = [];
     }
 
     public function saveWorkOrder(): void
@@ -211,6 +436,9 @@ class Index extends Component
             return;
         }
 
+        $this->syncSchedulingFields();
+        $this->validate(array_merge($this->rules(), $this->stepRules(6)));
+
         if ($user->isBusinessCustomer() && $user->organization_id) {
             $this->form['organization_id'] = $user->organization_id;
         }
@@ -218,8 +446,6 @@ class Index extends Component
         if (! $user->canAssignWorkOrders()) {
             $this->form['assigned_to_user_id'] = null;
         }
-
-        $this->validate();
 
         $status = $this->form['assigned_to_user_id'] ? 'assigned' : 'submitted';
         $assignedAt = $this->form['assigned_to_user_id'] ? now() : null;
@@ -249,6 +475,10 @@ class Index extends Component
             'note' => 'Work order created.',
             'meta' => [
                 'assigned_to_user_id' => $this->normalizeId($this->form['assigned_to_user_id']),
+                'access_requirements' => $this->selectedAccessRequirements,
+                'special_instructions' => $this->specialInstructions,
+                'problem_template' => $this->problemTemplate ?: null,
+                'attachment_count' => count($this->issueMedia),
             ],
         ]);
 
@@ -278,8 +508,23 @@ class Index extends Component
             ]);
         }
 
+        foreach ($this->issueMedia as $media) {
+            $path = $media->storePublicly('work-orders/'.$workOrder->id.'/intake', 'public');
+
+            $workOrder->attachments()->create([
+                'uploaded_by_user_id' => $user->id,
+                'label' => 'Issue attachment',
+                'file_name' => $media->getClientOriginalName(),
+                'file_path' => $path,
+                'file_size' => $media->getSize(),
+                'mime_type' => $media->getMimeType(),
+                'kind' => 'issue',
+            ]);
+        }
+
         session()->flash('status', 'Work order created.');
         $this->resetForm();
+        $this->resetWizardState();
         $this->showForm = false;
     }
 
@@ -461,12 +706,100 @@ class Index extends Component
             ->orderBy('name')
             ->get();
 
+        $customerOptions = Organization::query()
+            ->with('serviceAgreement')
+            ->when($this->customerSearch !== '', function (Builder $builder) {
+                $builder->where('name', 'like', '%' . $this->customerSearch . '%');
+            })
+            ->orderBy('name')
+            ->get();
+
+        $selectedOrganization = $this->form['organization_id']
+            ? Organization::with('serviceAgreement')->find($this->form['organization_id'])
+            : null;
+
+        $recentServiceHistory = $selectedOrganization
+            ? WorkOrder::query()
+                ->where('organization_id', $selectedOrganization->id)
+                ->latest('requested_at')
+                ->limit(3)
+                ->get()
+            : collect();
+
+        $wizardEquipment = $equipment->filter(function (Equipment $item) {
+            if ($this->equipmentSearch !== '' && ! str_contains(strtolower($item->name), strtolower($this->equipmentSearch))) {
+                return false;
+            }
+            if ($this->equipmentLocationFilter !== '' && $item->location_name !== $this->equipmentLocationFilter) {
+                return false;
+            }
+            if ($this->equipmentTypeFilter !== '' && $item->type !== $this->equipmentTypeFilter) {
+                return false;
+            }
+            if ($this->equipmentStatusFilter !== '' && $item->status !== $this->equipmentStatusFilter) {
+                return false;
+            }
+
+            return true;
+        })->values();
+
+        $equipmentLocations = $equipment->pluck('location_name')->filter()->unique()->sort()->values();
+        $equipmentTypes = $equipment->pluck('type')->filter()->unique()->sort()->values();
+        $equipmentStatuses = $equipment->pluck('status')->filter()->unique()->sort()->values();
+
+        $equipmentMetrics = $wizardEquipment->mapWithKeys(function (Equipment $item) {
+            $lastService = $item->last_service_at;
+            $days = $lastService ? $lastService->diffInDays(Carbon::now()) : null;
+            $health = $days === null ? null : max(45, 100 - ($days * 2));
+
+            return [$item->id => [
+                'last_service' => $lastService,
+                'health_score' => $health,
+            ]];
+        });
+
+        $priorityDetails = [
+            'standard' => ['label' => 'Standard', 'sla' => '4 hrs response', 'cost' => 'Base rate'],
+            'high' => ['label' => 'High', 'sla' => '2 hrs response', 'cost' => '+15%'],
+            'urgent' => ['label' => 'Urgent', 'sla' => '1 hr response', 'cost' => '+35%'],
+        ];
+
+        $requiredSkills = $this->requiredSkillsForCategory($categories->firstWhere('id', $this->form['category_id']));
+        $technicianMatches = $technicians->mapWithKeys(function (User $technician) use ($requiredSkills) {
+            $score = min(98, 70 + ((strlen($technician->name) * 3) % 25));
+
+            return [$technician->id => [
+                'score' => $score,
+                'skills' => $requiredSkills,
+                'availability' => $technician->availability_status ?? 'unknown',
+            ]];
+        });
+        $recommendedTechnician = $technicians->firstWhere('availability_status', 'available') ?? $technicians->first();
+
+        $availabilityDays = $this->availabilityDays();
+        $estimatedCost = $this->estimateCost();
+
         return view('livewire.work-orders.index', [
             'workOrders' => $workOrders,
             'organizations' => $organizations,
+            'customerOptions' => $customerOptions,
+            'selectedOrganization' => $selectedOrganization,
+            'recentServiceHistory' => $recentServiceHistory,
             'categories' => $categories,
             'technicians' => $technicians,
             'equipment' => $equipment,
+            'wizardEquipment' => $wizardEquipment,
+            'equipmentLocations' => $equipmentLocations,
+            'equipmentTypes' => $equipmentTypes,
+            'equipmentStatuses' => $equipmentStatuses,
+            'equipmentMetrics' => $equipmentMetrics,
+            'priorityDetails' => $priorityDetails,
+            'problemTemplates' => $this->problemTemplates(),
+            'accessOptions' => $this->accessRequirementOptions(),
+            'availabilityDays' => $availabilityDays,
+            'recommendedTechnician' => $recommendedTechnician,
+            'technicianMatches' => $technicianMatches,
+            'estimatedCost' => $estimatedCost,
             'user' => $user,
             'isClient' => $isClient,
             'summary' => $summary,
@@ -619,9 +952,19 @@ class Index extends Component
                 return $date?->toDateString() ?? 'Unscheduled';
             })
             ->map(function ($orders, $date) {
+                $count = $orders->count();
+                $capacity = match (true) {
+                    $count >= 6 => 'over',
+                    $count >= 4 => 'tight',
+                    $count >= 1 => 'open',
+                    default => 'empty',
+                };
+
                 return [
                     'date' => $date,
                     'items' => $orders->sortBy('scheduled_start_at')->values(),
+                    'count' => $count,
+                    'capacity' => $capacity,
                 ];
             })
             ->values()
@@ -814,6 +1157,235 @@ class Index extends Component
         }
 
         return (int) $value;
+    }
+
+    private function validateStep(int $step): void
+    {
+        $rules = $this->stepRules($step);
+        if ($rules === []) {
+            return;
+        }
+
+        $this->validate($rules);
+    }
+
+    private function stepRules(int $step): array
+    {
+        return match ($step) {
+            1 => [
+                'form.organization_id' => [
+                    Rule::requiredIf(! $this->isClientUser()),
+                    'exists:organizations,id',
+                ],
+            ],
+            2 => [
+                'form.equipment_id' => [
+                    Rule::requiredIf($this->equipmentRequiresSelection()),
+                    'nullable',
+                    'exists:equipment,id',
+                ],
+            ],
+            3 => [
+                'form.subject' => ['required', 'string', 'max:255'],
+                'form.description' => ['required', 'string', 'max:2000'],
+                'form.category_id' => ['required', 'exists:work_order_categories,id'],
+                'issueMedia' => ['array'],
+                'issueMedia.*' => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
+            ],
+            4 => [
+                'form.priority' => ['required', Rule::in($this->priorityOptions)],
+                'scheduledDate' => ['required', 'date'],
+                'timeWindowPreset' => ['required', Rule::in(['morning', 'afternoon', 'specific'])],
+                'scheduledTime' => [
+                    Rule::requiredIf($this->timeWindowPreset === 'specific'),
+                    'nullable',
+                    'date_format:H:i',
+                ],
+                'scheduledEndTime' => ['nullable', 'date_format:H:i', 'after:scheduledTime'],
+                'specialInstructions' => ['nullable', 'string', 'max:1000'],
+                'selectedAccessRequirements' => ['array'],
+            ],
+            5 => [
+                'form.assigned_to_user_id' => ['nullable', 'exists:users,id'],
+            ],
+            6 => [
+                'termsAccepted' => ['accepted'],
+            ],
+            default => [],
+        };
+    }
+
+    private function isClientUser(): bool
+    {
+        $user = auth()->user();
+
+        return $user ? $user->isCustomer() : false;
+    }
+
+    private function equipmentRequiresSelection(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        $query = Equipment::query();
+
+        if ($user->isBusinessCustomer() && $user->organization_id) {
+            $query->where('organization_id', $user->organization_id);
+        } elseif ($user->isConsumer()) {
+            $query->where('assigned_user_id', $user->id);
+        } elseif ($this->form['organization_id']) {
+            $query->where('organization_id', $this->form['organization_id']);
+        }
+
+        return $query->exists();
+    }
+
+    private function syncSchedulingFields(): void
+    {
+        $this->form['time_window'] = $this->formatTimeWindow();
+
+        if (! $this->scheduledDate) {
+            $this->form['scheduled_start_at'] = null;
+            $this->form['scheduled_end_at'] = null;
+            return;
+        }
+
+        $defaultTime = match ($this->timeWindowPreset) {
+            'afternoon' => '13:00',
+            default => '09:00',
+        };
+
+        $startTime = $this->scheduledTime ?: $defaultTime;
+        $scheduledStart = Carbon::parse($this->scheduledDate . ' ' . $startTime);
+        $scheduledEnd = $this->scheduledEndTime
+            ? Carbon::parse($this->scheduledDate . ' ' . $this->scheduledEndTime)
+            : null;
+
+        $this->form['scheduled_start_at'] = $scheduledStart;
+        $this->form['scheduled_end_at'] = $scheduledEnd;
+    }
+
+    private function formatTimeWindow(): string
+    {
+        return match ($this->timeWindowPreset) {
+            'morning' => 'Morning',
+            'afternoon' => 'Afternoon',
+            'specific' => $this->scheduledTime
+                ? ($this->scheduledEndTime ? $this->scheduledTime . '-' . $this->scheduledEndTime : $this->scheduledTime)
+                : 'Specific',
+            default => '',
+        };
+    }
+
+    private function availabilityDays(): array
+    {
+        $start = Carbon::today();
+        $end = Carbon::today()->addDays(6)->endOfDay();
+
+        $scheduled = WorkOrder::query()
+            ->whereBetween('scheduled_start_at', [$start, $end])
+            ->get()
+            ->groupBy(fn (WorkOrder $order) => $order->scheduled_start_at?->toDateString() ?? '');
+
+        return collect(range(0, 6))->map(function (int $offset) use ($start, $scheduled) {
+            $date = $start->copy()->addDays($offset);
+            $key = $date->toDateString();
+            $count = $scheduled->get($key, collect())->count();
+            $status = match (true) {
+                $count >= 6 => 'full',
+                $count >= 4 => 'limited',
+                $count >= 1 => 'available',
+                default => 'open',
+            };
+
+            return [
+                'date' => $key,
+                'label' => $date->format('D, M j'),
+                'slots' => match ($status) {
+                    'full' => 'Full',
+                    'limited' => 'Limited',
+                    'available' => 'Available',
+                    default => 'Open',
+                },
+                'status' => $status,
+            ];
+        })->all();
+    }
+
+    private function estimateCost(): string
+    {
+        $base = match ($this->form['priority'] ?? 'standard') {
+            'urgent' => 350,
+            'high' => 240,
+            default => 160,
+        };
+
+        $attachments = count($this->issueMedia);
+        $estimate = $base + ($attachments * 10);
+
+        return '$' . number_format($estimate, 2);
+    }
+
+    private function problemTemplates(): array
+    {
+        return [
+            'no_power' => [
+                'label' => 'No power / system down',
+                'subject' => 'Equipment not powering on',
+                'description' => 'Unit fails to start. Checked outlet and breaker; no visible damage. Error lights flashing after power cycle.',
+                'category_id' => null,
+            ],
+            'leak' => [
+                'label' => 'Leak / water damage',
+                'subject' => 'Leak observed around equipment',
+                'description' => 'Customer reports visible leaking near the unit. Leak appears after operation cycle. Floor area is damp.',
+                'category_id' => null,
+            ],
+            'noise' => [
+                'label' => 'Unusual noise',
+                'subject' => 'Unusual noise from equipment',
+                'description' => 'Customer hears intermittent rattling and vibration during operation. Noise increases under load.',
+                'category_id' => null,
+            ],
+            'performance' => [
+                'label' => 'Performance drop',
+                'subject' => 'Equipment performance degradation',
+                'description' => 'System performance has decreased over the last week. Output is below expected levels and alarms are intermittent.',
+                'category_id' => null,
+            ],
+        ];
+    }
+
+    private function accessRequirementOptions(): array
+    {
+        return [
+            'badge_required' => 'Badge required at entrance',
+            'escort_required' => 'Escort required onsite',
+            'parking_pass' => 'Parking pass needed',
+            'after_hours' => 'After-hours access only',
+            'security_check' => 'Security check-in required',
+            'confined_space' => 'Confined space permit',
+            'ladder_required' => 'Ladder access needed',
+        ];
+    }
+
+    private function requiredSkillsForCategory(?WorkOrderCategory $category): array
+    {
+        if (! $category) {
+            return ['General Service'];
+        }
+
+        $name = strtolower($category->name);
+
+        return match (true) {
+            str_contains($name, 'electrical') => ['Electrical', 'Diagnostics', 'Safety lockout'],
+            str_contains($name, 'hvac') => ['HVAC', 'Refrigerant', 'Controls'],
+            str_contains($name, 'plumbing') => ['Plumbing', 'Leak detection', 'Valve repair'],
+            str_contains($name, 'network') => ['Networking', 'Hardware', 'Cabling'],
+            default => ['General Service', 'Diagnostics'],
+        };
     }
 
     private function postProgressMessage(WorkOrder $workOrder, User $actor, string $body): void
