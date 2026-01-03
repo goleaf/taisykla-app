@@ -45,4 +45,11 @@ class SupportTicket extends Model
     {
         return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
+
+    public function knowledgeArticles()
+    {
+        return $this->belongsToMany(KnowledgeArticle::class, 'knowledge_article_support_ticket')
+            ->withPivot(['context', 'added_by_user_id'])
+            ->withTimestamps();
+    }
 }

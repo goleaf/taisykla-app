@@ -13,6 +13,10 @@ use App\Models\InventoryLocation;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\KnowledgeArticle;
+use App\Models\KnowledgeArticleResource;
+use App\Models\KnowledgeCategory;
+use App\Models\KnowledgeTag;
+use App\Models\KnowledgeTemplate;
 use App\Models\Message;
 use App\Models\MessageThread;
 use App\Models\MessageThreadParticipant;
@@ -438,15 +442,94 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        KnowledgeArticle::firstOrCreate(
+        $kbRoot = KnowledgeCategory::firstOrCreate(
+            ['slug' => 'hardware'],
+            [
+                'name' => 'Hardware',
+                'description' => 'Physical devices and components.',
+                'icon' => 'cpu',
+                'sort_order' => 1,
+            ]
+        );
+        $kbPrinters = KnowledgeCategory::firstOrCreate(
+            ['slug' => 'hardware-printers'],
+            [
+                'name' => 'Printers',
+                'description' => 'Printer diagnostics and maintenance.',
+                'icon' => 'printer',
+                'parent_id' => $kbRoot->id,
+                'sort_order' => 2,
+            ]
+        );
+        $kbTroubleshooting = KnowledgeCategory::firstOrCreate(
+            ['slug' => 'hardware-printers-troubleshooting'],
+            [
+                'name' => 'Troubleshooting',
+                'description' => 'Resolve common device issues.',
+                'icon' => 'wrench',
+                'parent_id' => $kbPrinters->id,
+                'sort_order' => 1,
+            ]
+        );
+
+        $tagJam = KnowledgeTag::firstOrCreate(['slug' => 'paper-jam'], ['name' => 'Paper Jam']);
+        $tagRoller = KnowledgeTag::firstOrCreate(['slug' => 'rollers'], ['name' => 'Rollers']);
+        $tagMaintenance = KnowledgeTag::firstOrCreate(['slug' => 'maintenance'], ['name' => 'Maintenance']);
+
+        $template = KnowledgeTemplate::firstOrCreate(
+            ['name' => 'Troubleshooting Template'],
+            [
+                'content_type' => 'troubleshooting',
+                'description' => 'Problem, symptoms, root cause, and resolution checklist.',
+                'sections' => [
+                    'Problem summary',
+                    'Symptoms',
+                    'Likely causes',
+                    'Resolution steps',
+                    'Prevention tips',
+                ],
+                'body' => "## Problem\\nDescribe the issue.\\n\\n## Symptoms\\n- Symptom 1\\n- Symptom 2\\n\\n## Resolution\\n1. Step one\\n2. Step two\\n",
+                'is_active' => true,
+            ]
+        );
+
+        $article = KnowledgeArticle::firstOrCreate(
             ['slug' => 'troubleshooting-printer-jams'],
             [
                 'title' => 'Troubleshooting Printer Jams',
+                'summary' => 'Steps for clearing jams, inspecting rollers, and preventing repeat issues.',
                 'category' => 'Printers',
-                'content' => "Step 1: Power down the printer.\nStep 2: Remove jammed paper carefully.\nStep 3: Inspect rollers.",
+                'category_id' => $kbTroubleshooting->id,
+                'content' => "## Quick fix\\n1. Power down the printer.\\n2. Remove jammed paper carefully.\\n3. Inspect rollers for debris.\\n\\n## Prevention\\nClean the feed path weekly and store paper flat.",
+                'content_type' => 'troubleshooting',
+                'content_format' => 'markdown',
+                'visibility' => 'public',
+                'status' => 'published',
                 'is_published' => true,
                 'published_at' => now(),
+                'author_name' => $support->name,
+                'author_title' => $support->job_title ?? 'Support Specialist',
+                'template_key' => $template->name,
+                'allow_comments' => true,
+                'reading_time_minutes' => 3,
                 'created_by_user_id' => $support->id,
+                'updated_by_user_id' => $support->id,
+            ]
+        );
+
+        $article->tags()->sync([$tagJam->id, $tagRoller->id, $tagMaintenance->id]);
+
+        KnowledgeArticleResource::firstOrCreate(
+            [
+                'knowledge_article_id' => $article->id,
+                'label' => 'Printer Jam Checklist',
+            ],
+            [
+                'resource_type' => 'quick_reference',
+                'url' => 'https://example.com/resources/printer-jam-checklist.pdf',
+                'file_type' => 'pdf',
+                'is_downloadable' => true,
+                'meta' => ['pages' => 2],
             ]
         );
 

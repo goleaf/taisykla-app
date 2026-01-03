@@ -15,16 +15,18 @@ class RbacSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $guard = config('auth.defaults.guard', 'web');
+
         foreach (PermissionCatalog::all() as $permission) {
-            Permission::findOrCreate($permission, 'web');
+            Permission::findOrCreate($permission, $guard);
         }
 
         foreach (RoleCatalog::all() as $roleName) {
-            Role::findOrCreate($roleName, 'web');
+            Role::findOrCreate($roleName, $guard);
         }
 
         foreach (RoleCatalog::all() as $roleName) {
-            $role = Role::findByName($roleName, 'web');
+            $role = Role::findByName($roleName, $guard);
             $permissions = PermissionCatalog::permissionsForRole($roleName);
             $role->syncPermissions($permissions);
         }
