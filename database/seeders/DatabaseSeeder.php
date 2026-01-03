@@ -31,6 +31,7 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
 use App\Models\WorkOrderFeedback;
 use App\Models\WorkOrderPart;
+use App\Support\RoleCatalog;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -45,14 +46,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $roles = [
-            'admin',
-            'dispatch',
-            'technician',
-            'support',
-            'client',
-            'guest',
-        ];
+        $roles = RoleCatalog::all();
 
         foreach ($roles as $role) {
             Role::firstOrCreate(['name' => $role]);
@@ -97,7 +91,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        $admin->assignRole('admin');
+        $admin->assignRole(RoleCatalog::ADMIN);
 
         $dispatch = User::firstOrCreate(
             ['email' => 'dispatch@example.com'],
@@ -108,7 +102,18 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        $dispatch->assignRole('dispatch');
+        $dispatch->assignRole(RoleCatalog::DISPATCH);
+
+        $operations = User::firstOrCreate(
+            ['email' => 'ops@example.com'],
+            [
+                'name' => 'Operations Manager',
+                'password' => Hash::make('password'),
+                'job_title' => 'Operations Manager',
+                'is_active' => true,
+            ]
+        );
+        $operations->assignRole(RoleCatalog::OPERATIONS_MANAGER);
 
         $technician = User::firstOrCreate(
             ['email' => 'tech@example.com'],
@@ -120,7 +125,40 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        $technician->assignRole('technician');
+        $technician->assignRole(RoleCatalog::TECHNICIAN);
+
+        $inventory = User::firstOrCreate(
+            ['email' => 'inventory@example.com'],
+            [
+                'name' => 'Pat Inventory',
+                'password' => Hash::make('password'),
+                'job_title' => 'Inventory Specialist',
+                'is_active' => true,
+            ]
+        );
+        $inventory->assignRole(RoleCatalog::INVENTORY_SPECIALIST);
+
+        $quality = User::firstOrCreate(
+            ['email' => 'qa@example.com'],
+            [
+                'name' => 'Quinn Quality',
+                'password' => Hash::make('password'),
+                'job_title' => 'Quality Assurance Manager',
+                'is_active' => true,
+            ]
+        );
+        $quality->assignRole(RoleCatalog::QA_MANAGER);
+
+        $billing = User::firstOrCreate(
+            ['email' => 'billing@example.com'],
+            [
+                'name' => 'Finley Billing',
+                'password' => Hash::make('password'),
+                'job_title' => 'Billing Specialist',
+                'is_active' => true,
+            ]
+        );
+        $billing->assignRole(RoleCatalog::BILLING_SPECIALIST);
 
         $support = User::firstOrCreate(
             ['email' => 'support@example.com'],
@@ -131,7 +169,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        $support->assignRole('support');
+        $support->assignRole(RoleCatalog::SUPPORT);
 
         $clientOwner = User::firstOrCreate(
             ['email' => 'client@example.com'],
@@ -144,7 +182,43 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        $clientOwner->assignRole('client');
+        $clientOwner->assignRole(RoleCatalog::CLIENT);
+
+        $businessAdmin = User::firstOrCreate(
+            ['email' => 'bizadmin@example.com'],
+            [
+                'name' => 'Business Admin',
+                'password' => Hash::make('password'),
+                'organization_id' => $organization->id,
+                'job_title' => 'Operations Lead',
+                'phone' => '+1 555-0188',
+                'is_active' => true,
+            ]
+        );
+        $businessAdmin->assignRole(RoleCatalog::BUSINESS_ADMIN);
+
+        $businessUser = User::firstOrCreate(
+            ['email' => 'bizuser@example.com'],
+            [
+                'name' => 'Business User',
+                'password' => Hash::make('password'),
+                'organization_id' => $organization->id,
+                'job_title' => 'Coordinator',
+                'phone' => '+1 555-0187',
+                'is_active' => true,
+            ]
+        );
+        $businessUser->assignRole(RoleCatalog::BUSINESS_USER);
+
+        $consumer = User::firstOrCreate(
+            ['email' => 'consumer@example.com'],
+            [
+                'name' => 'Individual Consumer',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]
+        );
+        $consumer->assignRole(RoleCatalog::CONSUMER);
 
         $guest = User::firstOrCreate(
             ['email' => 'guest@example.com'],
@@ -154,7 +228,7 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ]
         );
-        $guest->assignRole('guest');
+        $guest->assignRole(RoleCatalog::GUEST);
 
         $categories = [
             ['name' => 'Hardware Repair', 'default_estimated_minutes' => 180],

@@ -136,8 +136,10 @@ class Index extends Component
         $user = auth()->user();
         $query = Equipment::query();
 
-        if ($user->hasRole('client')) {
+        if ($user->isBusinessCustomer()) {
             $query->where('organization_id', $user->organization_id);
+        } elseif ($user->isConsumer()) {
+            $query->where('assigned_user_id', $user->id);
         }
 
         $equipment = $query->findOrFail($equipmentId);
@@ -197,7 +199,7 @@ class Index extends Component
             return;
         }
 
-        if ($user->hasRole('client') && $user->organization_id) {
+        if ($user->isBusinessCustomer() && $user->organization_id) {
             $this->form['organization_id'] = $user->organization_id;
         }
 
@@ -218,11 +220,16 @@ class Index extends Component
             'location_address' => $this->normalizeText($this->form['location_address']),
             'notes' => $this->normalizeText($this->form['notes']),
         ];
+        if ($user->isConsumer()) {
+            $payload['assigned_user_id'] = $user->id;
+        }
 
         if ($this->editingId) {
             $equipmentQuery = Equipment::query();
-            if ($user->hasRole('client')) {
+            if ($user->isBusinessCustomer()) {
                 $equipmentQuery->where('organization_id', $user->organization_id);
+            } elseif ($user->isConsumer()) {
+                $equipmentQuery->where('assigned_user_id', $user->id);
             }
             $equipment = $equipmentQuery->findOrFail($this->editingId);
             $equipment->update($payload);
@@ -253,7 +260,9 @@ class Index extends Component
     public function render()
     {
         $user = auth()->user();
-        $isClient = $user->hasRole('client');
+        $isBusinessCustomer = $user->isBusinessCustomer();
+        $isConsumer = $user->isConsumer();
+        $isClient = $user->isCustomer();
 
         $query = Equipment::query()
             ->with(['organization', 'category'])
@@ -261,8 +270,10 @@ class Index extends Component
                 $builder->whereNotNull('completed_at')
                     ->whereIn('status', ['completed', 'closed']);
             }], 'completed_at');
-        if ($isClient) {
+        if ($isBusinessCustomer) {
             $query->where('organization_id', $user->organization_id);
+        } elseif ($isConsumer) {
+            $query->where('assigned_user_id', $user->id);
         }
 
         if (! $isClient && $this->organizationFilter !== '') {
@@ -319,7 +330,7 @@ class Index extends Component
             return false;
         }
 
-        return ! $user->hasRole('guest');
+        return ! $user->isReadOnly();
     }
 
     private function statusValues(): array
@@ -376,7 +387,8 @@ class Index extends Component
     private function availableTypes(User $user)
     {
         return Equipment::query()
-            ->when($user->hasRole('client'), fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->when($user->isBusinessCustomer(), fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->when($user->isConsumer(), fn ($builder) => $builder->where('assigned_user_id', $user->id))
             ->whereNotNull('type')
             ->select('type')
             ->distinct()
@@ -387,7 +399,8 @@ class Index extends Component
     private function availableLocations(User $user)
     {
         return Equipment::query()
-            ->when($user->hasRole('client'), fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->when($user->isBusinessCustomer(), fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->when($user->isConsumer(), fn ($builder) => $builder->where('assigned_user_id', $user->id))
             ->whereNotNull('location_name')
             ->select('location_name')
             ->distinct()

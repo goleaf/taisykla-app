@@ -5,7 +5,7 @@
                 <h1 class="text-2xl font-semibold text-gray-900">Schedule</h1>
                 <p class="text-sm text-gray-500">Plan technician appointments and travel windows.</p>
             </div>
-            @if ($user->hasAnyRole(['admin', 'dispatch']))
+            @if ($user->canManageSchedule())
                 <button class="px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="$toggle('showCreate')">New Appointment</button>
             @endif
         </div>
@@ -34,7 +34,7 @@
             </div>
         </div>
 
-        @if ($showCreate && $user->hasAnyRole(['admin', 'dispatch']))
+        @if ($showCreate && $user->canManageSchedule())
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100 mb-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Schedule Appointment</h2>
                 <form wire:submit.prevent="createAppointment" class="grid grid-cols-1 md:grid-cols-2 gap-4">

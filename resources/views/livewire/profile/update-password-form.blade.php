@@ -37,6 +37,7 @@ new class extends Component
 
         Auth::user()->update([
             'password' => Hash::make($validated['password']),
+            'must_change_password' => false,
         ]);
 
         Auth::user()->passwordHistories()->create(['password_hash' => Auth::user()->password]);

@@ -11,6 +11,7 @@ use App\Models\SupportTicket;
 use App\Services\AutomationService;
 use App\Services\AuditLogger;
 use App\Services\WorkOrderMessagingService;
+use App\Support\RoleCatalog;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -71,7 +72,7 @@ class Show extends Component
             return false;
         }
 
-        if ($user->hasAnyRole(['admin', 'dispatch', 'support'])) {
+        if ($user->canViewAllWorkOrders()) {
             return true;
         }
 
@@ -79,11 +80,11 @@ class Show extends Component
             return true;
         }
 
-        if ($user->hasRole('technician')) {
+        if ($user->hasRole(RoleCatalog::TECHNICIAN)) {
             return $workOrder->assigned_to_user_id === $user->id;
         }
 
-        if ($user->hasRole('client')) {
+        if ($user->isBusinessCustomer()) {
             return $user->organization_id && $workOrder->organization_id === $user->organization_id;
         }
 
@@ -92,27 +93,27 @@ class Show extends Component
 
     private function canUpdateStatus(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
+        return $user->canUpdateWorkOrders();
     }
 
     private function canAssign(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'dispatch']);
+        return $user->canAssignWorkOrders();
     }
 
     private function canMarkArrived(User $user): bool
     {
-        return $user->hasAnyRole(['technician', 'dispatch']);
+        return $user->hasRole(RoleCatalog::TECHNICIAN) || $user->isOperations();
     }
 
     private function canAddNote(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
+        return $user->canUpdateWorkOrders();
     }
 
     private function canManageReport(User $user): bool
     {
-        return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
+        return $user->canUpdateWorkOrders();
     }
 
     private function syncFromWorkOrder(): void
@@ -490,7 +491,7 @@ class Show extends Component
             return false;
         }
 
-        return $user->hasRole('client') || $this->workOrder->requested_by_user_id === $user->id;
+        return $user->isBusinessCustomer() || $this->workOrder->requested_by_user_id === $user->id;
     }
 
     private function canLeaveFeedback(User $user): bool
@@ -503,7 +504,7 @@ class Show extends Component
             return false;
         }
 
-        return $user->hasRole('client') || $this->workOrder->requested_by_user_id === $user->id;
+        return $user->isBusinessCustomer() || $this->workOrder->requested_by_user_id === $user->id;
     }
 
     private function statusSummary(): array
@@ -677,7 +678,7 @@ class Show extends Component
         $query = MessageThread::where('work_order_id', $this->workOrder->id)
             ->with(['messages.user']);
 
-        if (! $user->hasAnyRole(['admin', 'dispatch', 'support'])) {
+        if (! $user->canViewAllWorkOrders()) {
             $query->whereHas('participants', function ($builder) use ($user) {
                 $builder->where('user_id', $user->id);
             });
@@ -692,9 +693,9 @@ class Show extends Component
             return null;
         }
 
-        if ($actor->hasRole('client')) {
-            return User::role('dispatch')->orderBy('name')->first()
-                ?? User::role('admin')->orderBy('name')->first();
+        if ($actor->isCustomer()) {
+            return User::role([RoleCatalog::OPERATIONS_MANAGER, RoleCatalog::DISPATCH])->orderBy('name')->first()
+                ?? User::role(RoleCatalog::ADMIN)->orderBy('name')->first();
         }
 
         return null;

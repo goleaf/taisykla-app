@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Console\Commands\RunScheduledReports;
+use App\Services\LogSmsGateway;
+use App\Services\NullSmsGateway;
+use App\Services\SmsGateway;
+use App\Services\TwilioSmsGateway;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -12,7 +16,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(SmsGateway::class, function () {
+            $driver = config('sms.driver', 'log');
+
+            return match ($driver) {
+                'twilio' => new TwilioSmsGateway(),
+                'null' => new NullSmsGateway(),
+                default => new LogSmsGateway(),
+            };
+        });
     }
 
     /**

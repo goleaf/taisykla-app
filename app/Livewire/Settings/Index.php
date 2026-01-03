@@ -17,6 +17,7 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderCategory;
 use App\Notifications\FirstLoginNotification;
 use App\Services\AuditLogger;
+use App\Support\RoleCatalog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -74,7 +75,7 @@ class Index extends Component
         $this->newUser = [
             'name' => '',
             'email' => '',
-            'role' => 'client',
+            'roles' => [RoleCatalog::BUSINESS_USER],
             'organization_id' => null,
             'phone' => '',
             'job_title' => '',
@@ -267,7 +268,8 @@ class Index extends Component
         $this->validate([
             'newUser.name' => ['required', 'string', 'max:255'],
             'newUser.email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'newUser.role' => ['required', 'string', 'exists:roles,name'],
+            'newUser.roles' => ['required', 'array', 'min:1'],
+            'newUser.roles.*' => ['required', 'string', 'exists:roles,name'],
             'newUser.organization_id' => ['nullable', 'exists:organizations,id'],
             'newUser.phone' => ['nullable', 'string', 'max:50'],
             'newUser.job_title' => ['nullable', 'string', 'max:255'],
@@ -286,9 +288,10 @@ class Index extends Component
             'department' => $this->newUser['department'] ?: null,
             'employee_id' => $this->newUser['employee_id'] ?: null,
             'is_active' => true,
+            'must_change_password' => true,
         ]);
 
-        $user->assignRole($this->newUser['role']);
+        $user->syncRoles($this->newUser['roles']);
 
         $user->passwordHistories()->create(['password_hash' => $user->password]);
 

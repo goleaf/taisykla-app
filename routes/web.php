@@ -14,12 +14,13 @@ use App\Livewire\Settings\Index as SettingsIndex;
 use App\Livewire\SupportTickets\Index as SupportTicketsIndex;
 use App\Livewire\WorkOrders\Index as WorkOrdersIndex;
 use App\Livewire\WorkOrders\Show as WorkOrdersShow;
+use App\Http\Middleware\EnsureAccountSetup;
 use App\Http\Controllers\ReportExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('dashboard', Dashboard::class)->name('dashboard');
     Route::get('work-orders', WorkOrdersIndex::class)->name('work-orders.index');
     Route::get('work-orders/{workOrder}', WorkOrdersShow::class)->name('work-orders.show');

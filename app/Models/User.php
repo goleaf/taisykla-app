@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\RoleCatalog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -30,6 +31,8 @@ class User extends Authenticatable
         'address',
         'timezone',
         'is_active',
+        'must_change_password',
+        'onboarded_at',
         'last_seen_at',
         'availability_status',
         'availability_updated_at',
@@ -65,7 +68,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
             'last_seen_at' => 'datetime',
+            'onboarded_at' => 'datetime',
             'availability_updated_at' => 'datetime',
             'mfa_enabled' => 'boolean',
             'mfa_confirmed_at' => 'datetime',
@@ -101,5 +106,85 @@ class User extends Authenticatable
     public function mfaChallenges()
     {
         return $this->hasMany(MfaChallenge::class);
+    }
+
+    public function securityKeys()
+    {
+        return $this->hasMany(SecurityKey::class);
+    }
+
+    public function isBusinessCustomer(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::businessCustomerRoles());
+    }
+
+    public function isConsumer(): bool
+    {
+        return $this->hasRole(RoleCatalog::CONSUMER);
+    }
+
+    public function isCustomer(): bool
+    {
+        return $this->isBusinessCustomer() || $this->isConsumer();
+    }
+
+    public function isOperations(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::operationsRoles());
+    }
+
+    public function isReadOnly(): bool
+    {
+        return $this->hasRole(RoleCatalog::GUEST);
+    }
+
+    public function canManageSchedule(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::scheduleManagers());
+    }
+
+    public function canViewSchedule(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::scheduleViewers());
+    }
+
+    public function canAccessInventory(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::inventoryAccessRoles());
+    }
+
+    public function canManageReports(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::reportsAccessRoles());
+    }
+
+    public function canManageBilling(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::billingManageRoles());
+    }
+
+    public function canManageSupportTickets(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::supportManageRoles());
+    }
+
+    public function canManageKnowledgeBase(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::knowledgeBaseManageRoles());
+    }
+
+    public function canUpdateWorkOrders(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::workOrderUpdateRoles());
+    }
+
+    public function canAssignWorkOrders(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::workOrderAssignRoles());
+    }
+
+    public function canViewAllWorkOrders(): bool
+    {
+        return $this->hasAnyRole(RoleCatalog::workOrderViewRoles());
     }
 }

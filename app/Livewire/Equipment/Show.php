@@ -4,6 +4,7 @@ namespace App\Livewire\Equipment;
 
 use App\Models\Equipment;
 use App\Models\User;
+use App\Support\RoleCatalog;
 use Illuminate\Support\Carbon;
 use Livewire\Component;
 
@@ -35,12 +36,16 @@ class Show extends Component
             return false;
         }
 
-        if ($user->hasAnyRole(['admin', 'dispatch', 'support', 'technician'])) {
+        if ($user->hasAnyRole(RoleCatalog::staffRoles())) {
             return true;
         }
 
-        if ($user->hasRole('client')) {
+        if ($user->isBusinessCustomer()) {
             return $user->organization_id && $equipment->organization_id === $user->organization_id;
+        }
+
+        if ($user->isConsumer()) {
+            return $equipment->assigned_user_id === $user->id;
         }
 
         return false;

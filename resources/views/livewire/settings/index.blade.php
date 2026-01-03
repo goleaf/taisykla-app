@@ -1,3 +1,7 @@
+@php
+    use App\Support\RoleCatalog;
+@endphp
+
 <div class="py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div>
@@ -28,10 +32,10 @@
                         <input wire:model="newUser.email" class="mt-1 w-full rounded-md border-gray-300" />
                     </div>
                     <div>
-                        <label class="text-xs text-gray-500">Role</label>
-                        <select wire:model="newUser.role" class="mt-1 w-full rounded-md border-gray-300">
+                        <label class="text-xs text-gray-500">Roles</label>
+                        <select wire:model="newUser.roles" multiple size="4" class="mt-1 w-full rounded-md border-gray-300">
                             @foreach ($roles as $role)
-                                <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                                <option value="{{ $role->name }}">{{ RoleCatalog::label($role->name) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -81,7 +85,9 @@
                         <tr>
                             <td class="px-4 py-3 text-sm text-gray-900">{{ $user->name }}</td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ $user->email }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-700">{{ $user->getRoleNames()->first() ?? '—' }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-700">
+                                {{ $user->getRoleNames()->map(fn ($role) => RoleCatalog::label($role))->implode(', ') ?: '—' }}
+                            </td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ $user->organization?->name ?? '—' }}</td>
                         </tr>
                     @endforeach

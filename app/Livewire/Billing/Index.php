@@ -210,9 +210,16 @@ class Index extends Component
         $invoiceQuery = Invoice::query()->with('organization');
         $quoteQuery = Quote::query()->with('organization');
 
-        if ($user->hasRole('client')) {
+        if ($user->isBusinessCustomer()) {
             $invoiceQuery->where('organization_id', $user->organization_id);
             $quoteQuery->where('organization_id', $user->organization_id);
+        } elseif ($user->isConsumer()) {
+            $invoiceQuery->whereHas('workOrder', function (Builder $builder) use ($user) {
+                $builder->where('requested_by_user_id', $user->id);
+            });
+            $quoteQuery->whereHas('workOrder', function (Builder $builder) use ($user) {
+                $builder->where('requested_by_user_id', $user->id);
+            });
         }
 
         if ($this->canManage && $this->organizationFilter !== '') {
@@ -261,7 +268,7 @@ class Index extends Component
             return false;
         }
 
-        return $user->hasAnyRole(['admin', 'dispatch']);
+        return $user->canManageBilling();
     }
 
     private function invoiceStatuses(): array

@@ -18,7 +18,7 @@
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100 mb-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Create Ticket</h2>
                 <form wire:submit.prevent="createTicket" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @if (! $user->hasRole('client'))
+                    @if (! $user->isCustomer())
                         <div>
                             <label class="text-xs text-gray-500">Organization</label>
                             <select wire:model="new.organization_id" class="mt-1 w-full rounded-md border-gray-300">
@@ -88,7 +88,7 @@
                             <td class="px-4 py-3 text-sm text-gray-700">{{ $ticket->organization?->name ?? '—' }}</td>
                             <td class="px-4 py-3 text-sm text-gray-700">{{ ucfirst($ticket->priority) }}</td>
                             <td class="px-4 py-3 text-sm text-gray-700">
-                                @if ($user->hasAnyRole(['admin', 'support']))
+                                @if ($user->canManageSupportTickets())
                                     <select class="rounded-md border-gray-300 text-sm" wire:change="updateStatus({{ $ticket->id }}, $event.target.value)">
                                         @foreach ($statusOptions as $status)
                                             <option value="{{ $status }}" @selected($ticket->status === $status)>{{ ucfirst(str_replace('_', ' ', $status)) }}</option>

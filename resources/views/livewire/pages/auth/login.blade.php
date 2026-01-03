@@ -3,6 +3,7 @@
 use App\Livewire\Forms\LoginForm;
 use App\Models\User;
 use App\Services\MfaService;
+use App\Support\RoleCatalog;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -17,7 +18,7 @@ new #[Layout('layouts.guest')] class extends Component
      */
     public function mount(): void
     {
-        $roles = ['admin', 'dispatch', 'technician', 'support', 'client', 'guest'];
+        $roles = RoleCatalog::all();
         $demoUsers = [];
 
         foreach ($roles as $role) {
@@ -118,7 +119,7 @@ new #[Layout('layouts.guest')] class extends Component
                 @continue($demoUser['missing'])
                 <div class="rounded-md border border-gray-200 px-3 py-2 text-xs text-gray-700">
                     <div class="flex items-center justify-between">
-                        <span class="font-semibold">{{ ucfirst($demoUser['role']) }}</span>
+                        <span class="font-semibold">{{ RoleCatalog::label($demoUser['role']) }}</span>
                     </div>
                     <div class="mt-1 text-gray-600">
                         Name: <span class="font-medium text-gray-700">{{ $demoUser['name'] }}</span>

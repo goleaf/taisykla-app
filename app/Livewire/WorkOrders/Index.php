@@ -208,11 +208,11 @@ class Index extends Component
             return;
         }
 
-        if ($user->hasRole('client') && $user->organization_id) {
+        if ($user->isBusinessCustomer() && $user->organization_id) {
             $this->form['organization_id'] = $user->organization_id;
         }
 
-        if (! $user->hasAnyRole(['admin', 'dispatch'])) {
+        if (! $user->canAssignWorkOrders()) {
             $this->form['assigned_to_user_id'] = null;
         }
 
@@ -391,7 +391,9 @@ class Index extends Component
     public function render()
     {
         $user = auth()->user();
-        $isClient = $user->hasRole('client');
+        $isBusinessCustomer = $user->isBusinessCustomer();
+        $isConsumer = $user->isConsumer();
+        $isClient = $user->isCustomer();
 
         $query = $this->workOrderQueryFor($user);
 
@@ -450,7 +452,8 @@ class Index extends Component
             : collect();
 
         $equipment = Equipment::query()
-            ->when($isClient, fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->when($isBusinessCustomer, fn ($builder) => $builder->where('organization_id', $user->organization_id))
+            ->when($isConsumer, fn ($builder) => $builder->where('assigned_user_id', $user->id))
             ->when(! $isClient && $this->form['organization_id'], fn ($builder) => $builder->where('organization_id', $this->form['organization_id']))
             ->orderBy('name')
             ->get();
@@ -482,7 +485,7 @@ class Index extends Component
             return false;
         }
 
-        return ! $user->hasRole('guest');
+        return ! $user->isReadOnly();
     }
 
     public function getCanUpdateStatusProperty(): bool
@@ -493,7 +496,7 @@ class Index extends Component
             return false;
         }
 
-        return $user->hasAnyRole(['admin', 'dispatch', 'technician']);
+        return $user->canUpdateWorkOrders();
     }
 
     public function getCanAssignProperty(): bool
@@ -504,7 +507,7 @@ class Index extends Component
             return false;
         }
 
-        return $user->hasAnyRole(['admin', 'dispatch']);
+        return $user->canAssignWorkOrders();
     }
 
     private function workOrderQueryFor(User $user): Builder
@@ -519,8 +522,10 @@ class Index extends Component
 
         if ($user->hasRole('technician')) {
             $query->where('assigned_to_user_id', $user->id);
-        } elseif ($user->hasRole('client')) {
+        } elseif ($user->isBusinessCustomer()) {
             $query->where('organization_id', $user->organization_id);
+        } elseif ($user->isConsumer()) {
+            $query->where('requested_by_user_id', $user->id);
         }
 
         return $query;

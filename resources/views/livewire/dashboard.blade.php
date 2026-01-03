@@ -1,3 +1,7 @@
+@php
+    use App\Support\RoleCatalog;
+@endphp
+
 <div class="py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -12,7 +16,7 @@
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
                 <div class="space-y-1">
                     <p>Name: {{ $user->name }}</p>
-                    <p>Role: {{ $roles ? implode(', ', $roles) : '—' }}</p>
+                    <p>Role: {{ $roles ? collect($roles)->map(fn ($role) => RoleCatalog::label($role))->implode(', ') : '—' }}</p>
                     <p>Department: {{ $user->department ?? '—' }}</p>
                     <p>Employee ID: {{ $user->employee_id ?? '—' }}</p>
                 </div>
@@ -509,7 +513,7 @@
                         <div class="grid grid-cols-2 gap-3 text-sm text-gray-700">
                             @foreach ($adminData['roleCounts'] as $role => $count)
                                 <div class="rounded-md bg-gray-50 p-3">
-                                    <p class="text-xs uppercase text-gray-500">{{ ucfirst($role) }}</p>
+                                    <p class="text-xs uppercase text-gray-500">{{ RoleCatalog::label($role) }}</p>
                                     <p class="text-lg font-semibold text-gray-900">{{ $count }}</p>
                                 </div>
                             @endforeach

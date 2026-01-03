@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\MfaChallenge;
 use App\Models\User;
 use App\Notifications\MfaCodeNotification;
+use App\Services\SmsGateway;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -17,11 +18,13 @@ class MfaService
             return false;
         }
 
-        if ($user->mfa_method === 'auth_app') {
-            return (bool) $user->mfa_secret;
-        }
-
-        return true;
+        return match ($user->mfa_method) {
+            'auth_app' => (bool) $user->mfa_secret,
+            'sms' => (bool) $user->mfa_phone,
+            'security_key' => $user->securityKeys()->exists(),
+            'email' => true,
+            default => false,
+        };
     }
 
     public function initiate(User $user): void
@@ -32,6 +35,10 @@ class MfaService
 
         if ($user->mfa_method === 'email') {
             $this->sendEmailCode($user);
+        }
+
+        if ($user->mfa_method === 'sms') {
+            $this->sendSmsCode($user);
         }
     }
 
@@ -53,10 +60,50 @@ class MfaService
             ->notify(new MfaCodeNotification($code, $expiresAt));
     }
 
+    public function sendSmsCode(User $user): void
+    {
+        $this->consumeOpenChallenges($user);
+
+        $to = $user->mfa_phone ?: $user->phone;
+        if (! $to) {
+            return;
+        }
+
+        $code = (string) random_int(100000, 999999);
+        $expiresAt = Carbon::now()->addMinutes(10);
+
+        MfaChallenge::create([
+            'user_id' => $user->id,
+            'method' => 'sms',
+            'code_hash' => Hash::make($code),
+            'expires_at' => $expiresAt,
+        ]);
+
+        $message = "Your verification code is {$code}. It expires in 10 minutes.";
+        app(SmsGateway::class)->send($to, $message);
+    }
+
     public function verifyEmailCode(User $user, string $code): bool
     {
         $challenge = MfaChallenge::where('user_id', $user->id)
             ->where('method', 'email')
+            ->whereNull('consumed_at')
+            ->where('expires_at', '>=', now())
+            ->latest('id')
+            ->first();
+
+        if (! $challenge || ! Hash::check($code, $challenge->code_hash)) {
+            return false;
+        }
+
+        $challenge->update(['consumed_at' => now()]);
+        return true;
+    }
+
+    public function verifySmsCode(User $user, string $code): bool
+    {
+        $challenge = MfaChallenge::where('user_id', $user->id)
+            ->where('method', 'sms')
             ->whereNull('consumed_at')
             ->where('expires_at', '>=', now())
             ->latest('id')

@@ -3,6 +3,7 @@
 use App\Livewire\Actions\Logout;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Support\RoleCatalog;
 use Livewire\Volt\Component;
 
 new class extends Component
@@ -55,7 +56,7 @@ new class extends Component
             return false;
         }
 
-        if ($user->hasAnyRole(['admin', 'dispatch', 'support'])) {
+        if ($user->canViewAllWorkOrders()) {
             return true;
         }
 
@@ -63,11 +64,11 @@ new class extends Component
             return true;
         }
 
-        if ($user->hasRole('technician')) {
+        if ($user->hasRole(RoleCatalog::TECHNICIAN)) {
             return $workOrder->assigned_to_user_id === $user->id;
         }
 
-        if ($user->hasRole('client')) {
+        if ($user->isBusinessCustomer()) {
             return $user->organization_id && $workOrder->organization_id === $user->organization_id;
         }
 
@@ -93,15 +94,15 @@ new class extends Component
                         ['label' => 'Dashboard', 'route' => 'dashboard', 'show' => true],
                         ['label' => 'Work Orders', 'route' => 'work-orders.index', 'show' => true],
                         ['label' => 'Equipment', 'route' => 'equipment.index', 'show' => true],
-                        ['label' => 'Schedule', 'route' => 'schedule.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'technician'])],
-                        ['label' => 'Inventory', 'route' => 'inventory.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'technician', 'support'])],
-                        ['label' => 'Clients', 'route' => 'clients.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'support'])],
+                        ['label' => 'Schedule', 'route' => 'schedule.index', 'show' => $user->canViewSchedule()],
+                        ['label' => 'Inventory', 'route' => 'inventory.index', 'show' => $user->canAccessInventory()],
+                        ['label' => 'Clients', 'route' => 'clients.index', 'show' => $user->hasAnyRole(RoleCatalog::clientAccessRoles())],
                         ['label' => 'Messages', 'route' => 'messages.index', 'show' => true],
-                        ['label' => 'Reports', 'route' => 'reports.index', 'show' => $user->hasAnyRole(['admin', 'dispatch', 'support'])],
+                        ['label' => 'Reports', 'route' => 'reports.index', 'show' => $user->canManageReports()],
                         ['label' => 'Billing', 'route' => 'billing.index', 'show' => true],
                         ['label' => 'Knowledge Base', 'route' => 'knowledge-base.index', 'show' => true],
-                        ['label' => 'Support', 'route' => 'support-tickets.index', 'show' => $user->hasAnyRole(['admin', 'support', 'client'])],
-                        ['label' => 'Settings', 'route' => 'settings.index', 'show' => $user->hasRole('admin')],
+                        ['label' => 'Support', 'route' => 'support-tickets.index', 'show' => $user->canManageSupportTickets() || $user->isCustomer()],
+                        ['label' => 'Settings', 'route' => 'settings.index', 'show' => $user->hasRole(RoleCatalog::ADMIN)],
                     ];
                 @endphp
 

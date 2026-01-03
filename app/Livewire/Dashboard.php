@@ -19,6 +19,7 @@ use App\Models\WorkOrder;
 use App\Models\WorkOrderFeedback;
 use App\Models\WorkOrderPart;
 use App\Services\AuditLogger;
+use App\Support\RoleCatalog;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,7 @@ class Dashboard extends Component
         $user = auth()->user();
         $today = Carbon::today();
         $roleKey = $this->roleKey($user);
+        $primaryRole = $this->primaryRole($user);
 
         $summaryCards = $this->summaryCardsFor($roleKey, $user, $today);
         $sections = $this->sectionsFor($roleKey, $user, $today);
@@ -90,7 +92,7 @@ class Dashboard extends Component
         return view('livewire.dashboard', [
             'user' => $user,
             'roleKey' => $roleKey,
-            'roleLabel' => Str::title(str_replace('_', ' ', $roleKey)),
+            'roleLabel' => RoleCatalog::label($primaryRole ?? $roleKey),
             'todayLabel' => now()->toDayDateTimeString(),
             'availability' => $this->availabilityData($user),
             'summaryCards' => $summaryCards,
@@ -109,13 +111,69 @@ class Dashboard extends Component
             return 'user';
         }
 
-        foreach (['admin', 'dispatch', 'technician', 'support', 'client'] as $role) {
+        if ($user->hasRole(RoleCatalog::ADMIN)) {
+            return RoleCatalog::ADMIN;
+        }
+
+        if ($user->hasAnyRole([
+            RoleCatalog::OPERATIONS_MANAGER,
+            RoleCatalog::DISPATCH,
+            RoleCatalog::INVENTORY_SPECIALIST,
+            RoleCatalog::BILLING_SPECIALIST,
+        ])) {
+            return RoleCatalog::DISPATCH;
+        }
+
+        if ($user->hasRole(RoleCatalog::TECHNICIAN)) {
+            return RoleCatalog::TECHNICIAN;
+        }
+
+        if ($user->hasAnyRole([RoleCatalog::SUPPORT, RoleCatalog::QA_MANAGER])) {
+            return RoleCatalog::SUPPORT;
+        }
+
+        if ($user->isBusinessCustomer()) {
+            return RoleCatalog::CLIENT;
+        }
+
+        if ($user->isConsumer()) {
+            return RoleCatalog::CONSUMER;
+        }
+
+        if ($user->isReadOnly()) {
+            return RoleCatalog::GUEST;
+        }
+
+        return 'user';
+    }
+
+    private function primaryRole(?User $user): ?string
+    {
+        if (! $user) {
+            return null;
+        }
+
+        foreach ([
+            RoleCatalog::ADMIN,
+            RoleCatalog::OPERATIONS_MANAGER,
+            RoleCatalog::DISPATCH,
+            RoleCatalog::TECHNICIAN,
+            RoleCatalog::INVENTORY_SPECIALIST,
+            RoleCatalog::QA_MANAGER,
+            RoleCatalog::BILLING_SPECIALIST,
+            RoleCatalog::SUPPORT,
+            RoleCatalog::BUSINESS_ADMIN,
+            RoleCatalog::BUSINESS_USER,
+            RoleCatalog::CLIENT,
+            RoleCatalog::CONSUMER,
+            RoleCatalog::GUEST,
+        ] as $role) {
             if ($user->hasRole($role)) {
                 return $role;
             }
         }
 
-        return 'user';
+        return null;
     }
 
     private function availabilityData(?User $user): array
@@ -124,7 +182,7 @@ class Dashboard extends Component
             return ['show' => false];
         }
 
-        $show = $user->hasAnyRole(['technician', 'dispatch']);
+        $show = $user->canViewSchedule();
         if (! $show) {
             return ['show' => false];
         }
@@ -143,7 +201,7 @@ class Dashboard extends Component
     private function summaryCardsFor(string $roleKey, User $user, Carbon $today): array
     {
         return match ($roleKey) {
-            'admin' => [
+            RoleCatalog::ADMIN => [
                 $this->card('Work Orders', WorkOrder::count()),
                 $this->card('Open Work Orders', WorkOrder::whereIn('status', $this->openStatuses())->count()),
                 $this->card('Organizations', Organization::count()),
@@ -154,7 +212,7 @@ class Dashboard extends Component
                         ->sum('total')
                 ), 'Paid invoices'),
             ],
-            'dispatch' => [
+            RoleCatalog::DISPATCH => [
                 $this->card('Queue', WorkOrder::where('status', 'submitted')->count(), 'Submitted'),
                 $this->card('Unassigned', WorkOrder::whereNull('assigned_to_user_id')
                     ->whereIn('status', ['submitted', 'assigned'])
@@ -165,7 +223,7 @@ class Dashboard extends Component
                     ->where('scheduled_end_at', '<', now())
                     ->count()),
             ],
-            'technician' => [
+            RoleCatalog::TECHNICIAN => [
                 $this->card('Assigned Today', Appointment::whereDate('scheduled_start_at', $today)
                     ->where('assigned_to_user_id', $user->id)
                     ->count()),
@@ -173,10 +231,22 @@ class Dashboard extends Component
                     ->whereIn('status', ['assigned', 'in_progress', 'on_hold'])
                     ->count()),
             ],
-            'support' => [
+            RoleCatalog::SUPPORT => [
                 $this->card('Open Tickets', SupportTicket::where('status', 'open')->count()),
                 $this->card('In Review', SupportTicket::where('status', 'in_review')->count()),
                 $this->card('Completed Work Orders', WorkOrder::where('status', 'completed')->count()),
+            ],
+            RoleCatalog::CONSUMER, RoleCatalog::GUEST => [
+                $this->card('My Work Orders', WorkOrder::where('requested_by_user_id', $user->id)->count()),
+                $this->card('Open Requests', WorkOrder::where('requested_by_user_id', $user->id)
+                    ->whereIn('status', $this->openStatuses())
+                    ->count()),
+                $this->card('My Equipment', Equipment::where('assigned_user_id', $user->id)->count()),
+                $this->card('Open Invoices', Invoice::whereHas('workOrder', function ($builder) use ($user) {
+                    $builder->where('requested_by_user_id', $user->id);
+                })
+                    ->whereIn('status', ['sent', 'overdue'])
+                    ->count()),
             ],
             default => [
                 $this->card('Active Work Orders', WorkOrder::where('organization_id', $user->organization_id)
@@ -193,7 +263,7 @@ class Dashboard extends Component
     private function sectionsFor(string $roleKey, User $user, Carbon $today): array
     {
         return match ($roleKey) {
-            'admin' => [
+            RoleCatalog::ADMIN => [
                 $this->section(
                     'Recent Work Orders',
                     $this->workOrderItems(WorkOrder::latest()->with(['organization', 'assignedTo'])->take(6)->get()),
@@ -217,7 +287,7 @@ class Dashboard extends Component
                     $this->action(route('messages.index'))
                 ),
             ],
-            'dispatch' => [
+            RoleCatalog::DISPATCH => [
                 $this->section(
                     'Work Order Queue',
                     $this->workOrderItems(WorkOrder::whereIn('status', ['submitted', 'assigned'])
@@ -240,7 +310,7 @@ class Dashboard extends Component
                     $this->action(route('schedule.index'))
                 ),
             ],
-            'technician' => [
+            RoleCatalog::TECHNICIAN => [
                 $this->section(
                     'My Appointments',
                     $this->appointmentItems(Appointment::where('assigned_to_user_id', $user->id)
@@ -260,7 +330,7 @@ class Dashboard extends Component
                     $this->action(route('work-orders.index'))
                 ),
             ],
-            'support' => [
+            RoleCatalog::SUPPORT => [
                 $this->section(
                     'Support Tickets',
                     $this->ticketItems(SupportTicket::latest()->take(6)->get()),
@@ -275,6 +345,37 @@ class Dashboard extends Component
                         ->get()),
                     'No completed work orders yet.',
                     $this->action(route('work-orders.index'))
+                ),
+            ],
+            RoleCatalog::CONSUMER, RoleCatalog::GUEST => [
+                $this->section(
+                    'My Work Orders',
+                    $this->workOrderItems(WorkOrder::where('requested_by_user_id', $user->id)
+                        ->latest()
+                        ->take(6)
+                        ->get()),
+                    'No work orders yet.',
+                    $this->action(route('work-orders.index'))
+                ),
+                $this->section(
+                    'My Equipment',
+                    $this->equipmentItems(Equipment::where('assigned_user_id', $user->id)
+                        ->latest()
+                        ->take(6)
+                        ->get()),
+                    'No equipment recorded yet.',
+                    $this->action(route('equipment.index'))
+                ),
+                $this->section(
+                    'Recent Invoices',
+                    $this->invoiceItems(Invoice::whereHas('workOrder', function ($builder) use ($user) {
+                        $builder->where('requested_by_user_id', $user->id);
+                    })
+                        ->latest()
+                        ->take(6)
+                        ->get()),
+                    'No invoices yet.',
+                    $this->action(route('billing.index'))
                 ),
             ],
             default => [
@@ -581,13 +682,9 @@ class Dashboard extends Component
             'sessions' => $this->tableCount('sessions'),
         ];
 
-        $roleCounts = [
-            'admin' => User::role('admin')->count(),
-            'dispatch' => User::role('dispatch')->count(),
-            'technician' => User::role('technician')->count(),
-            'support' => User::role('support')->count(),
-            'client' => User::role('client')->count(),
-        ];
+        $roleCounts = collect(RoleCatalog::all())
+            ->mapWithKeys(fn (string $role) => [$role => User::role($role)->count()])
+            ->toArray();
 
         $recentUsers = User::orderByDesc('created_at')->take(6)->get();
         $inactiveUsers = User::where('is_active', false)->count();

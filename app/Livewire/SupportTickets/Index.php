@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\SupportTicket;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Support\RoleCatalog;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -41,7 +42,7 @@ class Index extends Component
     {
         $user = auth()->user();
 
-        if ($user->hasRole('client') && $user->organization_id) {
+        if ($user->isBusinessCustomer() && $user->organization_id) {
             $this->new['organization_id'] = $user->organization_id;
         }
 
@@ -88,14 +89,28 @@ class Index extends Component
         $user = auth()->user();
         $query = SupportTicket::query()->with(['organization', 'workOrder', 'assignedTo']);
 
-        if ($user->hasRole('client')) {
+        if ($user->isBusinessCustomer()) {
             $query->where('organization_id', $user->organization_id);
+        } elseif ($user->isConsumer()) {
+            $query->where('submitted_by_user_id', $user->id);
         }
 
         $tickets = $query->latest()->paginate(10);
-        $organizations = Organization::orderBy('name')->get();
-        $workOrders = WorkOrder::orderBy('subject')->get();
-        $supportManagers = User::role('support')->orderBy('name')->get();
+        $organizations = $user->isCustomer()
+            ? collect()
+            : Organization::orderBy('name')->get();
+        $workOrders = WorkOrder::query()
+            ->when($user->isBusinessCustomer(), function ($builder) use ($user) {
+                $builder->where('organization_id', $user->organization_id);
+            })
+            ->when($user->isConsumer(), function ($builder) use ($user) {
+                $builder->where('requested_by_user_id', $user->id);
+            })
+            ->orderBy('subject')
+            ->get();
+        $supportManagers = User::role([RoleCatalog::SUPPORT, RoleCatalog::QA_MANAGER])
+            ->orderBy('name')
+            ->get();
 
         return view('livewire.support-tickets.index', [
             'tickets' => $tickets,

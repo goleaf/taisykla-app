@@ -56,6 +56,7 @@ new #[Layout('layouts.guest')] class extends Component
                 $user->forceFill([
                     'password' => Hash::make($this->password),
                     'remember_token' => Str::random(60),
+                    'must_change_password' => false,
                 ])->save();
 
                 $user->passwordHistories()->create(['password_hash' => $user->password]);

@@ -40,6 +40,11 @@ class Index extends Component
 
     public function createAppointment(): void
     {
+        $user = auth()->user();
+        if (! $user || ! $user->canManageSchedule()) {
+            return;
+        }
+
         $this->validate([
             'new.work_order_id' => ['required', 'exists:work_orders,id'],
             'new.assigned_to_user_id' => ['nullable', 'exists:users,id'],
@@ -63,9 +68,13 @@ class Index extends Component
 
         if ($user->hasRole('technician')) {
             $query->where('assigned_to_user_id', $user->id);
-        } elseif ($user->hasRole('client')) {
+        } elseif ($user->isBusinessCustomer()) {
             $query->whereHas('workOrder', function ($builder) use ($user) {
                 $builder->where('organization_id', $user->organization_id);
+            });
+        } elseif ($user->isConsumer()) {
+            $query->whereHas('workOrder', function ($builder) use ($user) {
+                $builder->where('requested_by_user_id', $user->id);
             });
         }
 

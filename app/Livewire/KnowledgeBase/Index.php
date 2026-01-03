@@ -215,7 +215,7 @@ class Index extends Component
             return false;
         }
 
-        return $user->hasAnyRole(['admin', 'dispatch', 'technician', 'support']);
+        return $user->canManageKnowledgeBase();
     }
 
     private function uniqueSlug(string $title, ?int $ignoreId = null): string
