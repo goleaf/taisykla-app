@@ -16,6 +16,7 @@ use App\Models\SupportTicket;
 use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Models\WorkOrderEvent;
 use App\Models\WorkOrderFeedback;
 use App\Models\WorkOrderPart;
 use App\Services\AuditLogger;
@@ -31,17 +32,27 @@ class Dashboard extends Component
 {
     public array $availabilityOptions = [
         'available' => 'Available',
-        'unavailable' => 'Unavailable',
-        'offline' => 'Offline',
+        'traveling' => 'Traveling',
+        'on_site' => 'On Site',
+        'working' => 'Working',
+        'on_break' => 'On Break',
+        'off_duty' => 'Off Duty',
     ];
 
     private array $availabilityColors = [
         'available' => 'text-green-600',
+        'traveling' => 'text-blue-600',
+        'on_site' => 'text-indigo-600',
+        'working' => 'text-orange-600',
+        'on_break' => 'text-yellow-600',
+        'off_duty' => 'text-gray-500',
+        'offline' => 'text-gray-500',
         'unavailable' => 'text-yellow-600',
         'offline' => 'text-gray-500',
     ];
 
     public array $quickReplies = [];
+    public ?string $emergencyAlertedAt = null;
 
     public function updateAvailability(string $status): void
     {
@@ -188,12 +199,17 @@ class Dashboard extends Component
         }
 
         $status = $user->availability_status ?? 'available';
+        $normalizedStatus = match ($status) {
+            'offline' => 'off_duty',
+            'unavailable' => 'on_break',
+            default => $status,
+        };
 
         return [
             'show' => true,
-            'status' => $status,
-            'label' => $this->availabilityOptions[$status] ?? 'Offline',
-            'color' => $this->availabilityColors[$status] ?? 'text-gray-500',
+            'status' => $normalizedStatus,
+            'label' => $this->availabilityOptions[$normalizedStatus] ?? 'Off Duty',
+            'color' => $this->availabilityColors[$normalizedStatus] ?? 'text-gray-500',
             'updated' => $user->availability_updated_at?->diffForHumans() ?? 'just now',
         ];
     }
