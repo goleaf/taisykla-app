@@ -13,6 +13,7 @@ use App\Models\WorkOrderEvent;
 use App\Services\AutomationService;
 use App\Services\AuditLogger;
 use App\Services\WorkOrderMessagingService;
+use App\Support\PermissionCatalog;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
@@ -78,6 +79,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::WORK_ORDERS_VIEW), 403);
+
         if (! in_array($this->view, $this->viewOptions, true)) {
             $this->view = 'list';
         }
@@ -485,7 +488,7 @@ class Index extends Component
             return false;
         }
 
-        return ! $user->isReadOnly();
+        return $user->canCreateWorkOrders();
     }
 
     public function getCanUpdateStatusProperty(): bool
@@ -520,12 +523,30 @@ class Index extends Component
             'requestedBy',
         ]);
 
-        if ($user->hasRole('technician')) {
-            $query->where('assigned_to_user_id', $user->id);
-        } elseif ($user->isBusinessCustomer()) {
-            $query->where('organization_id', $user->organization_id);
-        } elseif ($user->isConsumer()) {
-            $query->where('requested_by_user_id', $user->id);
+        if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_ALL)) {
+            return $query;
+        }
+
+        $hasScope = false;
+        $query->where(function (Builder $builder) use ($user, &$hasScope) {
+            if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_ASSIGNED)) {
+                $builder->orWhere('assigned_to_user_id', $user->id);
+                $hasScope = true;
+            }
+
+            if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_ORG) && $user->organization_id) {
+                $builder->orWhere('organization_id', $user->organization_id);
+                $hasScope = true;
+            }
+
+            if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_OWN)) {
+                $builder->orWhere('requested_by_user_id', $user->id);
+                $hasScope = true;
+            }
+        });
+
+        if (! $hasScope) {
+            $query->whereRaw('1 = 0');
         }
 
         return $query;

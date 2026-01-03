@@ -35,7 +35,6 @@ use App\Support\RoleCatalog;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -46,11 +45,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $roles = RoleCatalog::all();
-
-        foreach ($roles as $role) {
-            Role::firstOrCreate(['name' => $role]);
-        }
+        $this->call(RbacSeeder::class);
 
         $serviceAgreement = ServiceAgreement::firstOrCreate(
             ['name' => 'Comprehensive Support'],

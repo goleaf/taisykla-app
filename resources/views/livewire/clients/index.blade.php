@@ -5,7 +5,9 @@
                 <h1 class="text-2xl font-semibold text-gray-900">Clients</h1>
                 <p class="text-sm text-gray-500">Manage customer accounts and service agreements.</p>
             </div>
-            <button class="px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="$toggle('showCreate')">Add Client</button>
+            @if ($canManage)
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="$toggle('showCreate')">Add Client</button>
+            @endif
         </div>
 
         @if (session('status'))
@@ -14,7 +16,7 @@
             </div>
         @endif
 
-        @if ($showCreate)
+        @if ($showCreate && $canManage)
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100 mb-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">New Client Organization</h2>
                 <form wire:submit.prevent="createOrganization" class="grid grid-cols-1 md:grid-cols-2 gap-4">

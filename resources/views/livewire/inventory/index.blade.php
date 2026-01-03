@@ -5,10 +5,12 @@
                 <h1 class="text-2xl font-semibold text-gray-900">Parts & Inventory</h1>
                 <p class="text-sm text-gray-500">Track parts, stock levels, and locations.</p>
             </div>
-            <div class="flex items-center gap-2">
-                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="$toggle('showNewPart')">Add Part</button>
-                <button class="px-4 py-2 border border-gray-300 rounded-md" wire:click="$toggle('showStock')">Add Stock</button>
-            </div>
+            @if ($canManage)
+                <div class="flex items-center gap-2">
+                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="$toggle('showNewPart')">Add Part</button>
+                    <button class="px-4 py-2 border border-gray-300 rounded-md" wire:click="$toggle('showStock')">Add Stock</button>
+                </div>
+            @endif
         </div>
 
         @if (session('status'))
@@ -17,7 +19,7 @@
             </div>
         @endif
 
-        @if ($showNewPart)
+        @if ($showNewPart && $canManage)
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100 mb-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">New Part</h2>
                 <form wire:submit.prevent="createPart" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -58,7 +60,7 @@
             </div>
         @endif
 
-        @if ($showStock)
+        @if ($showStock && $canManage)
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100 mb-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Stock</h2>
                 <form wire:submit.prevent="addStock" class="grid grid-cols-1 md:grid-cols-3 gap-4">

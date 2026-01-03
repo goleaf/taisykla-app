@@ -7,6 +7,7 @@ use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Support\PermissionCatalog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -40,6 +41,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::EQUIPMENT_VIEW), 403);
+
         $this->resetForm();
     }
 
@@ -134,15 +137,7 @@ class Index extends Component
         }
 
         $user = auth()->user();
-        $query = Equipment::query();
-
-        if ($user->isBusinessCustomer()) {
-            $query->where('organization_id', $user->organization_id);
-        } elseif ($user->isConsumer()) {
-            $query->where('assigned_user_id', $user->id);
-        }
-
-        $equipment = $query->findOrFail($equipmentId);
+        $equipment = $this->equipmentQueryFor($user)->findOrFail($equipmentId);
         $this->editingId = $equipment->id;
         $this->form = [
             'organization_id' => $equipment->organization_id,
@@ -264,17 +259,12 @@ class Index extends Component
         $isConsumer = $user->isConsumer();
         $isClient = $user->isCustomer();
 
-        $query = Equipment::query()
+        $query = $this->equipmentQueryFor($user)
             ->with(['organization', 'category'])
             ->withMax(['workOrders as last_service_at' => function (Builder $builder) {
                 $builder->whereNotNull('completed_at')
                     ->whereIn('status', ['completed', 'closed']);
             }], 'completed_at');
-        if ($isBusinessCustomer) {
-            $query->where('organization_id', $user->organization_id);
-        } elseif ($isConsumer) {
-            $query->where('assigned_user_id', $user->id);
-        }
 
         if (! $isClient && $this->organizationFilter !== '') {
             $query->where('organization_id', $this->organizationFilter);
@@ -330,7 +320,7 @@ class Index extends Component
             return false;
         }
 
-        return ! $user->isReadOnly();
+        return $user->canManageEquipment();
     }
 
     private function statusValues(): array
@@ -386,9 +376,7 @@ class Index extends Component
 
     private function availableTypes(User $user)
     {
-        return Equipment::query()
-            ->when($user->isBusinessCustomer(), fn ($builder) => $builder->where('organization_id', $user->organization_id))
-            ->when($user->isConsumer(), fn ($builder) => $builder->where('assigned_user_id', $user->id))
+        return $this->equipmentQueryFor($user)
             ->whereNotNull('type')
             ->select('type')
             ->distinct()
@@ -398,14 +386,40 @@ class Index extends Component
 
     private function availableLocations(User $user)
     {
-        return Equipment::query()
-            ->when($user->isBusinessCustomer(), fn ($builder) => $builder->where('organization_id', $user->organization_id))
-            ->when($user->isConsumer(), fn ($builder) => $builder->where('assigned_user_id', $user->id))
+        return $this->equipmentQueryFor($user)
             ->whereNotNull('location_name')
             ->select('location_name')
             ->distinct()
             ->orderBy('location_name')
             ->pluck('location_name');
+    }
+
+    private function equipmentQueryFor(User $user): Builder
+    {
+        $query = Equipment::query();
+
+        if ($user->can(PermissionCatalog::EQUIPMENT_VIEW_ALL)) {
+            return $query;
+        }
+
+        $hasScope = false;
+        $query->where(function (Builder $builder) use ($user, &$hasScope) {
+            if ($user->can(PermissionCatalog::EQUIPMENT_VIEW_ORG) && $user->organization_id) {
+                $builder->orWhere('organization_id', $user->organization_id);
+                $hasScope = true;
+            }
+
+            if ($user->can(PermissionCatalog::EQUIPMENT_VIEW_OWN)) {
+                $builder->orWhere('assigned_user_id', $user->id);
+                $hasScope = true;
+            }
+        });
+
+        if (! $hasScope) {
+            $query->whereRaw('1 = 0');
+        }
+
+        return $query;
     }
 
     private function buildSummary(Builder $query): array

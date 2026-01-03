@@ -18,6 +18,7 @@ use App\Models\WorkOrderCategory;
 use App\Notifications\FirstLoginNotification;
 use App\Services\AuditLogger;
 use App\Support\RoleCatalog;
+use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -56,6 +57,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::SETTINGS_VIEW), 403);
+
         $this->resetNewUser();
         $this->resetNewAgreement();
         $this->resetNewCategory();
@@ -207,6 +210,10 @@ class Index extends Component
 
     public function updateCompanyProfile(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'companyProfile.name' => ['nullable', 'string', 'max:255'],
             'companyProfile.address' => ['nullable', 'string', 'max:500'],
@@ -238,6 +245,10 @@ class Index extends Component
 
     public function markBackupComplete(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $now = now()->toDateTimeString();
         $setting = SystemSetting::updateOrCreate(
             ['group' => 'backup', 'key' => 'last_run_at'],
@@ -265,6 +276,10 @@ class Index extends Component
 
     public function createUser(): void
     {
+        if (! $this->canManageUsers) {
+            return;
+        }
+
         $this->validate([
             'newUser.name' => ['required', 'string', 'max:255'],
             'newUser.email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -306,6 +321,10 @@ class Index extends Component
 
     public function createAgreement(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newAgreement.name' => ['required', 'string', 'max:255'],
             'newAgreement.agreement_type' => ['required', 'string', 'max:50'],
@@ -320,6 +339,10 @@ class Index extends Component
 
     public function createCategory(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newCategory.name' => ['required', 'string', 'max:255'],
             'newCategory.default_estimated_minutes' => ['nullable', 'integer', 'min:0'],
@@ -333,6 +356,10 @@ class Index extends Component
 
     public function createTemplate(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newTemplate.name' => ['required', 'string', 'max:255'],
             'newTemplate.channel' => ['required', 'string', 'max:50'],
@@ -356,6 +383,10 @@ class Index extends Component
 
     public function createLocation(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newLocation.name' => ['required', 'string', 'max:255'],
             'newLocation.address' => ['nullable', 'string', 'max:1000'],
@@ -370,6 +401,10 @@ class Index extends Component
 
     public function createSetting(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newSetting.group' => ['required', 'string', 'max:50'],
             'newSetting.key' => ['required', 'string', 'max:100'],
@@ -403,6 +438,10 @@ class Index extends Component
 
     public function updateSetting(int $settingId): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $setting = SystemSetting::findOrFail($settingId);
         $value = $this->parseSettingValue($this->settingValues[$settingId] ?? '');
         $setting->update(['value' => $value]);
@@ -420,6 +459,10 @@ class Index extends Component
 
     public function createEquipmentCategory(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newEquipmentCategory.name' => ['required', 'string', 'max:255'],
             'newEquipmentCategory.description' => ['nullable', 'string'],
@@ -444,6 +487,10 @@ class Index extends Component
 
     public function createAutomationRule(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newAutomation.name' => ['required', 'string', 'max:255'],
             'newAutomation.trigger' => ['required', 'string', 'max:100'],
@@ -474,6 +521,10 @@ class Index extends Component
 
     public function createIntegrationSetting(): void
     {
+        if (! $this->canManageSettings) {
+            return;
+        }
+
         $this->validate([
             'newIntegration.provider' => ['required', 'string', 'max:100'],
             'newIntegration.name' => ['nullable', 'string', 'max:255'],
@@ -574,6 +625,30 @@ class Index extends Component
             'openWorkOrders' => $openWorkOrders,
             'overdueWorkOrders' => $overdueWorkOrders,
             'openSupportTickets' => $openSupportTickets,
+            'canManageSettings' => $this->canManageSettings,
+            'canManageUsers' => $this->canManageUsers,
         ]);
+    }
+
+    public function getCanManageSettingsProperty(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->canManageSettings();
+    }
+
+    public function getCanManageUsersProperty(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->canManageUsers();
     }
 }

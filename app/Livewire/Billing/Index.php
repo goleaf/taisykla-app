@@ -5,6 +5,7 @@ namespace App\Livewire\Billing;
 use App\Models\Invoice;
 use App\Models\Organization;
 use App\Models\Quote;
+use App\Support\PermissionCatalog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -40,6 +41,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::BILLING_VIEW), 403);
+
         $this->resetInvoiceForm();
     }
 
@@ -210,17 +213,8 @@ class Index extends Component
         $invoiceQuery = Invoice::query()->with('organization');
         $quoteQuery = Quote::query()->with('organization');
 
-        if ($user->isBusinessCustomer()) {
-            $invoiceQuery->where('organization_id', $user->organization_id);
-            $quoteQuery->where('organization_id', $user->organization_id);
-        } elseif ($user->isConsumer()) {
-            $invoiceQuery->whereHas('workOrder', function (Builder $builder) use ($user) {
-                $builder->where('requested_by_user_id', $user->id);
-            });
-            $quoteQuery->whereHas('workOrder', function (Builder $builder) use ($user) {
-                $builder->where('requested_by_user_id', $user->id);
-            });
-        }
+        $this->applyBillingVisibility($invoiceQuery, $user);
+        $this->applyBillingVisibility($quoteQuery, $user);
 
         if ($this->canManage && $this->organizationFilter !== '') {
             $invoiceQuery->where('organization_id', $this->organizationFilter);
@@ -352,5 +346,31 @@ class Index extends Component
             'approved_count' => (clone $query)->where('status', 'approved')->count(),
             'total_value' => (clone $query)->sum('total'),
         ];
+    }
+
+    private function applyBillingVisibility(Builder $query, $user): void
+    {
+        if ($user->can(PermissionCatalog::BILLING_VIEW_ALL)) {
+            return;
+        }
+
+        $hasScope = false;
+        $query->where(function (Builder $builder) use ($user, &$hasScope) {
+            if ($user->can(PermissionCatalog::BILLING_VIEW_ORG) && $user->organization_id) {
+                $builder->orWhere('organization_id', $user->organization_id);
+                $hasScope = true;
+            }
+
+            if ($user->can(PermissionCatalog::BILLING_VIEW_OWN)) {
+                $builder->orWhereHas('workOrder', function (Builder $workOrderBuilder) use ($user) {
+                    $workOrderBuilder->where('requested_by_user_id', $user->id);
+                });
+                $hasScope = true;
+            }
+        });
+
+        if (! $hasScope) {
+            $query->whereRaw('1 = 0');
+        }
     }
 }

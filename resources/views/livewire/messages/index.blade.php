@@ -8,7 +8,9 @@
             <div class="flex items-center gap-3 text-xs text-gray-500">
                 <span>{{ $threads->count() }} threads</span>
                 <span>{{ $unreadCount }} unread</span>
-                <button class="px-3 py-1 text-sm border border-gray-300 rounded-md" wire:click="startComposer">New Thread</button>
+                @if ($canSend)
+                    <button class="px-3 py-1 text-sm border border-gray-300 rounded-md" wire:click="startComposer">New Thread</button>
+                @endif
             </div>
         </div>
 
@@ -119,13 +121,15 @@
                             @endforelse
                         </div>
 
-                        <form wire:submit.prevent="sendReply" class="mt-4 space-y-2">
-                            <textarea wire:model="replyBody" class="w-full rounded-md border-gray-300" rows="2" placeholder="Type a reply"></textarea>
-                            @error('replyBody') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
-                            <div class="flex items-center justify-end">
-                                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Send Reply</button>
-                            </div>
-                        </form>
+                        @if ($canSend)
+                            <form wire:submit.prevent="sendReply" class="mt-4 space-y-2">
+                                <textarea wire:model="replyBody" class="w-full rounded-md border-gray-300" rows="2" placeholder="Type a reply"></textarea>
+                                @error('replyBody') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                <div class="flex items-center justify-end">
+                                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Send Reply</button>
+                                </div>
+                            </form>
+                        @endif
                     @else
                         <p class="text-sm text-gray-500">Select a thread to view messages.</p>
                     @endif
@@ -139,7 +143,7 @@
                         @endif
                     </div>
 
-                    @if ($showComposer)
+                    @if ($showComposer && $canSend)
                         <form wire:submit.prevent="createThread" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="text-xs text-gray-500">Recipient</label>

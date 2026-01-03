@@ -7,6 +7,7 @@ use App\Models\MessageThread;
 use App\Models\MessageThreadParticipant;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Support\PermissionCatalog;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Component;
 
@@ -20,6 +21,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::MESSAGES_VIEW), 403);
+
         $this->resetComposer();
     }
 
@@ -53,6 +56,10 @@ class Index extends Component
 
     public function startComposer(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::MESSAGES_SEND)) {
+            return;
+        }
+
         $this->resetComposer();
         $this->showComposer = true;
     }
@@ -75,6 +82,10 @@ class Index extends Component
 
     public function createThread(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::MESSAGES_SEND)) {
+            return;
+        }
+
         $this->validate();
 
         $user = auth()->user();
@@ -124,6 +135,10 @@ class Index extends Component
 
     public function sendReply(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::MESSAGES_SEND)) {
+            return;
+        }
+
         if (! $this->activeThreadId) {
             return;
         }
@@ -194,11 +209,15 @@ class Index extends Component
                 ->get()
             : collect();
 
-        $recipients = User::query()
-            ->where('id', '!=', $user->id)
-            ->orderBy('name')
-            ->get();
-        $workOrders = WorkOrder::orderByDesc('created_at')->take(50)->get();
+        $recipients = $this->canSend
+            ? User::query()
+                ->where('id', '!=', $user->id)
+                ->orderBy('name')
+                ->get()
+            : collect();
+        $workOrders = $this->canSend
+            ? WorkOrder::orderByDesc('created_at')->take(50)->get()
+            : collect();
         $unreadCount = $threads
             ->filter(fn ($thread) => $this->threadIsUnread($thread, $user->id))
             ->count();
@@ -211,7 +230,19 @@ class Index extends Component
             'workOrders' => $workOrders,
             'user' => $user,
             'unreadCount' => $unreadCount,
+            'canSend' => $this->canSend,
         ]);
+    }
+
+    public function getCanSendProperty(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can(PermissionCatalog::MESSAGES_SEND);
     }
 
     private function threadBaseQuery(int $userId): Builder

@@ -3,6 +3,7 @@
 namespace App\Livewire\KnowledgeBase;
 
 use App\Models\KnowledgeArticle;
+use App\Support\PermissionCatalog;
 use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -28,6 +29,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::KNOWLEDGE_BASE_VIEW), 403);
+
         $this->resetForm();
 
         if (! $this->canManage) {

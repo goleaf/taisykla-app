@@ -5,6 +5,7 @@ namespace App\Livewire\Inventory;
 use App\Models\InventoryItem;
 use App\Models\InventoryLocation;
 use App\Models\Part;
+use App\Support\PermissionCatalog;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::INVENTORY_VIEW), 403);
+
         $this->resetNewPart();
         $this->resetNewStock();
     }
@@ -50,6 +53,10 @@ class Index extends Component
 
     public function createPart(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::INVENTORY_MANAGE)) {
+            return;
+        }
+
         $this->validate([
             'newPart.name' => ['required', 'string', 'max:255'],
             'newPart.sku' => ['nullable', 'string', 'max:255'],
@@ -68,6 +75,10 @@ class Index extends Component
 
     public function addStock(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::INVENTORY_MANAGE)) {
+            return;
+        }
+
         $this->validate([
             'newStock.part_id' => ['required', 'exists:parts,id'],
             'newStock.location_id' => ['required', 'exists:inventory_locations,id'],
@@ -111,6 +122,18 @@ class Index extends Component
             'inventory' => $inventory,
             'locations' => $locations,
             'lowStockParts' => $lowStockParts,
+            'canManage' => $this->canManage,
         ]);
+    }
+
+    public function getCanManageProperty(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can(PermissionCatalog::INVENTORY_MANAGE);
     }
 }

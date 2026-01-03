@@ -56,9 +56,11 @@
                 <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-900">Saved Reports</h2>
-                        <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showCreate')">
-                            New Report
-                        </button>
+                        @if ($canManage)
+                            <button class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$toggle('showCreate')">
+                                New Report
+                            </button>
+                        @endif
                     </div>
 
                     <div class="space-y-4">
@@ -79,8 +81,12 @@
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <button class="px-3 py-1 text-sm border border-gray-300 rounded-md" wire:click="previewReport({{ $report->id }})">Preview</button>
-                                        <a class="px-3 py-1 text-sm border border-gray-300 rounded-md" href="{{ route('reports.export', $report) }}">CSV</a>
-                                        <button class="px-3 py-1 text-sm border border-gray-300 rounded-md" wire:click="startSchedule({{ $report->id }})">Schedule</button>
+                                        @if ($canExport)
+                                            <a class="px-3 py-1 text-sm border border-gray-300 rounded-md" href="{{ route('reports.export', $report) }}">CSV</a>
+                                        @endif
+                                        @if ($canManage)
+                                            <button class="px-3 py-1 text-sm border border-gray-300 rounded-md" wire:click="startSchedule({{ $report->id }})">Schedule</button>
+                                        @endif
                                     </div>
                                 </div>
 
@@ -107,7 +113,7 @@
                                     </div>
                                 @endif
 
-                                @if ($scheduleReportId === $report->id)
+                                @if ($scheduleReportId === $report->id && $canManage)
                                     <form wire:submit.prevent="createSchedule" class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-3">
                                         <div>
                                             <label class="text-xs text-gray-500">Frequency</label>
@@ -180,12 +186,12 @@
                 <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-900">Create Report</h2>
-                        @if ($showCreate)
+                        @if ($showCreate && $canManage)
                             <button class="text-sm text-gray-500" wire:click="$toggle('showCreate')">Close</button>
                         @endif
                     </div>
 
-                    @if ($showCreate)
+                    @if ($showCreate && $canManage)
                         <form wire:submit.prevent="createReport" class="space-y-3">
                             <div>
                                 <label class="text-xs text-gray-500">Name</label>

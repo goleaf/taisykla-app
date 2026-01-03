@@ -4,7 +4,7 @@ namespace App\Livewire\Equipment;
 
 use App\Models\Equipment;
 use App\Models\User;
-use App\Support\RoleCatalog;
+use App\Support\PermissionCatalog;
 use Illuminate\Support\Carbon;
 use Livewire\Component;
 
@@ -36,16 +36,22 @@ class Show extends Component
             return false;
         }
 
-        if ($user->hasAnyRole(RoleCatalog::staffRoles())) {
+        if (! $user->can(PermissionCatalog::EQUIPMENT_VIEW)) {
+            return false;
+        }
+
+        if ($user->can(PermissionCatalog::EQUIPMENT_VIEW_ALL)) {
             return true;
         }
 
-        if ($user->isBusinessCustomer()) {
-            return $user->organization_id && $equipment->organization_id === $user->organization_id;
+        if ($user->can(PermissionCatalog::EQUIPMENT_VIEW_ORG)
+            && $user->organization_id
+            && $equipment->organization_id === $user->organization_id) {
+            return true;
         }
 
-        if ($user->isConsumer()) {
-            return $equipment->assigned_user_id === $user->id;
+        if ($user->can(PermissionCatalog::EQUIPMENT_VIEW_OWN) && $equipment->assigned_user_id === $user->id) {
+            return true;
         }
 
         return false;

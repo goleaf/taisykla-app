@@ -10,6 +10,7 @@ use App\Models\WorkOrderCategory;
 use App\Models\WorkOrderFeedback;
 use App\Services\ReportService;
 use App\Services\AuditLogger;
+use App\Support\PermissionCatalog;
 use Livewire\Component;
 
 class Index extends Component
@@ -52,6 +53,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::REPORTS_VIEW), 403);
+
         $this->resetNewReport();
         $this->resetNewSchedule();
     }
@@ -85,6 +88,10 @@ class Index extends Component
 
     public function createReport(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::REPORTS_MANAGE)) {
+            return;
+        }
+
         $this->validate([
             'newReport.name' => ['required', 'string', 'max:255'],
             'newReport.report_type' => ['required', 'string', 'max:50'],
@@ -153,12 +160,20 @@ class Index extends Component
 
     public function startSchedule(int $reportId): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::REPORTS_MANAGE)) {
+            return;
+        }
+
         $this->scheduleReportId = $reportId;
         $this->resetNewSchedule();
     }
 
     public function createSchedule(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::REPORTS_MANAGE)) {
+            return;
+        }
+
         if (! $this->scheduleReportId) {
             return;
         }
@@ -272,6 +287,30 @@ class Index extends Component
             'statusCounts' => $statusCounts,
             'categoryCounts' => $categoryCounts,
             'reports' => $reports,
+            'canManage' => $this->canManage,
+            'canExport' => $this->canExport,
         ]);
+    }
+
+    public function getCanManageProperty(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can(PermissionCatalog::REPORTS_MANAGE);
+    }
+
+    public function getCanExportProperty(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can(PermissionCatalog::REPORTS_EXPORT);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Livewire\Clients;
 
 use App\Models\Organization;
 use App\Models\ServiceAgreement;
+use App\Support\PermissionCatalog;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -18,6 +19,8 @@ class Index extends Component
 
     public function mount(): void
     {
+        abort_unless(auth()->user()?->can(PermissionCatalog::CLIENTS_VIEW), 403);
+
         $this->resetNew();
     }
 
@@ -39,6 +42,10 @@ class Index extends Component
 
     public function createOrganization(): void
     {
+        if (! auth()->user()?->can(PermissionCatalog::CLIENTS_MANAGE)) {
+            return;
+        }
+
         $this->validate([
             'new.name' => ['required', 'string', 'max:255'],
             'new.type' => ['required', 'string', 'max:50'],
@@ -66,6 +73,18 @@ class Index extends Component
         return view('livewire.clients.index', [
             'organizations' => $organizations,
             'agreements' => $agreements,
+            'canManage' => $this->canManage,
         ]);
+    }
+
+    public function getCanManageProperty(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can(PermissionCatalog::CLIENTS_MANAGE);
     }
 }

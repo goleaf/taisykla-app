@@ -11,6 +11,7 @@ use App\Models\SupportTicket;
 use App\Services\AutomationService;
 use App\Services\AuditLogger;
 use App\Services\WorkOrderMessagingService;
+use App\Support\PermissionCatalog;
 use App\Support\RoleCatalog;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -72,20 +73,26 @@ class Show extends Component
             return false;
         }
 
-        if ($user->canViewAllWorkOrders()) {
+        if (! $user->can(PermissionCatalog::WORK_ORDERS_VIEW)) {
+            return false;
+        }
+
+        if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_ALL)) {
             return true;
         }
 
-        if ($workOrder->requested_by_user_id === $user->id) {
+        if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_ASSIGNED) && $workOrder->assigned_to_user_id === $user->id) {
             return true;
         }
 
-        if ($user->hasRole(RoleCatalog::TECHNICIAN)) {
-            return $workOrder->assigned_to_user_id === $user->id;
+        if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_ORG)
+            && $user->organization_id
+            && $workOrder->organization_id === $user->organization_id) {
+            return true;
         }
 
-        if ($user->isBusinessCustomer()) {
-            return $user->organization_id && $workOrder->organization_id === $user->organization_id;
+        if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_OWN) && $workOrder->requested_by_user_id === $user->id) {
+            return true;
         }
 
         return false;
@@ -103,17 +110,17 @@ class Show extends Component
 
     private function canMarkArrived(User $user): bool
     {
-        return $user->hasRole(RoleCatalog::TECHNICIAN) || $user->isOperations();
+        return $user->canMarkWorkOrdersArrived();
     }
 
     private function canAddNote(User $user): bool
     {
-        return $user->canUpdateWorkOrders();
+        return $user->canAddWorkOrderNotes();
     }
 
     private function canManageReport(User $user): bool
     {
-        return $user->canUpdateWorkOrders();
+        return $user->canManageWorkOrderReports();
     }
 
     private function syncFromWorkOrder(): void
@@ -455,6 +462,10 @@ class Show extends Component
 
     private function createFollowUpTicket(User $user, string $description): void
     {
+        if (! $user->can(PermissionCatalog::SUPPORT_CREATE)) {
+            return;
+        }
+
         $existing = SupportTicket::where('work_order_id', $this->workOrder->id)
             ->whereIn('status', ['open', 'in_review'])
             ->first();
@@ -491,7 +502,15 @@ class Show extends Component
             return false;
         }
 
-        return $user->isBusinessCustomer() || $this->workOrder->requested_by_user_id === $user->id;
+        if (! $user->canSignOffWorkOrders()) {
+            return false;
+        }
+
+        if ($this->workOrder->requested_by_user_id === $user->id) {
+            return true;
+        }
+
+        return $user->organization_id && $this->workOrder->organization_id === $user->organization_id;
     }
 
     private function canLeaveFeedback(User $user): bool
@@ -504,7 +523,15 @@ class Show extends Component
             return false;
         }
 
-        return $user->isBusinessCustomer() || $this->workOrder->requested_by_user_id === $user->id;
+        if (! $user->canSubmitWorkOrderFeedback()) {
+            return false;
+        }
+
+        if ($this->workOrder->requested_by_user_id === $user->id) {
+            return true;
+        }
+
+        return $user->organization_id && $this->workOrder->organization_id === $user->organization_id;
     }
 
     private function statusSummary(): array

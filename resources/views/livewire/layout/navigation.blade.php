@@ -3,6 +3,7 @@
 use App\Livewire\Actions\Logout;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Support\PermissionCatalog;
 use App\Support\RoleCatalog;
 use Livewire\Volt\Component;
 
@@ -91,18 +92,18 @@ new class extends Component
                 @php
                     $user = auth()->user();
                     $links = [
-                        ['label' => 'Dashboard', 'route' => 'dashboard', 'show' => true],
-                        ['label' => 'Work Orders', 'route' => 'work-orders.index', 'show' => true],
-                        ['label' => 'Equipment', 'route' => 'equipment.index', 'show' => true],
-                        ['label' => 'Schedule', 'route' => 'schedule.index', 'show' => $user->canViewSchedule()],
-                        ['label' => 'Inventory', 'route' => 'inventory.index', 'show' => $user->canAccessInventory()],
-                        ['label' => 'Clients', 'route' => 'clients.index', 'show' => $user->hasAnyRole(RoleCatalog::clientAccessRoles())],
-                        ['label' => 'Messages', 'route' => 'messages.index', 'show' => true],
-                        ['label' => 'Reports', 'route' => 'reports.index', 'show' => $user->canManageReports()],
-                        ['label' => 'Billing', 'route' => 'billing.index', 'show' => true],
-                        ['label' => 'Knowledge Base', 'route' => 'knowledge-base.index', 'show' => true],
-                        ['label' => 'Support', 'route' => 'support-tickets.index', 'show' => $user->canManageSupportTickets() || $user->isCustomer()],
-                        ['label' => 'Settings', 'route' => 'settings.index', 'show' => $user->hasRole(RoleCatalog::ADMIN)],
+                        ['label' => 'Dashboard', 'route' => 'dashboard', 'show' => $user->can(PermissionCatalog::DASHBOARD_VIEW)],
+                        ['label' => 'Work Orders', 'route' => 'work-orders.index', 'show' => $user->can(PermissionCatalog::WORK_ORDERS_VIEW)],
+                        ['label' => 'Equipment', 'route' => 'equipment.index', 'show' => $user->can(PermissionCatalog::EQUIPMENT_VIEW)],
+                        ['label' => 'Schedule', 'route' => 'schedule.index', 'show' => $user->can(PermissionCatalog::SCHEDULE_VIEW)],
+                        ['label' => 'Inventory', 'route' => 'inventory.index', 'show' => $user->can(PermissionCatalog::INVENTORY_VIEW)],
+                        ['label' => 'Clients', 'route' => 'clients.index', 'show' => $user->can(PermissionCatalog::CLIENTS_VIEW)],
+                        ['label' => 'Messages', 'route' => 'messages.index', 'show' => $user->can(PermissionCatalog::MESSAGES_VIEW)],
+                        ['label' => 'Reports', 'route' => 'reports.index', 'show' => $user->can(PermissionCatalog::REPORTS_VIEW)],
+                        ['label' => 'Billing', 'route' => 'billing.index', 'show' => $user->can(PermissionCatalog::BILLING_VIEW)],
+                        ['label' => 'Knowledge Base', 'route' => 'knowledge-base.index', 'show' => $user->can(PermissionCatalog::KNOWLEDGE_BASE_VIEW)],
+                        ['label' => 'Support', 'route' => 'support-tickets.index', 'show' => $user->can(PermissionCatalog::SUPPORT_VIEW)],
+                        ['label' => 'Settings', 'route' => 'settings.index', 'show' => $user->can(PermissionCatalog::SETTINGS_VIEW)],
                     ];
                 @endphp
 

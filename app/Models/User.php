@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\PermissionCatalog;
 use App\Support\RoleCatalog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -140,51 +141,161 @@ class User extends Authenticatable
 
     public function canManageSchedule(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::scheduleManagers());
+        return $this->can(PermissionCatalog::SCHEDULE_MANAGE);
     }
 
     public function canViewSchedule(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::scheduleViewers());
+        return $this->can(PermissionCatalog::SCHEDULE_VIEW);
     }
 
     public function canAccessInventory(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::inventoryAccessRoles());
+        return $this->can(PermissionCatalog::INVENTORY_VIEW);
     }
 
     public function canManageReports(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::reportsAccessRoles());
+        return $this->can(PermissionCatalog::REPORTS_MANAGE);
+    }
+
+    public function canViewReports(): bool
+    {
+        return $this->can(PermissionCatalog::REPORTS_VIEW);
     }
 
     public function canManageBilling(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::billingManageRoles());
+        return $this->can(PermissionCatalog::BILLING_MANAGE);
+    }
+
+    public function canViewBilling(): bool
+    {
+        return $this->can(PermissionCatalog::BILLING_VIEW);
     }
 
     public function canManageSupportTickets(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::supportManageRoles());
+        return $this->can(PermissionCatalog::SUPPORT_MANAGE);
+    }
+
+    public function canViewSupportTickets(): bool
+    {
+        return $this->can(PermissionCatalog::SUPPORT_VIEW);
+    }
+
+    public function canCreateSupportTickets(): bool
+    {
+        return $this->can(PermissionCatalog::SUPPORT_CREATE);
+    }
+
+    public function canAssignSupportTickets(): bool
+    {
+        return $this->can(PermissionCatalog::SUPPORT_ASSIGN);
     }
 
     public function canManageKnowledgeBase(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::knowledgeBaseManageRoles());
+        return $this->can(PermissionCatalog::KNOWLEDGE_BASE_MANAGE);
+    }
+
+    public function canViewKnowledgeBase(): bool
+    {
+        return $this->can(PermissionCatalog::KNOWLEDGE_BASE_VIEW);
     }
 
     public function canUpdateWorkOrders(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::workOrderUpdateRoles());
+        return $this->can(PermissionCatalog::WORK_ORDERS_UPDATE);
     }
 
     public function canAssignWorkOrders(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::workOrderAssignRoles());
+        return $this->can(PermissionCatalog::WORK_ORDERS_ASSIGN);
+    }
+
+    public function canCreateWorkOrders(): bool
+    {
+        return $this->can(PermissionCatalog::WORK_ORDERS_CREATE);
+    }
+
+    public function canManageWorkOrderReports(): bool
+    {
+        return $this->can(PermissionCatalog::WORK_ORDERS_REPORT);
+    }
+
+    public function canAddWorkOrderNotes(): bool
+    {
+        return $this->can(PermissionCatalog::WORK_ORDERS_NOTE);
+    }
+
+    public function canMarkWorkOrdersArrived(): bool
+    {
+        return $this->can(PermissionCatalog::WORK_ORDERS_ARRIVE);
+    }
+
+    public function canSignOffWorkOrders(): bool
+    {
+        return $this->can(PermissionCatalog::WORK_ORDERS_SIGNOFF);
+    }
+
+    public function canSubmitWorkOrderFeedback(): bool
+    {
+        return $this->can(PermissionCatalog::WORK_ORDERS_FEEDBACK);
     }
 
     public function canViewAllWorkOrders(): bool
     {
-        return $this->hasAnyRole(RoleCatalog::workOrderViewRoles());
+        return $this->can(PermissionCatalog::WORK_ORDERS_VIEW_ALL);
+    }
+
+    public function canViewWorkOrders(): bool
+    {
+        return $this->can(PermissionCatalog::WORK_ORDERS_VIEW);
+    }
+
+    public function canViewEquipment(): bool
+    {
+        return $this->can(PermissionCatalog::EQUIPMENT_VIEW);
+    }
+
+    public function canManageEquipment(): bool
+    {
+        return $this->can(PermissionCatalog::EQUIPMENT_MANAGE);
+    }
+
+    public function canViewClients(): bool
+    {
+        return $this->can(PermissionCatalog::CLIENTS_VIEW);
+    }
+
+    public function canManageClients(): bool
+    {
+        return $this->can(PermissionCatalog::CLIENTS_MANAGE);
+    }
+
+    public function canViewMessages(): bool
+    {
+        return $this->can(PermissionCatalog::MESSAGES_VIEW);
+    }
+
+    public function canSendMessages(): bool
+    {
+        return $this->can(PermissionCatalog::MESSAGES_SEND);
+    }
+
+    public function canViewSettings(): bool
+    {
+        return $this->can(PermissionCatalog::SETTINGS_VIEW);
+    }
+
+    public function canManageSettings(): bool
+    {
+        return $this->can(PermissionCatalog::SETTINGS_MANAGE);
+    }
+
+    public function canManageUsers(): bool
+    {
+        return $this->can(PermissionCatalog::USERS_MANAGE);
     }
 }
