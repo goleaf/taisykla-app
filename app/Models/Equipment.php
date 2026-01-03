@@ -19,16 +19,25 @@ class Equipment extends Model
         'serial_number',
         'asset_tag',
         'purchase_date',
+        'purchase_price',
+        'purchase_vendor',
         'status',
         'location_name',
         'location_address',
+        'location_building',
+        'location_floor',
+        'location_room',
         'assigned_user_id',
         'notes',
+        'specifications',
+        'custom_fields',
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
         'last_service_at' => 'datetime',
+        'specifications' => 'array',
+        'custom_fields' => 'array',
     ];
 
     public function organization()
