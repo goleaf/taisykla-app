@@ -31,9 +31,20 @@ class LoginForm extends Form
     {
         $this->ensureIsNotRateLimited();
 
+        $user = User::where('email', $this->email)->first();
+        if ($user) {
+            $this->clearLockoutIfExpired($user);
+            $this->ensureAccountNotLocked($user);
+        }
+
         $credentials = $this->only(['email', 'password']);
         if (! Auth::validate($credentials)) {
             RateLimiter::hit($this->throttleKey());
+
+            if ($user) {
+                $this->recordFailedAttempt($user);
+                $this->ensureAccountNotLocked($user);
+            }
 
             throw ValidationException::withMessages([
                 'form.email' => trans('auth.failed'),
@@ -42,7 +53,7 @@ class LoginForm extends Form
 
         RateLimiter::clear($this->throttleKey());
 
-        $user = User::where('email', $this->email)->first();
+        $user ??= User::where('email', $this->email)->first();
         if (! $user) {
             throw ValidationException::withMessages([
                 'form.email' => trans('auth.failed'),
@@ -84,5 +95,47 @@ class LoginForm extends Form
     protected function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->email).'|'.request()->ip());
+    }
+
+    protected function clearLockoutIfExpired(User $user): void
+    {
+        if (! $user->locked_until || $user->locked_until->isFuture()) {
+            return;
+        }
+
+        $user->forceFill([
+            'locked_until' => null,
+            'failed_login_attempts' => 0,
+        ])->save();
+    }
+
+    protected function ensureAccountNotLocked(User $user): void
+    {
+        if (! $user->locked_until || $user->locked_until->isPast()) {
+            return;
+        }
+
+        $seconds = max(1, now()->diffInSeconds($user->locked_until));
+
+        throw ValidationException::withMessages([
+            'form.email' => trans('auth.locked', [
+                'seconds' => $seconds,
+                'minutes' => ceil($seconds / 60),
+            ]),
+        ]);
+    }
+
+    protected function recordFailedAttempt(User $user): void
+    {
+        $attempts = $user->failed_login_attempts + 1;
+        $lockoutAttempts = max((int) config('security.lockout.attempts', 5), 1);
+        $lockoutMinutes = max((int) config('security.lockout.minutes', 15), 1);
+
+        $updates = ['failed_login_attempts' => $attempts];
+        if ($attempts >= $lockoutAttempts) {
+            $updates['locked_until'] = now()->addMinutes($lockoutMinutes);
+        }
+
+        $user->forceFill($updates)->save();
     }
 }
