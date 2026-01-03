@@ -6,28 +6,44 @@ use App\Models\Equipment;
 use App\Models\EquipmentCategory;
 use App\Models\Organization;
 use App\Models\User;
+use App\Models\Warranty;
 use App\Services\AuditLogger;
 use App\Support\PermissionCatalog;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
     use WithPagination;
+    use WithFileUploads;
 
     public array $form = [];
     public bool $showForm = false;
     public ?int $editingId = null;
+    public string $inventoryView = 'list';
     public string $search = '';
     public string $statusFilter = 'all';
     public string $categoryFilter = '';
     public string $organizationFilter = '';
+    public string $manufacturerFilter = '';
+    public string $ownerFilter = '';
+    public string $ageFilter = '';
+    public string $warrantyFilter = '';
     public string $typeFilter = '';
     public string $locationFilter = '';
     public string $sortField = 'last_service_at';
     public string $sortDirection = 'desc';
+    public array $photos = [];
+    public array $selected = [];
+    public string $bulkAction = '';
+    public ?string $bulkStatus = null;
+    public string $bulkLocation = '';
+    public ?int $bulkOwner = null;
+    public bool $showImport = false;
 
     protected $paginationTheme = 'tailwind';
 
@@ -36,7 +52,7 @@ class Index extends Component
         'operational' => 'Operational',
         'needs_attention' => 'Needs Attention',
         'in_repair' => 'In Repair',
-        'retired' => 'Retired',
+        'retired' => 'Decommissioned',
     ];
 
     public function mount(): void
@@ -59,11 +75,25 @@ class Index extends Component
             'serial_number' => '',
             'asset_tag' => '',
             'purchase_date' => null,
+            'purchase_price' => null,
+            'purchase_vendor' => '',
             'status' => 'operational',
             'location_name' => '',
             'location_address' => '',
+            'location_building' => '',
+            'location_floor' => '',
+            'location_room' => '',
+            'assigned_user_id' => $user?->id,
             'notes' => '',
+            'specifications' => '',
+            'custom_fields' => '',
+            'warranty_provider' => '',
+            'warranty_type' => 'standard',
+            'warranty_starts_at' => null,
+            'warranty_ends_at' => null,
+            'warranty_terms' => '',
         ];
+        $this->photos = [];
     }
 
     public function updatedSearch(): void
@@ -138,6 +168,9 @@ class Index extends Component
 
         $user = auth()->user();
         $equipment = $this->equipmentQueryFor($user)->findOrFail($equipmentId);
+        $primaryWarranty = $equipment->warranties()
+            ->orderByDesc('ends_at')
+            ->first();
         $this->editingId = $equipment->id;
         $this->form = [
             'organization_id' => $equipment->organization_id,
@@ -149,10 +182,23 @@ class Index extends Component
             'serial_number' => $equipment->serial_number ?? '',
             'asset_tag' => $equipment->asset_tag ?? '',
             'purchase_date' => $equipment->purchase_date?->toDateString(),
+            'purchase_price' => $equipment->purchase_price,
+            'purchase_vendor' => $equipment->purchase_vendor ?? '',
             'status' => $equipment->status,
             'location_name' => $equipment->location_name ?? '',
             'location_address' => $equipment->location_address ?? '',
+            'location_building' => $equipment->location_building ?? '',
+            'location_floor' => $equipment->location_floor ?? '',
+            'location_room' => $equipment->location_room ?? '',
+            'assigned_user_id' => $equipment->assigned_user_id,
             'notes' => $equipment->notes ?? '',
+            'specifications' => $this->encodeJson($equipment->specifications),
+            'custom_fields' => $this->encodeJson($equipment->custom_fields),
+            'warranty_provider' => $primaryWarranty?->provider_name ?? '',
+            'warranty_type' => $primaryWarranty?->coverage_type ?? 'standard',
+            'warranty_starts_at' => $primaryWarranty?->starts_at?->toDateString(),
+            'warranty_ends_at' => $primaryWarranty?->ends_at?->toDateString(),
+            'warranty_terms' => $primaryWarranty?->coverage_details ?? '',
         ];
         $this->showForm = true;
     }
@@ -168,18 +214,39 @@ class Index extends Component
     {
         return [
             'form.organization_id' => ['nullable', 'exists:organizations,id'],
-            'form.equipment_category_id' => ['nullable', 'exists:equipment_categories,id'],
+            'form.equipment_category_id' => ['required', 'exists:equipment_categories,id'],
             'form.name' => ['required', 'string', 'max:255'],
             'form.type' => ['required', 'string', 'max:255'],
             'form.manufacturer' => ['nullable', 'string', 'max:255'],
             'form.model' => ['nullable', 'string', 'max:255'],
-            'form.serial_number' => ['nullable', 'string', 'max:255'],
+            'form.serial_number' => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[A-Za-z0-9\\-_.\\/]+$/',
+                Rule::unique('equipment', 'serial_number')->ignore($this->editingId),
+            ],
             'form.asset_tag' => ['nullable', 'string', 'max:255'],
             'form.purchase_date' => ['nullable', 'date'],
+            'form.purchase_price' => ['nullable', 'numeric', 'min:0'],
+            'form.purchase_vendor' => ['nullable', 'string', 'max:255'],
             'form.status' => ['required', Rule::in($this->statusValues())],
             'form.location_name' => ['nullable', 'string', 'max:255'],
             'form.location_address' => ['nullable', 'string', 'max:1000'],
+            'form.location_building' => ['nullable', 'string', 'max:255'],
+            'form.location_floor' => ['nullable', 'string', 'max:255'],
+            'form.location_room' => ['nullable', 'string', 'max:255'],
+            'form.assigned_user_id' => ['nullable', 'exists:users,id'],
             'form.notes' => ['nullable', 'string'],
+            'form.specifications' => ['nullable', 'string', 'json'],
+            'form.custom_fields' => ['nullable', 'string', 'json'],
+            'form.warranty_provider' => ['nullable', 'string', 'max:255'],
+            'form.warranty_type' => ['nullable', 'string', 'max:255'],
+            'form.warranty_starts_at' => ['nullable', 'date'],
+            'form.warranty_ends_at' => ['nullable', 'date', 'after_or_equal:form.warranty_starts_at'],
+            'form.warranty_terms' => ['nullable', 'string'],
+            'photos' => ['nullable', 'array'],
+            'photos.*' => ['image', 'max:5120'],
         ];
     }
 
