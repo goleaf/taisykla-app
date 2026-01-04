@@ -852,39 +852,39 @@
             </div>
         @endif
     </div>
-</div>
 
-<style>
-    .kb-callout {
-        border-left: 4px solid #cbd5f5;
-        background: #eef2ff;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 8px 0;
-    }
-    .kb-callout-tip {
-        border-left-color: #a7f3d0;
-        background: #ecfdf5;
-    }
-    .kb-callout-warning {
-        border-left-color: #fcd34d;
-        background: #fffbeb;
-    }
-    .kb-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 8px;
-    }
-    .kb-table th,
-    .kb-table td {
-        border: 1px solid #e5e7eb;
-        padding: 6px;
-        text-align: left;
-        font-size: 0.85rem;
-    }
-    .kb-embed iframe {
-        width: 100%;
-        height: 220px;
-        border: 0;
-    }
-</style>
+    <style>
+        .kb-callout {
+            border-left: 4px solid #cbd5f5;
+            background: #eef2ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+        }
+        .kb-callout-tip {
+            border-left-color: #a7f3d0;
+            background: #ecfdf5;
+        }
+        .kb-callout-warning {
+            border-left-color: #fcd34d;
+            background: #fffbeb;
+        }
+        .kb-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        .kb-table th,
+        .kb-table td {
+            border: 1px solid #e5e7eb;
+            padding: 6px;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        .kb-embed iframe {
+            width: 100%;
+            height: 220px;
+            border: 0;
+        }
+    </style>
+</div>

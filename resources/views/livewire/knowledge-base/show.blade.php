@@ -239,78 +239,78 @@
             </div>
         </div>
     </div>
-</div>
 
-<style>
-    @media print {
-        nav, button, select, textarea, input {
-            display: none !important;
+    <style>
+        @media print {
+            nav, button, select, textarea, input {
+                display: none !important;
+            }
+            .kb-content {
+                font-size: 12pt;
+            }
         }
-        .kb-content {
-            font-size: 12pt;
+        .kb-content h1,
+        .kb-content h2,
+        .kb-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #111827;
         }
-    }
-    .kb-content h1,
-    .kb-content h2,
-    .kb-content h3 {
-        margin-top: 1.5rem;
-        margin-bottom: 0.5rem;
-        color: #111827;
-    }
-    .kb-content p {
-        margin-top: 0.75rem;
-        margin-bottom: 0.75rem;
-        color: #374151;
-        line-height: 1.6;
-    }
-    .kb-content ul,
-    .kb-content ol {
-        margin-left: 1.25rem;
-        margin-top: 0.75rem;
-        margin-bottom: 0.75rem;
-        color: #374151;
-    }
-    .kb-content pre {
-        background: #111827;
-        color: #f9fafb;
-        padding: 12px;
-        border-radius: 8px;
-        overflow-x: auto;
-    }
-    .kb-content code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    }
-    .kb-content table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-    }
-    .kb-content table th,
-    .kb-content table td {
-        border: 1px solid #e5e7eb;
-        padding: 8px;
-        font-size: 0.85rem;
-        text-align: left;
-    }
-    .kb-content .kb-callout {
-        border-left: 4px solid #cbd5f5;
-        background: #eef2ff;
-        padding: 12px;
-        border-radius: 8px;
-        margin: 12px 0;
-    }
-    .kb-content .kb-callout-tip {
-        border-left-color: #a7f3d0;
-        background: #ecfdf5;
-    }
-    .kb-content .kb-callout-warning {
-        border-left-color: #fcd34d;
-        background: #fffbeb;
-    }
-    .kb-content details {
-        margin: 12px 0;
-        padding: 10px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-    }
-</style>
+        .kb-content p {
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+            color: #374151;
+            line-height: 1.6;
+        }
+        .kb-content ul,
+        .kb-content ol {
+            margin-left: 1.25rem;
+            margin-top: 0.75rem;
+            margin-bottom: 0.75rem;
+            color: #374151;
+        }
+        .kb-content pre {
+            background: #111827;
+            color: #f9fafb;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .kb-content code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+        .kb-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .kb-content table th,
+        .kb-content table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+        .kb-content .kb-callout {
+            border-left: 4px solid #cbd5f5;
+            background: #eef2ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+        .kb-content .kb-callout-tip {
+            border-left-color: #a7f3d0;
+            background: #ecfdf5;
+        }
+        .kb-content .kb-callout-warning {
+            border-left-color: #fcd34d;
+            background: #fffbeb;
+        }
+        .kb-content details {
+            margin: 12px 0;
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+    </style>
+</div>
