@@ -37,6 +37,7 @@
                         'workflow' => 'Workflow',
                         'communication' => 'Communication',
                         'integrations' => 'Integrations',
+                        'customization' => 'Customization',
                         'system' => 'System'
                     ] as $key => $label)
                         <button 
@@ -63,6 +64,8 @@
                 @include('livewire.settings.tabs.communication')
             @elseif($activeTab === 'integrations')
                 @include('livewire.settings.tabs.integrations')
+            @elseif($activeTab === 'customization')
+                @include('livewire.settings.tabs.customization')
             @elseif($activeTab === 'system')
                 @include('livewire.settings.tabs.system')
             @endif

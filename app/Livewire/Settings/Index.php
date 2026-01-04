@@ -781,6 +781,60 @@ class Index extends Component
         return $value;
     }
 
+    public function createCustomField(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+
+        $this->validate([
+            'customFieldForm.entity_type' => ['required', 'string'],
+            'customFieldForm.label' => ['required', 'string', 'max:255'],
+            'customFieldForm.key' => ['required', 'string', 'max:100', 'unique:custom_fields,key'],
+            'customFieldForm.type' => ['required', 'string'],
+        ]);
+
+        CustomField::create($this->customFieldForm);
+        session()->flash('status', 'Custom field created.');
+        $this->resetCustomFieldForm();
+        $this->showCustomFieldForm = false;
+    }
+
+    public function createCustomStatus(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+
+        $this->validate([
+            'customStatusForm.context' => ['required', 'string'],
+            'customStatusForm.label' => ['required', 'string', 'max:255'],
+            'customStatusForm.key' => ['required', 'string', 'max:100'],
+            'customStatusForm.state' => ['required', 'string'],
+            'customStatusForm.color' => ['required', 'string'],
+        ]);
+
+        CustomStatus::create($this->customStatusForm);
+        session()->flash('status', 'Custom status created.');
+        $this->resetStatusForm();
+        $this->showCustomStatusForm = false;
+    }
+
+    public function createLabelOverride(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+
+        $this->validate([
+            'labelForm.group' => ['required', 'string'],
+            'labelForm.key' => ['required', 'string'],
+            'labelForm.value' => ['required', 'string'],
+        ]);
+
+        LabelOverride::create($this->labelForm);
+        session()->flash('status', 'Label override saved.');
+        $this->resetLabelForm();
+        $this->showLabelForm = false;
+    }
+
     public function render()
     {
         $users = User::with('organization')->latest()->paginate(10, pageName: 'users');
@@ -822,6 +876,9 @@ class Index extends Component
             'openWorkOrders' => $openWorkOrders,
             'overdueWorkOrders' => $overdueWorkOrders,
             'openSupportTickets' => $openSupportTickets,
+            'customFields' => CustomField::orderBy('entity_type')->orderBy('sort_order')->get(),
+            'customStatuses' => CustomStatus::orderBy('context')->orderBy('sort_order')->get(),
+            'labelOverrides' => LabelOverride::orderBy('group')->orderBy('key')->get(),
             'canManageSettings' => $this->canManageSettings,
             'canManageUsers' => $this->canManageUsers,
         ]);
