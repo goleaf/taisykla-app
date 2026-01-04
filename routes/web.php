@@ -105,6 +105,11 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
         ->middleware('can:' . PermissionCatalog::WORK_ORDERS_VIEW)
         ->name('mobile.field-tech');
 
+    // Intelligent Scheduler
+    Route::get('schedule/intelligent', \App\Livewire\IntelligentScheduler::class)
+        ->middleware('can:' . PermissionCatalog::SCHEDULE_MANAGE)
+        ->name('schedule.intelligent');
+
     Route::view('profile', 'profile')->name('profile');
 });
 
