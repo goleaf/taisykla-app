@@ -158,6 +158,11 @@ class KnowledgeArticle extends Model
         return $this->morphMany(Attachment::class, 'attachable');
     }
 
+    public function auditLogs()
+    {
+        return $this->morphMany(AuditLog::class, 'subject');
+    }
+
     public function scopeVisibleTo($query, ?User $user)
     {
         if (!$user) {

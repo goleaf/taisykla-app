@@ -167,9 +167,12 @@
                         
                         <button
                             wire:click="checkOut({{ $activeJob->id }})"
-                            class="px-6 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition"
+                            class="px-6 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-75"
                         >
-                            Complete Job
+                            <span wire:loading.remove wire:target="checkOut({{ $activeJob->id }})">Complete Job</span>
+                            <span wire:loading wire:target="checkOut({{ $activeJob->id }})">Finishing...</span>
                         </button>
                     </div>
                     
@@ -192,7 +195,7 @@
     <section class="px-4 pb-4">
         <div class="bg-white rounded-2xl shadow-sm p-4">
             <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Today's Summary</h3>
-            <div class="grid grid-cols-4 gap-2 text-center">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
                 <div>
                     <p class="text-2xl font-bold text-indigo-600">{{ floor($timeSummary['work'] / 60) }}h</p>
                     <p class="text-xs text-gray-500">Work</p>
@@ -446,35 +449,56 @@
                                     <a 
                                         href="https://www.google.com/maps/dir/?api=1&destination={{ $job->location_latitude }},{{ $job->location_longitude }}"
                                         target="_blank"
-                                        class="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-xl font-medium"
+                                        class="flex items-center justify-center gap-2 py-3 bg-blue-600 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                         wire:click="startTravel({{ $job->id }})"
+                                        wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-75"
                                     >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg wire:loading.remove wire:target="startTravel({{ $job->id }})" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
                                         </svg>
-                                        Navigate
+                                        <svg wire:loading wire:target="startTravel({{ $job->id }})" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span wire:loading.remove wire:target="startTravel({{ $job->id }})">Navigate</span>
+                                        <span wire:loading wire:target="startTravel({{ $job->id }})">Loading...</span>
                                     </a>
                                 @endif
                                 
                                 @if (!$isActive)
                                     <button
                                         wire:click="checkIn({{ $job->id }})"
-                                        class="flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-xl font-medium"
+                                        class="flex items-center justify-center gap-2 py-3 bg-green-600 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-75"
                                     >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg wire:loading.remove wire:target="checkIn({{ $job->id }})" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
-                                        Check In
+                                        <svg wire:loading wire:target="checkIn({{ $job->id }})" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span wire:loading.remove wire:target="checkIn({{ $job->id }})">Check In</span>
+                                        <span wire:loading wire:target="checkIn({{ $job->id }})">Checking...</span>
                                     </button>
                                 @else
                                     <button
                                         wire:click="checkOut({{ $job->id }})"
-                                        class="flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-medium"
+                                        class="flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-75"
                                     >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg wire:loading.remove wire:target="checkOut({{ $job->id }})" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                         </svg>
-                                        Complete
+                                        <svg wire:loading wire:target="checkOut({{ $job->id }})" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span wire:loading.remove wire:target="checkOut({{ $job->id }})">Complete</span>
+                                        <span wire:loading wire:target="checkOut({{ $job->id }})">Finishing...</span>
                                     </button>
                                 @endif
                             </div>
@@ -558,9 +582,12 @@
                         >
                         <button
                             wire:click="sendQuickReply"
-                            class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium text-sm"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-xl font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-75"
                         >
-                            Send
+                            <span wire:loading.remove wire:target="sendQuickReply">Send</span>
+                            <span wire:loading wire:target="sendQuickReply">...</span>
                         </button>
                         <button
                             wire:click="$set('replyToMessageId', null)"
@@ -583,7 +610,7 @@
                 <h3 class="font-semibold text-gray-900">Quick Parts</h3>
             </div>
             
-            <div class="p-4 grid grid-cols-2 gap-2">
+            <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 @forelse ($commonParts as $part)
                     @php
                         $stock = $part->inventory_items_sum_quantity ?? 0;
@@ -592,9 +619,11 @@
                     <button
                         wire:click="reservePart({{ $part->id }})"
                         @disabled(!$activeJobId)
-                        class="flex items-center gap-3 p-3 rounded-xl text-left transition
+                        class="flex items-center gap-3 p-3 rounded-xl text-left transition disabled:opacity-50 disabled:cursor-not-allowed
                             {{ $activeJobId ? 'hover:bg-indigo-50 active:bg-indigo-100' : 'opacity-50 cursor-not-allowed' }}
                             {{ $isLow ? 'bg-amber-50' : 'bg-gray-50' }}"
+                        wire:loading.attr="disabled"
+                        wire:loading.class="opacity-75"
                     >
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-gray-900 truncate">{{ $part->name }}</p>
@@ -605,8 +634,12 @@
                                 @endif
                             </p>
                         </div>
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg wire:loading.remove wire:target="reservePart({{ $part->id }})" class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <svg wire:loading wire:target="reservePart({{ $part->id }})" class="w-5 h-5 text-gray-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </button>
                 @empty

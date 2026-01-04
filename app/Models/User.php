@@ -150,6 +150,11 @@ class User extends Authenticatable
         return $this->hasMany(MessageFolder::class);
     }
 
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
     public function serviceEvents()
     {
         return $this->hasMany(ServiceEvent::class, 'technician_id');

@@ -141,6 +141,11 @@ class Equipment extends Model
         return $this->morphMany(Attachment::class, 'attachable');
     }
 
+    public function auditLogs(): MorphMany
+    {
+        return $this->morphMany(AuditLog::class, 'subject');
+    }
+
     public function parentRelationships(): HasMany
     {
         return $this->hasMany(EquipmentRelationship::class, 'parent_equipment_id');

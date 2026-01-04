@@ -122,4 +122,9 @@ class Organization extends Model
     {
         return $this->hasMany(SupportTicket::class);
     }
+
+    public function auditLogs()
+    {
+        return $this->morphMany(AuditLog::class, 'subject');
+    }
 }

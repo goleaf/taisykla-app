@@ -27,3 +27,4 @@ class KnowledgeCategoryFactory extends Factory
         ];
     }
 }
+2

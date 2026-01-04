@@ -58,4 +58,9 @@ class SupportTicket extends Model
     {
         return $this->morphMany(Attachment::class, 'attachable');
     }
+
+    public function auditLogs()
+    {
+        return $this->morphMany(AuditLog::class, 'subject');
+    }
 }
