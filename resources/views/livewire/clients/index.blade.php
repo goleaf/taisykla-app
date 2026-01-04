@@ -16,6 +16,46 @@
             </div>
         @endif
 
+        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 mb-6 relative overflow-hidden">
+            <div wire:loading wire:target="search, statusFilter, typeFilter" class="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-2">
+                    <label class="text-xs text-gray-500">Search</label>
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="search"
+                        class="mt-1 w-full rounded-md border-gray-300"
+                        placeholder="Name, contact, or email"
+                    />
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Status</label>
+                    <select wire:model.live="statusFilter" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="all">All statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Type</label>
+                    <select wire:model.live="typeFilter" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="all">All types</option>
+                        <option value="business">Business</option>
+                        <option value="individual">Individual</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+                <button type="button" class="text-indigo-600" wire:click="clearFilters">Clear filters</button>
+                <span>Found {{ $organizations->total() }} clients</span>
+            </div>
+        </div>
+
         @if ($showCreate && $canManage)
             <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100 mb-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">New Client Organization</h2>

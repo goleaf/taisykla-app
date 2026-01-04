@@ -37,10 +37,18 @@
             </div>
         </div>
 
+        <!-- Breadcrumbs (for pages without header) -->
+        @if (!isset($header))
+            <div class="max-w-7xl mx-auto pt-6 px-4 sm:px-6 lg:px-8">
+                <livewire:layout.breadcrumbs />
+            </div>
+        @endif
+
         <!-- Page Heading -->
         @if (isset($header))
             <header class="bg-white shadow">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    <livewire:layout.breadcrumbs />
                     {{ $header }}
                 </div>
             </header>

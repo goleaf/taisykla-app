@@ -125,11 +125,43 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="3" class="px-4 py-3 text-sm text-gray-500">No low-stock alerts.</td>
+                            <td colspan="3" class="px-4 py-3 text-sm text-gray-500 text-center">No low-stock alerts.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex-1 bg-white shadow-sm rounded-lg p-4 border border-gray-100">
+                <label class="text-xs text-gray-500">Search Parts</label>
+                <input
+                    type="text"
+                    wire:model.live.debounce.300ms="partSearch"
+                    class="mt-1 w-full rounded-md border-gray-300"
+                    placeholder="Name, SKU, or Vendor"
+                />
+            </div>
+            <div class="flex-1 bg-white shadow-sm rounded-lg p-4 border border-gray-100 flex gap-4">
+                <div class="flex-1">
+                    <label class="text-xs text-gray-500">Search Inventory</label>
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="inventorySearch"
+                        class="mt-1 w-full rounded-md border-gray-300"
+                        placeholder="Part name or SKU"
+                    />
+                </div>
+                <div class="w-1/3">
+                    <label class="text-xs text-gray-500">Location</label>
+                    <select wire:model.live="locationFilter" class="mt-1 w-full rounded-md border-gray-300">
+                        <option value="">All</option>
+                        @foreach ($locations as $location)
+                            <option value="{{ $location->id }}">{{ $location->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

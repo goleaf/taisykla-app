@@ -19,6 +19,17 @@ class Index extends Component
     public bool $showCreate = false;
     public array $new = [];
     public array $suggestedArticleIds = [];
+    public string $search = '';
+    public string $statusFilter = 'all';
+    public string $priorityFilter = 'all';
+    public string $organizationFilter = '';
+
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'statusFilter' => ['except' => 'all'],
+        'priorityFilter' => ['except' => 'all'],
+        'organizationFilter' => ['except' => ''],
+    ];
 
     protected $paginationTheme = 'tailwind';
 
@@ -29,6 +40,35 @@ class Index extends Component
         abort_unless(auth()->user()?->can(PermissionCatalog::SUPPORT_VIEW), 403);
 
         $this->resetNew();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPriorityFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedOrganizationFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->search = '';
+        $this->statusFilter = 'all';
+        $this->priorityFilter = 'all';
+        $this->organizationFilter = '';
+        $this->resetPage();
     }
 
     public function resetNew(): void
@@ -110,6 +150,26 @@ class Index extends Component
     {
         $user = auth()->user();
         $query = $this->ticketQueryFor($user);
+
+        if ($this->statusFilter !== 'all') {
+            $query->where('status', $this->statusFilter);
+        }
+
+        if ($this->priorityFilter !== 'all') {
+            $query->where('priority', $this->priorityFilter);
+        }
+
+        if ($this->organizationFilter !== '' && $this->canManage) {
+            $query->where('organization_id', $this->organizationFilter);
+        }
+
+        if ($this->search !== '') {
+            $searchLike = '%' . $this->search . '%';
+            $query->where(function ($q) use ($searchLike) {
+                $q->where('subject', 'like', $searchLike)
+                    ->orWhere('description', 'like', $searchLike);
+            });
+        }
 
         $tickets = $query->latest()->paginate(10);
         $organizations = $this->canManage

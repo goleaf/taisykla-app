@@ -2,10 +2,6 @@
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {{-- Header --}}
         <div class="mb-8">
-            <a href="{{ route('work-orders.index') }}" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800 mb-4" wire:navigate>
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                Back to Work Orders
-            </a>
             <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Create Work Order</h1>
             <p class="text-gray-500 mt-1">Complete the wizard to submit your service request</p>
         </div>

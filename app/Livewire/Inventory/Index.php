@@ -18,6 +18,15 @@ class Index extends Component
     public bool $showStock = false;
     public array $newPart = [];
     public array $newStock = [];
+    public string $partSearch = '';
+    public string $inventorySearch = '';
+    public string $locationFilter = '';
+
+    protected $queryString = [
+        'partSearch' => ['except' => ''],
+        'inventorySearch' => ['except' => ''],
+        'locationFilter' => ['except' => ''],
+    ];
 
     protected $paginationTheme = 'tailwind';
 
@@ -27,6 +36,30 @@ class Index extends Component
 
         $this->resetNewPart();
         $this->resetNewStock();
+    }
+
+    public function updatedPartSearch(): void
+    {
+        $this->resetPage(pageName: 'parts');
+    }
+
+    public function updatedInventorySearch(): void
+    {
+        $this->resetPage(pageName: 'inventory');
+    }
+
+    public function updatedLocationFilter(): void
+    {
+        $this->resetPage(pageName: 'inventory');
+    }
+
+    public function clearFilters(): void
+    {
+        $this->partSearch = '';
+        $this->inventorySearch = '';
+        $this->locationFilter = '';
+        $this->resetPage(pageName: 'parts');
+        $this->resetPage(pageName: 'inventory');
     }
 
     public function resetNewPart(): void
@@ -104,10 +137,34 @@ class Index extends Component
 
     public function render()
     {
-        $parts = Part::orderBy('name')->paginate(10, pageName: 'parts');
-        $inventory = InventoryItem::with(['part', 'location'])
-            ->orderByDesc('quantity')
+        $partsQuery = Part::query();
+        if ($this->partSearch !== '') {
+            $searchLike = '%' . $this->partSearch . '%';
+            $partsQuery->where(function ($q) use ($searchLike) {
+                $q->where('name', 'like', $searchLike)
+                    ->orWhere('sku', 'like', $searchLike)
+                    ->orWhere('vendor', 'like', $searchLike);
+            });
+        }
+        $parts = $partsQuery->orderBy('name')->paginate(10, pageName: 'parts');
+
+        $inventoryQuery = InventoryItem::with(['part', 'location']);
+        
+        if ($this->locationFilter !== '') {
+            $inventoryQuery->where('location_id', $this->locationFilter);
+        }
+
+        if ($this->inventorySearch !== '') {
+            $searchLike = '%' . $this->inventorySearch . '%';
+            $inventoryQuery->whereHas('part', function ($q) use ($searchLike) {
+                $q->where('name', 'like', $searchLike)
+                    ->orWhere('sku', 'like', $searchLike);
+            });
+        }
+
+        $inventory = $inventoryQuery->orderByDesc('quantity')
             ->paginate(10, pageName: 'inventory');
+
         $locations = InventoryLocation::orderBy('name')->get();
         $lowStockParts = Part::query()
             ->leftJoin('inventory_items', 'parts.id', '=', 'inventory_items.part_id')

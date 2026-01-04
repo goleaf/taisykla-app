@@ -45,6 +45,17 @@ class Index extends Component
     public ?int $bulkOwner = null;
     public bool $showImport = false;
 
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'statusFilter' => ['except' => 'all'],
+        'categoryFilter' => ['except' => ''],
+        'organizationFilter' => ['except' => ''],
+        'typeFilter' => ['except' => ''],
+        'locationFilter' => ['except' => ''],
+        'sortField' => ['except' => 'last_service_at'],
+        'sortDirection' => ['except' => 'desc'],
+    ];
+
     protected $paginationTheme = 'tailwind';
 
     public array $statusOptions = [

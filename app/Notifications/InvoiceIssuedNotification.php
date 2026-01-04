@@ -2,16 +2,16 @@
 
 namespace App\Notifications;
 
+use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Support\Carbon;
 
-class MfaCodeNotification extends Notification
+class InvoiceIssuedNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(private string $code, private Carbon $expiresAt)
+    public function __construct(public Invoice $invoice)
     {
     }
 
@@ -23,10 +23,9 @@ class MfaCodeNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Your verification code')
-            ->view('emails.mfa-code', [
-                'code' => $this->code,
-                'expiresIn' => $this->expiresAt->diffForHumans(),
+            ->subject('New Invoice Issued: ' . $this->invoice->invoice_number)
+            ->view('emails.invoice-issued', [
+                'invoice' => $this->invoice,
             ]);
     }
 }

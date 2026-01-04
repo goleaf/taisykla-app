@@ -19,13 +19,7 @@
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="text-sm text-gray-500">
-                <a href="{{ route('knowledge-base.index') }}" class="hover:text-indigo-600">Knowledge Base</a>
-                @foreach ($trail as $crumb)
-                    <span class="mx-1">/</span>
-                    <span>{{ $crumb->name }}</span>
-                @endforeach
-            </div>
+            <div></div>
             <div class="flex flex-wrap items-center gap-2">
                 <button type="button" class="px-3 py-1 text-xs border border-gray-300 rounded-md" x-on:click.prevent="window.print(); $wire.trackDownload()">Download PDF</button>
                 <button type="button" class="px-3 py-1 text-xs border border-gray-300 rounded-md" x-on:click.prevent="window.print()">Print</button>

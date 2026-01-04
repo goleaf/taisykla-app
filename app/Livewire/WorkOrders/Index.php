@@ -62,7 +62,14 @@ class Index extends Component
 
     protected $queryString = [
         'view' => ['except' => 'list'],
-        'create' => ['except' => false],
+        'search' => ['except' => ''],
+        'statusFilter' => ['except' => 'all'],
+        'priorityFilter' => ['except' => 'all'],
+        'categoryFilter' => ['except' => ''],
+        'organizationFilter' => ['except' => ''],
+        'technicianFilter' => ['except' => ''],
+        'sortField' => ['except' => 'requested_at'],
+        'sortDirection' => ['except' => 'desc'],
     ];
 
     protected $paginationTheme = 'tailwind';

@@ -3,7 +3,6 @@
         {{-- Header --}}
         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
-                <a href="{{ route('equipment.index') }}" class="text-sm text-indigo-600 hover:text-indigo-800" wire:navigate>← Back to Equipment</a>
                 <h1 class="text-2xl font-semibold text-gray-900">{{ $equipment->name }}</h1>
                 <p class="text-sm text-gray-500">{{ $equipment->type }} • {{ $equipment->category?->name ?? 'Uncategorized' }}</p>
             </div>

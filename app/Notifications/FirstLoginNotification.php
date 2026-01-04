@@ -22,12 +22,10 @@ class FirstLoginNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Set up your account')
-            ->greeting('Welcome!')
-            ->line('Your account has been created.')
-            ->line('Username: ' . $notifiable->email)
-            ->line('Use the link below to set your password and access the system for the first time.')
-            ->action('Set up password', $this->resetUrl)
-            ->line('For security, your password must include uppercase and lowercase letters, a number, and a symbol.');
+            ->subject('Set up your Taisykla account')
+            ->view('emails.onboarding', [
+                'user' => $notifiable,
+                'resetUrl' => $this->resetUrl,
+            ]);
     }
 }

@@ -2236,12 +2236,11 @@
                                             class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $itemMeta['pill'] }}">
                                             {{ $itemMeta['label'] }}
                                         </span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                            @endif
-                                        </div>
                                     </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
                                                         <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
@@ -2320,7 +2319,7 @@
                         @endforeach
                     </div>
                 </div>
-            </div>
+            @endif
         @endif
 
         @if($dashboardPreferences['visible_sections']['main_content'] ?? true)

@@ -14,6 +14,15 @@ class Index extends Component
 
     public bool $showCreate = false;
     public array $new = [];
+    public string $search = '';
+    public string $statusFilter = 'all';
+    public string $typeFilter = 'all';
+
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'statusFilter' => ['except' => 'all'],
+        'typeFilter' => ['except' => 'all'],
+    ];
 
     protected $paginationTheme = 'tailwind';
 
@@ -22,6 +31,29 @@ class Index extends Component
         abort_unless(auth()->user()?->can(PermissionCatalog::CLIENTS_VIEW), 403);
 
         $this->resetNew();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedTypeFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->search = '';
+        $this->statusFilter = 'all';
+        $this->typeFilter = 'all';
+        $this->resetPage();
     }
 
     public function resetNew(): void
@@ -67,7 +99,27 @@ class Index extends Component
 
     public function render()
     {
-        $organizations = Organization::latest()->paginate(10);
+        $query = Organization::query()->with('serviceAgreement');
+
+        if ($this->statusFilter !== 'all') {
+            $query->where('status', $this->statusFilter);
+        }
+
+        if ($this->typeFilter !== 'all') {
+            $query->where('type', $this->typeFilter);
+        }
+
+        if ($this->search !== '') {
+            $searchLike = '%' . $this->search . '%';
+            $query->where(function ($q) use ($searchLike) {
+                $q->where('name', 'like', $searchLike)
+                    ->orWhere('primary_contact_name', 'like', $searchLike)
+                    ->orWhere('primary_contact_email', 'like', $searchLike)
+                    ->orWhere('billing_email', 'like', $searchLike);
+            });
+        }
+
+        $organizations = $query->latest()->paginate(10);
         $agreements = ServiceAgreement::orderBy('name')->get();
 
         return view('livewire.clients.index', [
