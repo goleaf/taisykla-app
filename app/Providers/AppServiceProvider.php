@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Console\Commands\RunScheduledReports;
 use App\Listeners\AuthEventSubscriber;
+use App\Repositories\Contracts\ServiceRequestRepositoryInterface;
+use App\Repositories\ServiceRequestRepository;
 use App\Services\LogSmsGateway;
 use App\Services\NullSmsGateway;
 use App\Services\SmsGateway;
@@ -18,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // SMS Gateway binding
         $this->app->singleton(SmsGateway::class, function () {
             $driver = config('sms.driver', 'log');
 
@@ -27,6 +30,12 @@ class AppServiceProvider extends ServiceProvider
                 default => new LogSmsGateway(),
             };
         });
+
+        // Repository bindings
+        $this->app->bind(
+            ServiceRequestRepositoryInterface::class,
+            ServiceRequestRepository::class
+        );
     }
 
     /**
