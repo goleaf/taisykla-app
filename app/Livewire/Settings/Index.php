@@ -186,8 +186,8 @@ class Index extends Component
 
     public function loadSecuritySettings(): void
     {
-        $settings = SystemSetting::where('group', 'security')->get()->pluck('value', 'key');
-        $this->securitySettings = array_merge($this->securitySettings, $settings->toArray());
+        $settings = app(\App\Services\SettingsService::class)->getGroup('security');
+        $this->securitySettings = array_merge($this->securitySettings, $settings);
     }
 
     public function updateSecuritySettings(): void
@@ -503,9 +503,7 @@ class Index extends Component
             'primary_color' => '',
         ];
 
-        $stored = SystemSetting::where('group', 'company')
-            ->pluck('value', 'key')
-            ->toArray();
+        $stored = app(\App\Services\SettingsService::class)->getGroup('company');
 
         $this->companyProfile = array_merge($defaults, $stored);
     }

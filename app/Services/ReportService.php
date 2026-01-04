@@ -82,6 +82,8 @@ class ReportService
             'parts_usage' => $this->partsUsage($filters, $viewer),
             'lifecycle_analysis' => $this->lifecycleAnalysis($filters, $viewer),
             'predictive_analytics' => $this->predictiveAnalytics($filters, $viewer),
+            'customer_segmentation' => $this->customerSegmentation($filters, $viewer),
+            'inventory_forecasting' => $this->inventoryForecasting($filters, $viewer),
             default => $this->dailySummary($filters, $viewer),
         };
     }
@@ -482,6 +484,56 @@ class ReportService
                 'trend' => $trend,
                 'by_service_type' => $serviceTypeRows,
                 'low_ratings' => $lowRatings,
+            ],
+        ];
+    }
+
+    private function customerSegmentation(array $filters, ?User $viewer = null): array
+    {
+        $organizationsQuery = Organization::query();
+        $this->applyAccessScope($organizationsQuery, 'organizations', $viewer);
+        $organizations = $organizationsQuery->get(['id', 'name']);
+
+        $stats = WorkOrder::query()
+            ->whereNotNull('organization_id')
+            ->select('organization_id')
+            ->selectRaw('COUNT(*) as total_requests')
+            ->selectRaw('SUM(total_cost) as total_revenue')
+            ->groupBy('organization_id')
+            ->get()
+            ->keyBy('organization_id');
+
+        $rows = $organizations->map(function ($org) use ($stats) {
+            $orgStats = $stats[$org->id] ?? null;
+            $revenue = (float) ($orgStats->total_revenue ?? 0);
+            $requests = (int) ($orgStats->total_requests ?? 0);
+
+            $segment = match (true) {
+                $revenue >= 10000 && $requests >= 20 => 'Platinum',
+                $revenue >= 5000 || $requests >= 10 => 'Gold',
+                $revenue >= 1000 || $requests >= 3 => 'Silver',
+                default => 'Bronze',
+            };
+
+            return [
+                'Customer' => $org->name,
+                'Lifetime Revenue' => number_format($revenue, 2, '.', ''),
+                'Total Requests' => $requests,
+                'Segment' => $segment,
+                'Avg Value/Request' => $requests > 0 ? number_format($revenue / $requests, 2, '.', '') : '0.00',
+            ];
+        })->sortByDesc('Lifetime Revenue')->values();
+
+        $columns = ['Customer', 'Segment', 'Lifetime Revenue', 'Total Requests', 'Avg Value/Request'];
+
+        $segmentCounts = $rows->groupBy('Segment')->map->count()->toArray();
+
+        return [
+            'columns' => $columns,
+            'rows' => $rows->toArray(),
+            'meta' => [
+                'segment_counts' => $segmentCounts,
+                'high_value_customers' => $rows->whereIn('Segment', ['Platinum', 'Gold'])->take(10)->values()->toArray(),
             ],
         ];
     }
@@ -1353,6 +1405,71 @@ class ReportService
                 'total_used' => (int) $totalUsed,
                 'total_on_hand' => (int) $totalOnHand,
                 'inventory_turnover' => $totalOnHand > 0 ? number_format($totalUsed / $totalOnHand, 2) : '0.00',
+            ],
+        ];
+    }
+
+    private function inventoryForecasting(array $filters, ?User $viewer = null): array
+    {
+        $lookbackMonths = 6;
+        $forecastPeriods = 3;
+        $end = now()->endOfMonth();
+        $start = now()->subMonths($lookbackMonths - 1)->startOfMonth();
+        $months = $this->monthRange($start, $end);
+
+        $usageData = WorkOrderPart::query()
+            ->join('work_orders', 'work_order_parts.work_order_id', '=', 'work_orders.id')
+            ->join('parts', 'work_order_parts.part_id', '=', 'parts.id')
+            ->whereBetween('work_orders.completed_at', [$start, $end])
+            ->select('parts.id as part_id', 'parts.name')
+            ->selectRaw("strftime('%Y-%m', work_orders.completed_at) as month")
+            ->selectRaw('SUM(work_order_parts.quantity) as used_quantity')
+            ->groupBy('part_id', 'parts.name', 'month')
+            ->get();
+
+        $byPart = $usageData->groupBy('part_id');
+        $partNames = $usageData->pluck('name', 'part_id');
+
+        $inventory = InventoryItem::query()
+            ->select('part_id')
+            ->selectRaw('SUM(quantity) as on_hand')
+            ->groupBy('part_id')
+            ->pluck('on_hand', 'part_id');
+
+        $rows = [];
+        foreach ($byPart as $partId => $usages) {
+            $usageMap = $usages->pluck('used_quantity', 'month');
+            $series = array_map(fn ($month) => (float) ($usageMap[$month] ?? 0), $months);
+            $forecast = $this->forecastSeries($series, $forecastPeriods);
+            $totalForecast = array_sum($forecast);
+            $onHand = (float) ($inventory[$partId] ?? 0);
+            
+            $risk = match (true) {
+                $onHand == 0 && $totalForecast > 0 => 'Critical (Stocked Out)',
+                $onHand < $totalForecast => 'High (Underforecast)',
+                $onHand < ($totalForecast * 1.5) => 'Medium',
+                default => 'Low',
+            };
+
+            $rows[] = [
+                'Part' => $partNames[$partId],
+                'On Hand' => $onHand,
+                '6mo Avg Monthly' => number_format(array_sum($series) / $lookbackMonths, 1),
+                'Forecast Next 3mo' => number_format($totalForecast, 1),
+                'Trend' => $this->seriesTrend($series),
+                'Stock Risk' => $risk,
+            ];
+        }
+
+        $columns = ['Part', 'On Hand', '6mo Avg Monthly', 'Forecast Next 3mo', 'Trend', 'Stock Risk'];
+
+        return [
+            'columns' => $columns,
+            'rows' => collect($rows)->sortByDesc('Forecast Next 3mo')->values()->toArray(),
+            'meta' => [
+                'lookback_months' => $lookbackMonths,
+                'forecast_periods' => $forecastPeriods,
+                'high_risk_items' => collect($rows)->whereIn('Stock Risk', ['Critical (Stocked Out)', 'High (Underforecast)'])->count(),
             ],
         ];
     }

@@ -57,6 +57,8 @@ class Index extends Component
         'parts_usage' => 'Parts Usage',
         'lifecycle_analysis' => 'Lifecycle Analysis',
         'predictive_analytics' => 'Predictive Analytics',
+        'customer_segmentation' => 'Customer Segmentation',
+        'inventory_forecasting' => 'Inventory Forecasting',
         'custom' => 'Custom Report',
     ];
 
@@ -81,12 +83,14 @@ class Index extends Component
         'customer' => [
             'customer_satisfaction',
             'customer_activity',
+            'customer_segmentation',
             'sla_compliance',
         ],
         'equipment' => [
             'equipment_reliability',
             'maintenance_frequency',
             'parts_usage',
+            'inventory_forecasting',
             'lifecycle_analysis',
         ],
         'predictive' => [
