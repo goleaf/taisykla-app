@@ -72,7 +72,17 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
         ->middleware('can:' . PermissionCatalog::SETTINGS_VIEW)
         ->name('settings.index');
 
+    // Customer Portal
+    Route::get('my-portal', \App\Livewire\Customer\Portal::class)
+        ->middleware('can:' . PermissionCatalog::DASHBOARD_VIEW)
+        ->name('customer.portal');
+
+    // Live Technician Tracking (for customers)
+    Route::get('track/{workOrder}', \App\Livewire\Customer\TrackTechnician::class)
+        ->middleware('can:' . PermissionCatalog::WORK_ORDERS_VIEW)
+        ->name('customer.track');
+
     Route::view('profile', 'profile')->name('profile');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

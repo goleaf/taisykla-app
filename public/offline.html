@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Taisykla</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon svg {
+            width: 40px;
+            height: 40px;
+            color: #6b7280;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #111827;
+            margin-bottom: 12px;
+        }
+
+        p {
+            color: #6b7280;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+
+        .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .retry-btn:hover {
+            background: #4338ca;
+        }
+
+        .cached-pages {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .cached-pages h2 {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .cached-pages ul {
+            list-style: none;
+        }
+
+        .cached-pages a {
+            display: block;
+            padding: 10px 16px;
+            color: #4f46e5;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .cached-pages a:hover {
+            background: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+            </svg>
+        </div>
+
+        <h1>You're Offline</h1>
+        <p>It looks like you've lost your internet connection. Some features may not be available until you're back
+            online.</p>
+
+        <button class="retry-btn" onclick="window.location.reload()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Try Again
+        </button>
+
+        <div class="cached-pages" id="cached-pages" style="display: none;">
+            <h2>Available Offline</h2>
+            <ul id="cached-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // Show cached pages if available
+        if ('caches' in window) {
+            caches.open('taisykla-v1').then(cache => {
+                cache.keys().then(keys => {
+                    const pages = keys.filter(req =>
+                        req.url.includes('/dashboard') ||
+                        req.url.includes('/work-orders')
+                    );
+
+                    if (pages.length > 0) {
+                        document.getElementById('cached-pages').style.display = 'block';
+                        const list = document.getElementById('cached-list');
+
+                        pages.forEach(req => {
+                            const url = new URL(req.url);
+                            const li = document.createElement('li');
+                            const a = document.createElement('a');
+                            a.href = url.pathname;
+                            a.textContent = url.pathname === '/' ? 'Home' :
+                                url.pathname.replace(/\//g, ' ').trim()
+                                    .split(' ')
+                                    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                                    .join(' ');
+                            li.appendChild(a);
+                            list.appendChild(li);
+                        });
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
