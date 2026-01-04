@@ -153,9 +153,14 @@ class KnowledgeArticle extends Model
             ->withTimestamps();
     }
 
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
     public function scopeVisibleTo($query, ?User $user)
     {
-        if (! $user) {
+        if (!$user) {
             return $query->where('status', 'published')->where('visibility', 'public');
         }
 

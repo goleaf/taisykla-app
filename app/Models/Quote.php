@@ -80,4 +80,9 @@ class Quote extends Model
     {
         return $this->belongsTo(Quote::class, 'revision_of_quote_id');
     }
+
+    public function revisions()
+    {
+        return $this->hasMany(Quote::class, 'revision_of_quote_id');
+    }
 }

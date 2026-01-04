@@ -149,6 +149,66 @@ class User extends Authenticatable
         return $this->hasMany(MessageFolder::class);
     }
 
+    public function serviceEvents()
+    {
+        return $this->hasMany(ServiceEvent::class, 'technician_id');
+    }
+
+    public function inventoryTransactions()
+    {
+        return $this->hasMany(InventoryTransaction::class);
+    }
+
+    public function recurringSchedules()
+    {
+        return $this->hasMany(RecurringSchedule::class, 'assigned_to_user_id');
+    }
+
+    public function calendarBlocks()
+    {
+        return $this->hasMany(CalendarBlock::class);
+    }
+
+    public function createdCreditMemos()
+    {
+        return $this->hasMany(CreditMemo::class, 'created_by_user_id');
+    }
+
+    public function createdPurchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class, 'created_by_user_id');
+    }
+
+    public function approvedPurchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class, 'approved_by_user_id');
+    }
+
+    public function submittedSupportTickets()
+    {
+        return $this->hasMany(SupportTicket::class, 'submitted_by_user_id');
+    }
+
+    public function assignedSupportTickets()
+    {
+        return $this->hasMany(SupportTicket::class, 'assigned_to_user_id');
+    }
+
+    public function createdKnowledgeArticles()
+    {
+        return $this->hasMany(KnowledgeArticle::class, 'created_by_user_id');
+    }
+
+    public function updatedKnowledgeArticles()
+    {
+        return $this->hasMany(KnowledgeArticle::class, 'updated_by_user_id');
+    }
+
+    public function reviewedKnowledgeArticles()
+    {
+        return $this->hasMany(KnowledgeArticle::class, 'reviewed_by_user_id');
+    }
+
     public function isBusinessCustomer(): bool
     {
         return $this->hasAnyRole(RoleCatalog::businessCustomerRoles());

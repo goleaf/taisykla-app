@@ -105,6 +105,11 @@ class WorkOrder extends Model
         return $this->belongsTo(User::class, 'assigned_to_user_id');
     }
 
+    public function preferredTechnician()
+    {
+        return $this->belongsTo(User::class, 'preferred_technician_id');
+    }
+
     public function category()
     {
         return $this->belongsTo(WorkOrderCategory::class, 'category_id');
@@ -118,6 +123,11 @@ class WorkOrder extends Model
     public function events()
     {
         return $this->hasMany(WorkOrderEvent::class);
+    }
+
+    public function serviceEvents()
+    {
+        return $this->hasMany(ServiceEvent::class);
     }
 
     public function parts()

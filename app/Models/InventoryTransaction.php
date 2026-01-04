@@ -14,6 +14,7 @@ class InventoryTransaction extends Model
         'location_id',
         'work_order_id',
         'user_id',
+        'transfer_id',
         'type',
         'quantity',
         'unit_cost',
@@ -38,5 +39,10 @@ class InventoryTransaction extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function transfer()
+    {
+        return $this->belongsTo(InventoryTransfer::class, 'transfer_id');
     }
 }

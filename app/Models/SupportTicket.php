@@ -52,4 +52,9 @@ class SupportTicket extends Model
             ->withPivot(['context', 'added_by_user_id'])
             ->withTimestamps();
     }
+
+    public function attachments()
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
 }

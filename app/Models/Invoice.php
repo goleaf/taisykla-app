@@ -79,6 +79,11 @@ class Invoice extends Model
         return $this->belongsTo(Invoice::class, 'parent_invoice_id');
     }
 
+    public function childInvoices()
+    {
+        return $this->hasMany(Invoice::class, 'parent_invoice_id');
+    }
+
     public function creditMemos()
     {
         return $this->hasMany(CreditMemo::class);

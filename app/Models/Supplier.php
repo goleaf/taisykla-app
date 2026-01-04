@@ -41,6 +41,11 @@ class Supplier extends Model
         return $this->belongsToMany(Part::class, 'part_suppliers');
     }
 
+    public function primaryParts()
+    {
+        return $this->hasMany(Part::class, 'primary_supplier_id');
+    }
+
     public function purchaseOrders()
     {
         return $this->hasMany(PurchaseOrder::class);
