@@ -134,6 +134,21 @@ class User extends Authenticatable
         return $this->hasMany(SecurityKey::class);
     }
 
+    public function messageThreads()
+    {
+        return $this->belongsToMany(MessageThread::class, 'message_thread_participants', 'user_id', 'thread_id');
+    }
+
+    public function notificationPreferences()
+    {
+        return $this->hasMany(NotificationPreference::class);
+    }
+
+    public function messageFolders()
+    {
+        return $this->hasMany(MessageFolder::class);
+    }
+
     public function isBusinessCustomer(): bool
     {
         return $this->hasAnyRole(RoleCatalog::businessCustomerRoles());

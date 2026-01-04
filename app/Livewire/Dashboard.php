@@ -459,10 +459,18 @@ class Dashboard extends Component
             return;
         }
 
+        $thread = MessageThread::find($threadId);
+
         Message::create([
             'thread_id' => $threadId,
             'user_id' => $user->id,
+            'sender_id' => $user->id,
+            'subject' => $thread?->subject,
             'body' => $body,
+            'timestamp' => now(),
+            'message_type' => $thread?->type ?? 'direct',
+            'channel' => 'in_app',
+            'related_work_order_id' => $thread?->work_order_id,
         ]);
 
         MessageThread::whereKey($threadId)->update(['updated_at' => now()]);

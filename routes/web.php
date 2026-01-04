@@ -17,10 +17,22 @@ use App\Livewire\WorkOrders\Index as WorkOrdersIndex;
 use App\Livewire\WorkOrders\Show as WorkOrdersShow;
 use App\Http\Middleware\EnsureAccountSetup;
 use App\Http\Controllers\ReportExportController;
+use App\Http\Controllers\ReportExportDownloadController;
+use App\Http\Controllers\Messaging\InboundEmailController;
+use App\Http\Controllers\Messaging\InboundSmsController;
 use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
+
+Route::post('webhooks/messages/email', InboundEmailController::class)
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->middleware('throttle:60,1')
+    ->name('webhooks.messages.email');
+Route::post('webhooks/messages/sms', InboundSmsController::class)
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
+    ->middleware('throttle:60,1')
+    ->name('webhooks.messages.sms');
 
 Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('dashboard', Dashboard::class)
@@ -71,6 +83,9 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('reports/{report}/export', ReportExportController::class)
         ->middleware('can:' . PermissionCatalog::REPORTS_EXPORT)
         ->name('reports.export');
+    Route::get('reports/exports/{export}', ReportExportDownloadController::class)
+        ->middleware('can:' . PermissionCatalog::REPORTS_EXPORT)
+        ->name('reports.exports.download');
     Route::get('billing', BillingIndex::class)
         ->middleware('can:' . PermissionCatalog::BILLING_VIEW)
         ->name('billing.index');

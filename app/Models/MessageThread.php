@@ -11,6 +11,8 @@ class MessageThread extends Model
 
     protected $fillable = [
         'subject',
+        'type',
+        'status',
         'organization_id',
         'work_order_id',
         'created_by_user_id',

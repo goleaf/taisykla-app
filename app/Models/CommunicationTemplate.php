@@ -11,15 +11,20 @@ class CommunicationTemplate extends Model
 
     protected $fillable = [
         'name',
+        'category',
         'channel',
         'subject',
         'body',
         'is_active',
+        'is_shared',
+        'merge_fields',
         'created_by_user_id',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_shared' => 'boolean',
+        'merge_fields' => 'array',
     ];
 
     public function createdBy()

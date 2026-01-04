@@ -18,6 +18,7 @@ use App\Models\KnowledgeCategory;
 use App\Models\KnowledgeTag;
 use App\Models\KnowledgeTemplate;
 use App\Models\Message;
+use App\Models\MessageAutomation;
 use App\Models\MessageThread;
 use App\Models\MessageThreadParticipant;
 use App\Models\Organization;
@@ -533,14 +534,113 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        CommunicationTemplate::firstOrCreate(
-            ['name' => 'Service Request Received'],
-            [
+        $templateSeeds = [
+            'Service Request Received' => [
+                'category' => 'General',
                 'channel' => 'email',
                 'subject' => 'We received your service request',
                 'body' => 'Thanks for reaching out. We will respond within the SLA window.',
-                'is_active' => true,
-                'created_by_user_id' => $admin->id,
+                'merge_fields' => ['customer_name', 'work_order_id'],
+            ],
+            'Appointment Confirmation' => [
+                'category' => 'Appointments',
+                'channel' => 'email',
+                'subject' => 'Appointment confirmed for {{appointment_time}}',
+                'body' => 'Hi {{customer_name}}, your appointment is confirmed for {{appointment_time}} with {{technician_name}}.',
+                'merge_fields' => ['customer_name', 'appointment_time', 'technician_name'],
+            ],
+            'Running Late Notification' => [
+                'category' => 'Appointments',
+                'channel' => 'sms',
+                'subject' => 'Running late',
+                'body' => 'Hi {{customer_name}}, your technician is running about 15 minutes late. We are on the way.',
+                'merge_fields' => ['customer_name'],
+            ],
+            'Work Completed' => [
+                'category' => 'Work Orders',
+                'channel' => 'email',
+                'subject' => 'Work completed for WO #{{work_order_id}}',
+                'body' => 'We completed the work order. Summary: {{work_order_subject}}.',
+                'merge_fields' => ['work_order_id', 'work_order_subject'],
+            ],
+            'Quote Provided' => [
+                'category' => 'Quotes',
+                'channel' => 'email',
+                'subject' => 'Quote ready for your review',
+                'body' => 'Hi {{customer_name}}, we prepared a quote for {{work_order_subject}}. Please review when ready.',
+                'merge_fields' => ['customer_name', 'work_order_subject'],
+            ],
+            'Payment Reminder' => [
+                'category' => 'Billing',
+                'channel' => 'email',
+                'subject' => 'Payment reminder for invoice {{work_order_id}}',
+                'body' => 'This is a friendly reminder that payment is due. Please contact us if you need help.',
+                'merge_fields' => ['work_order_id', 'customer_name'],
+            ],
+            'Follow-up Message' => [
+                'category' => 'Follow-up',
+                'channel' => 'email',
+                'subject' => 'Checking in after your recent service',
+                'body' => 'Hi {{customer_name}}, just checking in to make sure everything is working well.',
+                'merge_fields' => ['customer_name'],
+            ],
+        ];
+
+        $templateModels = [];
+        foreach ($templateSeeds as $name => $data) {
+            $templateModels[$name] = CommunicationTemplate::firstOrCreate(
+                ['name' => $name],
+                array_merge($data, [
+                    'is_active' => true,
+                    'is_shared' => true,
+                    'created_by_user_id' => $admin->id,
+                ])
+            );
+        }
+
+        MessageAutomation::firstOrCreate(
+            ['trigger' => 'appointment_upcoming_24h'],
+            [
+                'name' => 'Appointment Reminder (24h)',
+                'channels' => ['email', 'sms'],
+                'template_id' => $templateModels['Appointment Confirmation']->id ?? null,
+                'schedule_offset_minutes' => 1440,
+            ]
+        );
+        MessageAutomation::firstOrCreate(
+            ['trigger' => 'technician_en_route'],
+            [
+                'name' => 'Technician En Route',
+                'channels' => ['sms'],
+                'template_id' => $templateModels['Running Late Notification']->id ?? null,
+                'schedule_offset_minutes' => 30,
+            ]
+        );
+        MessageAutomation::firstOrCreate(
+            ['trigger' => 'work_completed'],
+            [
+                'name' => 'Work Completed',
+                'channels' => ['email'],
+                'template_id' => $templateModels['Work Completed']->id ?? null,
+                'schedule_offset_minutes' => 0,
+            ]
+        );
+        MessageAutomation::firstOrCreate(
+            ['trigger' => 'invoice_generated'],
+            [
+                'name' => 'Invoice Generated',
+                'channels' => ['email'],
+                'template_id' => $templateModels['Payment Reminder']->id ?? null,
+                'schedule_offset_minutes' => 0,
+            ]
+        );
+        MessageAutomation::firstOrCreate(
+            ['trigger' => 'satisfaction_survey'],
+            [
+                'name' => 'Satisfaction Survey',
+                'channels' => ['email'],
+                'template_id' => $templateModels['Follow-up Message']->id ?? null,
+                'schedule_offset_minutes' => 60,
             ]
         );
 

@@ -22,6 +22,7 @@ class WorkOrderMessagingService
                 'organization_id' => $workOrder->organization_id,
                 'work_order_id' => $workOrder->id,
                 'created_by_user_id' => $actor?->id,
+                'type' => 'work_order',
             ]);
         }
 
@@ -36,6 +37,8 @@ class WorkOrderMessagingService
             MessageThreadParticipant::firstOrCreate([
                 'thread_id' => $thread->id,
                 'user_id' => $userId,
+            ], [
+                'folder' => 'inbox',
             ]);
         }
 
@@ -46,10 +49,20 @@ class WorkOrderMessagingService
     {
         $thread = $this->ensureThread($workOrder, $actor, $fallbackParticipant);
 
-        return Message::create([
+        $message = Message::create([
             'thread_id' => $thread->id,
             'user_id' => $actor->id,
+            'sender_id' => $actor->id,
+            'subject' => $thread->subject,
             'body' => $body,
+            'timestamp' => now(),
+            'message_type' => 'work_order',
+            'channel' => 'in_app',
+            'related_work_order_id' => $workOrder->id,
         ]);
+
+        $thread->touch();
+
+        return $message;
     }
 }

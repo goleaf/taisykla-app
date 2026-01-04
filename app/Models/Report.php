@@ -12,8 +12,10 @@ class Report extends Model
     protected $fillable = [
         'name',
         'report_type',
+        'category',
         'data_source',
         'description',
+        'visualization',
         'definition',
         'filters',
         'group_by',
@@ -45,5 +47,15 @@ class Report extends Model
     public function runs()
     {
         return $this->hasMany(ReportRun::class);
+    }
+
+    public function permissions()
+    {
+        return $this->hasMany(ReportPermission::class);
+    }
+
+    public function exports()
+    {
+        return $this->hasMany(ReportExport::class);
     }
 }

@@ -146,10 +146,18 @@ class TechnicianDashboard extends Component
 
         $originalMessage = Message::findOrFail($this->replyToMessageId);
 
+        $thread = $originalMessage->thread;
+
         Message::create([
             'thread_id' => $originalMessage->thread_id,
             'user_id' => auth()->id(),
+            'sender_id' => auth()->id(),
+            'subject' => $thread?->subject,
             'body' => $this->replyMessage,
+            'timestamp' => now(),
+            'message_type' => $thread?->type ?? 'direct',
+            'channel' => 'in_app',
+            'related_work_order_id' => $thread?->work_order_id,
         ]);
 
         $this->replyMessage = '';
