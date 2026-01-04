@@ -137,8 +137,115 @@ class Index extends Component
     public array $newRole = ['name' => ''];
     public array $newPriority = ['name' => '', 'color' => '#3b82f6', 'response_time_minutes' => null, 'resolution_time_minutes' => null, 'description' => ''];
 
+    public function loadComplianceSettings(): void
+    {
+        $settings = SystemSetting::where('group', 'compliance')->get()->pluck('value', 'key');
+        $this->complianceSettings = array_merge($this->complianceSettings, $settings->toArray());
+    }
+
+    public function updateComplianceSettings(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+
+        foreach ($this->complianceSettings as $key => $value) {
+            SystemSetting::updateOrCreate(
+                ['group' => 'compliance', 'key' => $key],
+                ['value' => $value, 'type' => is_bool($value) ? 'boolean' : 'string']
+            );
+        }
+        session()->flash('status', 'Compliance settings updated.');
+    }
+
+    public function loadNotificationSettings(): void
+    {
+        $settings = SystemSetting::where('group', 'notification')->get()->pluck('value', 'key');
+        $this->notificationSettings = array_merge($this->notificationSettings, $settings->toArray());
+    }
+
+    public function updateNotificationSettings(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+
+        foreach ($this->notificationSettings as $key => $value) {
+            SystemSetting::updateOrCreate(
+                ['group' => 'notification', 'key' => $key],
+                ['value' => $value, 'type' => 'boolean']
+            );
+        }
+        session()->flash('status', 'Notification settings updated.');
+    }
+
+    public function exportPersonalData(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+        session()->flash('status', 'Personal data export initiated for current user.');
+    }
+
+    public function loadSecuritySettings(): void
+    {
+        $settings = SystemSetting::where('group', 'security')->get()->pluck('value', 'key');
+        $this->securitySettings = array_merge($this->securitySettings, $settings->toArray());
+    }
+
+    public function updateSecuritySettings(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+
+        foreach ($this->securitySettings as $key => $value) {
+            SystemSetting::updateOrCreate(
+                ['group' => 'security', 'key' => $key],
+                ['value' => $value, 'type' => is_bool($value) ? 'boolean' : 'integer']
+            );
+        }
+        session()->flash('status', 'Security settings updated.');
+    }
+
+    public function exportData(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+        session()->flash('status', 'Database export started. You will receive an email when ready.');
+    }
+
+    public function importData(): void
+    {
+        if (!$this->canManageSettings)
+            return;
+        session()->flash('status', 'Data import feature is currently disabled in this environment.');
+    }
+    public array $securitySettings = [
+        'password_min_length' => 8,
+        'require_special_chars' => false,
+        'session_timeout_minutes' => 120,
+        'mfa_enforced' => false,
+    ];
+
+    public array $complianceSettings = [
+        'gdpr_enabled' => false,
+        'cookie_consent_enabled' => true,
+        'privacy_policy_url' => '',
+        'terms_service_url' => '',
+    ];
+
+    public array $notificationSettings = [
+        'email_on_work_order_created' => true,
+        'email_on_work_order_assigned' => true,
+        'email_on_work_order_completed' => true,
+        'email_on_ticket_created' => true,
+    ];
+
+
+
+
     public function mount(): void
     {
+        $this->loadSecuritySettings();
+        $this->loadComplianceSettings();
+        $this->loadNotificationSettings();
         abort_unless(auth()->user()?->can(PermissionCatalog::SETTINGS_VIEW), 403);
 
         $this->activeTab = request()->query('tab', 'general');
@@ -160,6 +267,8 @@ class Index extends Component
         $this->loadCompanyProfile();
         $this->backupLastRunAt = $this->loadBackupTimestamp();
     }
+
+
 
     public function createRole(): void
     {

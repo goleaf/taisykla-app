@@ -1,4 +1,34 @@
 <div class="space-y-6">
+    {{-- Security Settings --}}
+    <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Security Settings</h2>
+        <form wire:submit.prevent="updateSecuritySettings" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Minimum Password Length</label>
+                <input type="number" wire:model="securitySettings.password_min_length"
+                    class="mt-1 w-full rounded-md border-gray-300" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Session Timeout (Minutes)</label>
+                <input type="number" wire:model="securitySettings.session_timeout_minutes"
+                    class="mt-1 w-full rounded-md border-gray-300" />
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" wire:model="securitySettings.require_special_chars"
+                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                <label class="text-sm text-gray-700">Require Special Characters</label>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="checkbox" wire:model="securitySettings.mfa_enforced"
+                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                <label class="text-sm text-gray-700">Enforce MFA for All Users</label>
+            </div>
+            <div class="col-span-1 md:col-span-2 flex justify-end">
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save Security
+                    Settings</button>
+            </div>
+        </form>
+    </div>
     {{-- Roles Section --}}
     <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-6">
         <div class="flex items-center justify-between mb-4">
