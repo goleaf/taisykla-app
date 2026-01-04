@@ -54,6 +54,10 @@ class WorkOrder extends Model
         'customer_signoff_professional',
         'customer_signoff_satisfied',
         'customer_signoff_comments',
+        'target_response_at',
+        'target_resolution_at',
+        'sla_breached_at',
+        'sla_status',
     ];
 
     protected $casts = [
@@ -76,6 +80,9 @@ class WorkOrder extends Model
         'customer_signoff_professional' => 'boolean',
         'customer_signoff_satisfied' => 'boolean',
         'custom_fields' => 'array',
+        'target_response_at' => 'datetime',
+        'target_resolution_at' => 'datetime',
+        'sla_breached_at' => 'datetime',
     ];
 
     public function organization()
@@ -146,6 +153,13 @@ class WorkOrder extends Model
     public function messageThreads()
     {
         return $this->hasMany(MessageThread::class);
+    }
+
+    protected static function booted()
+    {
+        static::created(function (WorkOrder $workOrder) {
+            app(\App\Services\SLAService::class)->calculateTargets($workOrder);
+        });
     }
 
     public function attachments()

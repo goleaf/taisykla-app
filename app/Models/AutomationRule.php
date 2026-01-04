@@ -22,4 +22,16 @@ class AutomationRule extends Model
         'actions' => 'array',
         'is_active' => 'boolean',
     ];
+    public const TRIGGER_SLA_WARNING = 'sla_warning';
+    public const TRIGGER_SLA_BREACHED = 'sla_breached';
+    public const TRIGGER_WORK_ORDER_CREATED = 'work_order_created';
+
+    public static function getTriggers(): array
+    {
+        return [
+            self::TRIGGER_WORK_ORDER_CREATED => 'Work Order Created',
+            self::TRIGGER_SLA_WARNING => 'SLA Warning',
+            self::TRIGGER_SLA_BREACHED => 'SLA Breached',
+        ];
+    }
 }

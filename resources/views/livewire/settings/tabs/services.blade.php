@@ -88,6 +88,12 @@
                     <input wire:model="newAgreement.name" class="rounded-md border-gray-300" placeholder="Name" />
                     <input wire:model="newAgreement.agreement_type" class="rounded-md border-gray-300"
                         placeholder="Type (e.g. Standard)" />
+                    <div class="grid grid-cols-2 gap-3">
+                        <input type="number" wire:model="newAgreement.response_time_minutes"
+                            class="rounded-md border-gray-300" placeholder="Response (min)" />
+                        <input type="number" wire:model="newAgreement.resolution_time_minutes"
+                            class="rounded-md border-gray-300" placeholder="Resolution (min)" />
+                    </div>
                     <input type="number" step="0.01" wire:model="newAgreement.monthly_fee"
                         class="rounded-md border-gray-300" placeholder="Monthly Fee" />
                     <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>

@@ -522,6 +522,8 @@ class Index extends Component
             'newAgreement.name' => ['required', 'string', 'max:255'],
             'newAgreement.agreement_type' => ['required', 'string', 'max:50'],
             'newAgreement.monthly_fee' => ['required', 'numeric', 'min:0'],
+            'newAgreement.response_time_minutes' => ['nullable', 'integer', 'min:0'],
+            'newAgreement.resolution_time_minutes' => ['nullable', 'integer', 'min:0'],
         ]);
 
         ServiceAgreement::create($this->newAgreement);

@@ -17,7 +17,7 @@
                         placeholder="Channel (email, sms)" />
                     <input wire:model="newTemplate.subject" class="rounded-md border-gray-300" placeholder="Subject" />
                     <textarea wire:model="newTemplate.body" class="rounded-md border-gray-300" rows="3"
-                        placeholder="Message body... use {{ name }} variables"></textarea>
+                        placeholder="Message body... use @{{ name }} variables"></textarea>
 
                     <div class="flex justify-end gap-2 pt-2">
                         <button type="button" wire:click="$set('showTemplateCreate', false)"
