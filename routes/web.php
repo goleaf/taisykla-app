@@ -59,6 +59,12 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('billing', BillingIndex::class)
         ->middleware('can:' . PermissionCatalog::BILLING_VIEW)
         ->name('billing.index');
+    Route::get('billing/{invoice}/pay', \App\Livewire\Billing\Checkout::class)
+        ->middleware('can:' . PermissionCatalog::BILLING_VIEW)
+        ->name('billing.checkout');
+    Route::get('billing/{invoice}/success', function (\App\Models\Invoice $invoice) {
+        return view('billing.success', compact('invoice'));
+    })->middleware('can:' . PermissionCatalog::BILLING_VIEW)->name('billing.payment-success');
     Route::get('knowledge-base', KnowledgeBaseIndex::class)
         ->middleware('can:' . PermissionCatalog::KNOWLEDGE_BASE_VIEW)
         ->name('knowledge-base.index');

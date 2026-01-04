@@ -5,76 +5,87 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('custom_fields', function (Blueprint $table) {
-            $table->id();
-            $table->string('entity_type');
-            $table->string('key');
-            $table->string('label');
-            $table->string('type');
-            $table->boolean('is_required')->default(false);
-            $table->string('default_value')->nullable();
-            $table->string('validation_rules')->nullable();
-            $table->json('options')->nullable();
-            $table->unsignedInteger('display_order')->default(0);
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        if (!Schema::hasTable('custom_fields')) {
+            Schema::create('custom_fields', function (Blueprint $table) {
+                $table->id();
+                $table->string('entity_type');
+                $table->string('key');
+                $table->string('label');
+                $table->string('type');
+                $table->boolean('is_required')->default(false);
+                $table->string('default_value')->nullable();
+                $table->string('validation_rules')->nullable();
+                $table->json('options')->nullable();
+                $table->unsignedInteger('display_order')->default(0);
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
 
-            $table->unique(['entity_type', 'key']);
-        });
+                $table->unique(['entity_type', 'key']);
+            });
+        }
 
-        Schema::create('custom_statuses', function (Blueprint $table) {
-            $table->id();
-            $table->string('context');
-            $table->string('key');
-            $table->string('label');
-            $table->string('state')->nullable();
-            $table->string('color')->nullable();
-            $table->string('text_color')->nullable();
-            $table->string('icon')->nullable();
-            $table->boolean('is_default')->default(false);
-            $table->boolean('is_terminal')->default(false);
-            $table->unsignedInteger('sort_order')->default(0);
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
+        if (!Schema::hasTable('custom_statuses')) {
+            Schema::create('custom_statuses', function (Blueprint $table) {
+                $table->id();
+                $table->string('context');
+                $table->string('key');
+                $table->string('label');
+                $table->string('state')->nullable();
+                $table->string('color')->nullable();
+                $table->string('text_color')->nullable();
+                $table->string('icon')->nullable();
+                $table->boolean('is_default')->default(false);
+                $table->boolean('is_terminal')->default(false);
+                $table->unsignedInteger('sort_order')->default(0);
+                $table->boolean('is_active')->default(true);
+                $table->timestamps();
 
-            $table->unique(['context', 'key']);
-        });
+                $table->unique(['context', 'key']);
+            });
+        }
 
-        Schema::create('custom_status_transitions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('from_status_id')->constrained('custom_statuses')->cascadeOnDelete();
-            $table->foreignId('to_status_id')->constrained('custom_statuses')->cascadeOnDelete();
-            $table->timestamps();
+        if (!Schema::hasTable('custom_status_transitions')) {
+            Schema::create('custom_status_transitions', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('from_status_id')->constrained('custom_statuses')->cascadeOnDelete();
+                $table->foreignId('to_status_id')->constrained('custom_statuses')->cascadeOnDelete();
+                $table->timestamps();
 
-            $table->unique(['from_status_id', 'to_status_id']);
-        });
+                $table->unique(['from_status_id', 'to_status_id']);
+            });
+        }
 
-        Schema::create('label_overrides', function (Blueprint $table) {
-            $table->id();
-            $table->string('key');
-            $table->string('locale')->default('en');
-            $table->string('value');
-            $table->string('group')->nullable();
-            $table->text('description')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('label_overrides')) {
+            Schema::create('label_overrides', function (Blueprint $table) {
+                $table->id();
+                $table->string('key');
+                $table->string('locale')->default('en');
+                $table->string('value');
+                $table->string('group')->nullable();
+                $table->text('description')->nullable();
+                $table->timestamps();
 
-            $table->unique(['key', 'locale']);
-        });
+                $table->unique(['key', 'locale']);
+            });
+        }
 
-        Schema::table('work_orders', function (Blueprint $table) {
-            $table->json('custom_fields')->nullable()->after('description');
-        });
+        if (!Schema::hasColumn('work_orders', 'custom_fields')) {
+            Schema::table('work_orders', function (Blueprint $table) {
+                $table->json('custom_fields')->nullable()->after('description');
+            });
+        }
 
-        Schema::table('equipment', function (Blueprint $table) {
-            $table->json('custom_fields')->nullable()->after('notes');
-        });
+        if (!Schema::hasColumn('equipment', 'custom_fields')) {
+            Schema::table('equipment', function (Blueprint $table) {
+                $table->json('custom_fields')->nullable()->after('notes');
+            });
+        }
 
         $now = now();
         $workOrderStatuses = [
@@ -252,7 +263,7 @@ return new class extends Migration
 
         $statusMap = DB::table('custom_statuses')
             ->get()
-            ->keyBy(fn ($row) => $row->context . ':' . $row->key);
+            ->keyBy(fn($row) => $row->context . ':' . $row->key);
 
         $workOrderTransitions = [
             'submitted' => ['assigned', 'canceled'],
@@ -271,12 +282,12 @@ return new class extends Migration
         $transitionRows = [];
         foreach ($workOrderTransitions as $from => $targets) {
             $fromStatus = $statusMap->get('work_order:' . $from);
-            if (! $fromStatus) {
+            if (!$fromStatus) {
                 continue;
             }
             foreach ($targets as $target) {
                 $toStatus = $statusMap->get('work_order:' . $target);
-                if (! $toStatus) {
+                if (!$toStatus) {
                     continue;
                 }
                 $transitionRows[] = [
@@ -290,12 +301,12 @@ return new class extends Migration
 
         foreach ($equipmentTransitions as $from => $targets) {
             $fromStatus = $statusMap->get('equipment:' . $from);
-            if (! $fromStatus) {
+            if (!$fromStatus) {
                 continue;
             }
             foreach ($targets as $target) {
                 $toStatus = $statusMap->get('equipment:' . $target);
-                if (! $toStatus) {
+                if (!$toStatus) {
                     continue;
                 }
                 $transitionRows[] = [
