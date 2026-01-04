@@ -1,2657 +1,1964 @@
-# Computer & Equipment Maintenance Management System
-## Complete Development Prompts Collection
+I'll analyze the code structure by fetching key files from the repository to provide detailed, actionable prompts.Based on my analysis of the Taisykla App repository structure and the Laravel application architecture, I'll provide you with detailed, actionable prompts that you can use directly to improve the codebase. These are organized by priority and can be implemented incrementally.
 
 ---
 
-## Phase 1: Core Infrastructure Setup
+## **🎯 DETAILED IMPLEMENTATION PROMPTS**
 
-### Prompt 1: Authentication & User Management System
+### **1. DATABASE & MODELS ARCHITECTURE**
 
-Create a complete authentication and user management system with the following requirements:
+#### **Prompt 1.1: Create Comprehensive Service Request Model**
+```
+Create a Laravel Eloquent model for ServiceRequest with the following specifications:
 
-1. Multi-role user system supporting:
-   - System Administrators (full access)
-   - Operations Managers/Dispatch Coordinators
-   - Field Technicians
-   - Parts/Inventory Specialists
-   - Quality Assurance Managers
-   - Financial/Billing Specialists
-   - Support Staff
-   - Business Account Administrators (customers)
-   - Standard Business Users (customers)
-   - Individual Consumers
-   - Read-only/Guest Users
+Requirements:
+- Model name: ServiceRequest
+- Table: service_requests
+- Enable soft deletes (use SoftDeletes trait)
+- Add fillable fields: customer_id, equipment_id, technician_id, priority, status, description, scheduled_at, completed_at, estimated_cost, actual_cost, approval_status, approved_by, approved_at
+- Add casts: scheduled_at and completed_at as datetime, estimated_cost and actual_cost as decimal:2
+- Define relationships:
+  * belongsTo: Customer, Equipment, Technician (User model), ApprovedBy (User model)
+  * hasMany: ServiceRequestItems, ServiceRequestNotes, ServiceRequestAttachments
+  * morphMany: ActivityLog (polymorphic for audit trail)
+- Add scopes: scopeActive, scopePending, scopeInProgress, scopeCompleted, scopeHighPriority
+- Add accessor for status_label that returns human-readable status
+- Add mutator for priority that validates enum values
+- Implement observer for automatically logging status changes
+- Add constants for STATUS_PENDING, STATUS_ASSIGNED, STATUS_IN_PROGRESS, STATUS_COMPLETED, STATUS_CANCELLED
+- Add constants for PRIORITY_LOW, PRIORITY_MEDIUM, PRIORITY_HIGH, PRIORITY_URGENT
 
-2. Security features:
-   - Secure password requirements (min length, complexity rules)
-   - Multi-factor authentication support (SMS, Email, Authenticator App, Hardware Keys)
-   - Session management with automatic timeouts
-   - Account lockout after failed login attempts
-   - Password reset functionality via email
+Include proper PHPDoc blocks for all methods and properties.
+```
 
-3. First-time login flow:
-   - Welcome email with account setup link
-   - Forced password change on first login
-   - Optional MFA setup during onboarding
+#### **Prompt 1.2: Create Equipment Model with Maintenance History**
+```
+Create a comprehensive Equipment model with maintenance tracking:
 
-4. Role-based access control (RBAC):
-   - Define granular permissions for each role
-   - Permissions at module, function, and data visibility levels
-   - Permission inheritance through role assignments
+Model requirements:
+- Model name: Equipment
+- Table: equipment
+- Enable soft deletes
+- Fillable: customer_id, equipment_type_id, serial_number, manufacturer, model, purchase_date, warranty_expiry, status, location, notes
+- Relationships:
+  * belongsTo: Customer, EquipmentType
+  * hasMany: ServiceRequest, MaintenanceSchedule, EquipmentDocument
+  * morphMany: ActivityLog
+- Add scope for active equipment: scopeActive
+- Add scope for equipment needing maintenance: scopeNeedsMaintenance (checks last service date)
+- Add accessor: days_since_last_service
+- Add accessor: warranty_status (returns 'active', 'expired', or 'expiring_soon')
+- Add method: scheduleNextMaintenance() that creates a maintenance reminder
+- Add constants for equipment status: STATUS_OPERATIONAL, STATUS_NEEDS_REPAIR, STATUS_OUT_OF_SERVICE, STATUS_RETIRED
+- Implement automatic notification when warranty is expiring (within 30 days)
 
-5. User profile management:
-   - Full name, contact information, employee ID
-   - Department/team assignment
-   - Role designation
-   - Preferred language and timezone
-   - Notification preferences
+Include validation rules as static method validateRules() for use in form requests.
+```
 
-Build this with secure practices, encrypted password storage, and audit logging for all authentication events.
+#### **Prompt 1.3: Create Migration for Service Requests with Indexes**
+```
+Create a Laravel migration for the service_requests table with proper indexes and foreign keys:
 
----
+Migration specifications:
+- Table name: service_requests
+- Columns:
+  * id (bigIncrements, primary key)
+  * customer_id (unsignedBigInteger, foreign key to users)
+  * equipment_id (unsignedBigInteger, foreign key to equipment, nullable)
+  * technician_id (unsignedBigInteger, foreign key to users, nullable)
+  * priority (enum: 'low', 'medium', 'high', 'urgent', default 'medium')
+  * status (enum: 'pending', 'assigned', 'in_progress', 'completed', 'cancelled', default 'pending')
+  * description (text)
+  * scheduled_at (timestamp, nullable)
+  * started_at (timestamp, nullable)
+  * completed_at (timestamp, nullable)
+  * estimated_hours (decimal 8,2, nullable)
+  * actual_hours (decimal 8,2, nullable)
+  * estimated_cost (decimal 10,2, nullable)
+  * actual_cost (decimal 10,2, nullable)
+  * approval_status (enum: 'pending', 'approved', 'rejected', nullable)
+  * approved_by (unsignedBigInteger, foreign key to users, nullable)
+  * approved_at (timestamp, nullable)
+  * rejection_reason (text, nullable)
+  * customer_notes (text, nullable)
+  * technician_notes (text, nullable)
+  * internal_notes (text, nullable)
+  * timestamps (created_at, updated_at)
+  * softDeletes (deleted_at)
 
-### Prompt 2: Database Schema Design
+- Add indexes on:
+  * customer_id
+  * equipment_id
+  * technician_id
+  * status
+  * priority
+  * scheduled_at
+  * created_at
+  * composite index on (status, priority, scheduled_at) for efficient filtering
 
-Design a comprehensive database schema for a maintenance management system with these entities and relationships:
+- Add foreign key constraints with onDelete('cascade') for customer_id and onDelete('set null') for technician_id
 
-1. Users table:
-   - user_id (PK), username, email, password_hash, role_id (FK)
-   - first_name, last_name, phone, employee_id
-   - created_at, last_login, is_active, mfa_enabled
-   - department, timezone, language_preference
-
-2. Roles & Permissions tables:
-   - roles: role_id (PK), role_name, description
-   - permissions: permission_id (PK), permission_name, module, action_type
-   - role_permissions: role_id (FK), permission_id (FK)
-
-3. Customers table:
-   - customer_id (PK), account_number, company_name
-   - customer_type (residential, business, enterprise, government)
-   - service_level (economy, standard, premium)
-   - billing_address, service_addresses (JSON or separate table)
-   - contact_person, phone, email
-   - account_status, credit_limit, payment_terms
-   - created_at, parent_customer_id (for hierarchical relationships)
-
-4. Equipment table:
-   - equipment_id (PK), customer_id (FK), equipment_name
-   - equipment_type, manufacturer, model_number, serial_number
-   - purchase_date, purchase_price, location_address
-   - warranty_provider, warranty_type, warranty_start, warranty_end
-   - current_status, health_score, primary_user
-   - technical_specs (JSON), created_at, last_service_date
-
-5. Work Orders table:
-   - work_order_id (PK), ticket_number (unique), customer_id (FK)
-   - equipment_id (FK), assigned_technician_id (FK)
-   - priority (standard, high, urgent), status (submitted, assigned, in_progress, completed, closed)
-   - problem_description, problem_category
-   - requested_date, scheduled_date, scheduled_time_window
-   - estimated_duration, actual_duration
-   - service_location, special_instructions
-   - created_at, updated_at, completed_at
-
-6. Work Order History/Notes table:
-   - history_id (PK), work_order_id (FK), user_id (FK)
-   - action_type (status_change, note_added, parts_used)
-   - notes, timestamp, photos (array of URLs)
-
-7. Parts Inventory table:
-   - part_id (PK), part_name, part_number, manufacturer
-   - category, description, technical_specs
-   - quantity_in_stock, minimum_reorder_level, reorder_quantity
-   - cost_per_unit, retail_price, markup_percentage
-   - storage_location, supplier_info
-   - last_reorder_date, usage_last_30_days
-
-8. Parts Usage table:
-   - usage_id (PK), work_order_id (FK), part_id (FK)
-   - technician_id (FK), quantity_used
-   - cost_applied, timestamp
-
-9. Service Agreements table:
-   - agreement_id (PK), customer_id (FK)
-   - agreement_type (pay_per_service, monthly_maintenance, comprehensive)
-   - monthly_fee, included_services, excluded_services
-   - response_time_commitment, start_date, end_date
-   - auto_renewal, cancellation_terms
-
-10. Invoices table:
-    - invoice_id (PK), invoice_number (unique), customer_id (FK)
-    - work_order_id (FK), invoice_date, due_date
-    - subtotal, tax_amount, total_amount
-    - payment_status (unpaid, paid, overdue, disputed)
-    - payment_date, payment_method, payment_reference
-
-11. Invoice Line Items table:
-    - line_item_id (PK), invoice_id (FK)
-    - item_type (labor, parts, travel, fees)
-    - description, quantity, unit_price, extended_price
-
-12. Messages table:
-    - message_id (PK), sender_id (FK), recipient_id (FK)
-    - related_work_order_id (FK), subject, message_body
-    - timestamp, is_read, attachments (array)
-
-13. Audit Log table:
-    - log_id (PK), user_id (FK), action, entity_type
-    - entity_id, changes (JSON), ip_address, timestamp
-
-Include proper indexes, foreign key constraints, and consider partitioning strategies for tables that will grow large (work_orders, audit_log, messages).
+Include down() method that properly drops foreign keys and indexes before dropping the table.
+```
 
 ---
 
-## Phase 2: Dashboard Development
+### **2. CONTROLLERS & BUSINESS LOGIC**
 
-### Prompt 3: Technician Dashboard
+#### **Prompt 2.1: Create Service Request Controller with Repository Pattern**
+```
+Create a ServiceRequestController using repository pattern and best practices:
 
-Create a comprehensive field technician dashboard with these features:
+Controller structure:
+- Name: ServiceRequestController
+- Inject ServiceRequestRepository in constructor
+- Use Form Request validation classes (StoreServiceRequestRequest, UpdateServiceRequestRequest)
+- Implement methods:
+  * index(): Display paginated list with filters (status, priority, customer, technician, date range)
+  * create(): Show form with customer and equipment selection
+  * store(): Create new service request with validation, send notifications
+  * show($id): Display detailed view with timeline, notes, attachments
+  * edit($id): Show edit form with authorization check
+  * update($id): Update request, log changes, send notifications if status changed
+  * destroy($id): Soft delete with authorization
+  * assign(AssignTechnicianRequest $request, $id): Assign technician to request
+  * updateStatus(UpdateStatusRequest $request, $id): Change status, log activity
+  * approve($id): Approve request (manager only)
+  * reject(RejectRequestRequest $request, $id): Reject with reason
 
-1. Today's Work Queue:
-   - Display assigned jobs in priority order
-   - Color-coded priority indicators (red=urgent, orange=high, blue=normal, green=routine)
-   - Each job card shows:
-     * Customer name and location
-     * Scheduled time window
-     * Service type and problem description
-     * Estimated duration
-     * Equipment details
-   - Expandable cards revealing full details:
-     * Complete customer contact info
-     * Building access codes/parking instructions
-     * Problem description with photos
-     * Equipment history and specifications
-     * Suggested parts list
+Features to implement:
+- Use Laravel policies for authorization (ServiceRequestPolicy)
+- Add middleware for role-based access
+- Return JSON for AJAX requests, views for regular requests
+- Implement eager loading to prevent N+1 queries
+- Add try-catch blocks with proper error handling
+- Log all important actions using Laravel's logging
+- Send event when status changes (ServiceRequestStatusChanged event)
+- Return with flash messages for user feedback
+- Add pagination (15 items per page)
+- Add sorting by multiple columns
 
-2. Interactive Route Planning Map:
-   - Plot all assignments geographically
-   - Show optimal route with numbered sequence
-   - Calculate travel time between stops with traffic data
-   - Allow drag-and-drop reordering of jobs
-   - Highlight scheduling conflicts from reordering
-   - Show current location and navigation to next stop
+Include proper PHPDoc blocks and type hints for all methods.
+```
 
-3. Time Tracking:
-   - Real-time timer for current job
-   - Comparison to estimated duration
-   - Daily summary: work time, travel time, breaks, billable hours
-   - Visual indicator when running over estimated time
+#### **Prompt 2.2: Create Repository for Service Requests**
+```
+Create a ServiceRequestRepository class following repository pattern:
 
-4. Communication Center:
-   - Unread message counter
-   - Recent messages from dispatch/customers
-   - Quick reply functionality
-   - Alert panel for urgent notifications
+Repository specifications:
+- Interface: ServiceRequestRepositoryInterface
+- Implementation: ServiceRequestRepository
+- Inject ServiceRequest model in constructor
 
-5. Parts & Inventory Widget:
-   - Show commonly used parts
-   - Current availability status
-   - Quick reserve/checkout functionality
-   - Low stock warnings
+Methods to implement:
+- all($filters = []): Get all with optional filters (status, priority, customer_id, technician_id, date_from, date_to)
+- find($id): Find by ID with relationships loaded
+- create(array $data): Create new service request
+- update($id, array $data): Update existing request
+- delete($id): Soft delete
+- restore($id): Restore soft deleted
+- forceDelete($id): Permanently delete
+- getWithRelations($id, array $relations): Get with specific relations
+- getPendingForTechnician($technicianId): Get pending requests for specific technician
+- getOverdueRequests(): Get requests past scheduled_at that aren't completed
+- getByCustomer($customerId, $paginate = true): Get all requests for customer
+- getStatistics($dateFrom = null, $dateTo = null): Return array with counts by status and priority
+- searchByKeyword($keyword): Full-text search in description and notes
+- getUpcoming($days = 7): Get requests scheduled in next X days
+- getCompletedInDateRange($from, $to): Get completed requests in date range
+- updateStatus($id, $status, $userId): Update status and log change
+- assignTechnician($id, $technicianId): Assign technician to request
 
-6. Status Controls:
-   - Large, easy-to-tap status buttons (Available, Traveling, On Site, Working, On Break, Off Duty)
-   - One-click check-in/check-out for jobs
-   - Emergency alert button
+Features:
+- Use query builder for complex queries
+- Implement caching for statistics (cache for 5 minutes)
+- Add query scopes for common filters
+- Return paginated results where appropriate
+- Include proper error handling
+- Log database queries in debug mode
 
-Make the interface mobile-responsive, optimized for tablets and phones, with large touch targets and minimal text entry requirements.
+Bind interface to implementation in AppServiceProvider.
+```
 
----
+#### **Prompt 2.3: Create Form Request Validation Classes**
+```
+Create comprehensive Form Request classes for ServiceRequest:
 
-### Prompt 4: Dispatch Manager Dashboard
+1. StoreServiceRequestRequest:
+- Validation rules:
+  * customer_id: required, exists:users,id (with role check for customer)
+  * equipment_id: nullable, exists:equipment,id (must belong to customer)
+  * priority: required, in:low,medium,high,urgent
+  * description: required, string, min:10, max:5000
+  * scheduled_at: nullable, date, after:now
+  * estimated_hours: nullable, numeric, min:0.5, max:100
+  * estimated_cost: nullable, numeric, min:0
+  * customer_notes: nullable, string, max:2000
 
-Build a real-time dispatch coordinator dashboard with:
+- Custom validation:
+  * Ensure scheduled_at is during business hours (Mon-Fri, 8am-6pm)
+  * Validate equipment belongs to selected customer
+  * Check technician availability if technician_id provided
 
-1. Unassigned Work Request Queue:
-   - Prioritized list with urgency scoring
-   - Each request shows:
-     * Customer name and service level
-     * Request age (time waiting)
-     * Problem type and urgency
-     * Requested timeframe
-     * SLA deadline countdown
-   - One-click assignment to technician
-   - Bulk operations for multiple requests
+- Authorization: User must have 'create-service-requests' permission
 
-2. Live Technician Status Board:
-   - Grid or card view of all technicians
-   - Color-coded status indicators:
-     * Green = Available
-     * Blue = Traveling
-     * Orange = Working
-     * Red = Overdue/Late
-     * Gray = Off Duty
-   - For each technician show:
-     * Current location on mini-map
-     * Current job details
-     * Today's schedule with timeline
-     * Utilization percentage
-     * Performance metrics (avg job time vs estimate)
-     * Capacity for additional work
+2. UpdateServiceRequestRequest:
+- Same rules as Store but make customer_id optional (can't change customer)
+- Add rule for status transitions (can't go from completed to pending)
+- Authorization: User must own the request or be admin/manager
 
-3. Real-time KPI Metrics:
-   - Jobs completed today vs target
-   - Jobs in progress
-   - Average response time
-   - Average completion time
-   - Customer satisfaction scores
-   - Technician utilization rates
-   - Visual comparison to historical averages
+3. AssignTechnicianRequest:
+- technician_id: required, exists:users,id (must have technician role)
+- scheduled_at: required, date, after:now
+- estimated_hours: required, numeric, min:0.5
 
-4. Geographic Heat Map:
-   - Show concentration of pending requests
-   - Overlay active technician locations
-   - Identify coverage gaps
-   - Suggest optimal assignments based on proximity
+4. UpdateStatusRequest:
+- status: required, in:pending,assigned,in_progress,completed,cancelled
+- notes: required_if:status,cancelled|required_if:status,completed
+- actual_hours: required_if:status,completed
+- actual_cost: required_if:status,completed
 
-5. Schedule Timeline View:
-   - Horizontal timeline with technicians as rows
-   - Color-coded job blocks in time slots
-   - Drag-and-drop scheduling
-   - Automatic conflict detection
-   - Gap identification for optimization
-
-6. Alert & Exception Panel:
-   - Jobs running significantly over time
-   - Missed check-ins
-   - SLA violations or near-violations
-   - Parts unavailable for scheduled jobs
-   - Customer complaints/escalations
-   - Priority notifications with action buttons
-
-7. Assignment Workflow:
-   - Intelligent technician suggestion algorithm considering:
-     * Skills/certifications
-     * Geographic proximity
-     * Current workload
-     * Customer preferences
-     * Historical performance
-   - Show impact metrics for each assignment option
-   - Route optimization suggestions
-   - Automated scheduling with manual override
-
-Include real-time updates via WebSockets or polling, with automatic refresh of status changes.
+Include custom error messages for better UX.
+```
 
 ---
 
-### Prompt 5: Administrator Dashboard
+### **3. FRONTEND & USER INTERFACE**
 
-Design a system administrator dashboard featuring:
+#### **Prompt 3.1: Create Service Request Index View with Filters**
+```
+Create a Blade view for service requests listing (resources/views/service-requests/index.blade.php):
 
-1. System Health Monitoring:
-   - Server uptime percentage with historical trend
-   - Current response time metrics
-   - Database performance indicators
-   - Storage utilization with projections
-   - Active user session count
-   - API endpoint health status
-   - Visual indicators (green/yellow/red) for all metrics
+Requirements:
+- Extend main layout: @extends('layouts.app')
+- Page title: "Service Requests"
+- Breadcrumbs component showing: Dashboard > Service Requests
 
-2. Security Monitoring:
-   - Failed login attempt counter
-   - Geographic access anomalies
-   - Unusual data access patterns
-   - Security alert flags
-   - Recent account lockouts
-   - Suspicious activity log with details
+Components to include:
+1. Filter section (collapsible card):
+   - Status filter (dropdown with all statuses)
+   - Priority filter (dropdown)
+   - Customer search (autocomplete if admin/manager)
+   - Technician filter (dropdown if admin/manager)
+   - Date range picker (from/to)
+   - Search box for keyword search
+   - Apply Filters and Clear Filters buttons
 
-3. User Management Summary:
-   - Total active accounts by role type
-   - Recent account creations
-   - Recently deactivated accounts
-   - Pending password resets
-   - Accounts requiring attention:
-     * Inactive for 90+ days
-     * Locked accounts
-     * Access request queue
+2. Actions section:
+   - "Create New Request" button (check permission)
+   - Export to CSV button
+   - Bulk actions dropdown (for selected items)
 
-4. Business Intelligence Overview:
-   - Current month revenue vs projection vs last month
-   - Job volume trends (graph)
-   - Customer acquisition/churn metrics
-   - Average profitability per job
-   - Service type breakdown (pie chart)
+3. Results table:
+   - Columns: ID, Customer, Equipment, Priority (badge with colors), Status (badge), Scheduled Date, Technician, Actions
+   - Make priority badges: red for urgent, orange for high, yellow for medium, green for low
+   - Make status badges: gray for pending, blue for assigned, yellow for in_progress, green for completed, red for cancelled
+   - Each row should be clickable to view details
+   - Action buttons: View, Edit, Delete (check permissions for each)
 
-5. Compliance Dashboard:
-   - Data backup status with last backup time
-   - Security patch status
-   - Audit log integrity verification
-   - Data privacy compliance indicators
-   - Regulatory requirement checklist
+4. Pagination:
+   - Use Laravel's pagination links
+   - Show total count of results
+   - Per page selector (10, 25, 50, 100)
 
-6. System Configuration Quick Access:
-   - Shortcut buttons for:
-     * User account creation
-     * System settings adjustment
-     * Database maintenance
-     * Data export/backup
-     * System logs review
-     * Integration management
+Features:
+- Use Alpine.js for interactive filters without page reload
+- Add sorting by clicking column headers
+- Highlight overdue requests in light red background
+- Add loading spinner when filtering
+- Show empty state with illustration if no results
+- Make responsive: stack on mobile, table on desktop
+- Add tooltips for truncated text
 
-7. Alert Center:
-   - Critical system notifications
-   - Maintenance schedules
-   - License expiration warnings
-   - Storage capacity warnings
-   - Integration failures
+Use Tailwind CSS for styling with modern design.
+```
 
-Include comprehensive filtering, date range selection, and export capabilities for all data views.
+#### **Prompt 3.2: Create Service Request Detail View**
+```
+Create a comprehensive service request detail view (resources/views/service-requests/show.blade.php):
 
----
+Layout sections:
+1. Header:
+   - Request ID and status badge
+   - Priority badge
+   - Edit and Delete buttons (if authorized)
+   - Back to list button
 
-## Phase 3: Work Order Management
+2. Main Information Card:
+   - Customer details (name, email, phone) with link to customer profile
+   - Equipment information (type, manufacturer, model, serial)
+   - Description (formatted text)
+   - Scheduled date and time
+   - Estimated vs actual hours and cost comparison
 
-### Prompt 6: Work Order Creation & Management
+3. Status Timeline (visual):
+   - Show all status changes with dates and who made the change
+   - Use vertical timeline component with icons
+   - Highlight current status
 
-Build a comprehensive work order management system with:
+4. Assignment Section:
+   - Current technician info (photo, name, contact)
+   - Assign/Reassign button (if manager)
+   - Show technician workload indicator
 
-1. Work Order Creation Wizard (multi-step):
-   
-   Step 1 - Customer Selection:
-   - Searchable customer dropdown
-   - Display customer service level and status
-   - Quick "Add New Customer" option
-   - Show customer's recent service history
-   
-   Step 2 - Equipment Selection:
-   - Display customer's equipment inventory
-   - Filter by location, type, status
-   - Show equipment health score and last service
-   - "Add New Equipment" option
-   
-   Step 3 - Problem Description:
-   - Large text area with character counter
-   - Helper text with good description examples
-   - Problem category dropdown
-   - Upload photos/videos (drag & drop)
-   - Template selection for common issues
-   
-   Step 4 - Priority & Scheduling:
-   - Priority level selection with cost implications
-   - Calendar date picker with availability indicators
-   - Time window selection (morning/afternoon/specific)
-   - Special instructions field
-   - Access requirements checklist
-   
-   Step 5 - Assignment (for employees):
-   - Suggested technician recommendation
-   - Manual technician selection
-   - Skills match indicator
-   - Availability verification
-   - Route optimization preview
-   
-   Step 6 - Review & Submit:
-   - Complete summary display
-   - Cost estimate if applicable
-   - Edit buttons for each section
-   - Terms acknowledgment
-   - Submit button
+5. Notes Section (tabbed):
+   - Customer Notes tab
+   - Technician Notes tab
+   - Internal Notes tab (admin only)
+   - Add note form for each type
 
-2. Work Order List Views:
-   
-   Table View:
-   - Sortable columns: ticket#, customer, status, priority, date, technician
-   - Multi-criteria filtering
-   - Bulk actions (assign, change priority, export)
-   - Status indicators with color coding
-   - Quick actions menu per row
-   
-   Calendar View:
-   - Month/week/day views
-   - Color-coded by priority or status
-   - Drag-to-reschedule
-   - Conflict warnings
-   - Capacity indicators
-   
-   Kanban Board View:
-   - Columns: Submitted → Assigned → In Progress → Completed → Closed
-   - Drag between columns to update status
-   - Card preview with key info
-   - Filter by technician, priority, customer
-   
-   Map View:
-   - Geographic plotting of work orders
-   - Filter by status, date range
-   - Cluster markers for dense areas
-   - Click marker for details
-   - Route planning overlay
+6. Attachments Section:
+   - Grid of uploaded images/documents
+   - Download and delete options
+   - Upload new attachment button with drag-drop
 
-3. Work Order Detail Page:
-   
-   Header Section:
-   - Large ticket number
-   - Status badge
-   - Priority indicator
-   - Created/updated timestamps
-   
-   Customer Information Panel:
-   - Name, contact info, service level
-   - Location with map
-   - Access instructions
-   - Communication history
-   
-   Equipment Information Panel:
-   - Equipment name and photo
-   - Specifications
-   - Warranty status
-   - Service history timeline
-   
-   Problem Details Section:
-   - Original description
-   - Attached photos/videos
-   - Category tags
-   
-   Assignment & Schedule Section:
-   - Assigned technician with photo
-   - Scheduled date/time
-   - Estimated vs actual duration
-   - Status timeline with updates
-   
-   Parts & Materials Section:
-   - Parts used log with costs
-   - Materials consumed
-   - Availability checker
-   - Request additional parts button
-   
-   Work Notes & Documentation:
-   - Chronological activity feed
-   - Technician notes entries
-   - Status change history
-   - Photo uploads during service
-   - Time stamped entries
-   
-   Financial Information:
-   - Labor charges breakdown
-   - Parts charges
-   - Travel/trip fees
-   - Tax calculation
-   - Total cost
-   
-   Action Buttons:
-   - Edit details
-   - Change status
-   - Reassign technician
-   - Add notes
-   - Upload photos
-   - Generate invoice
-   - Clone work order
-   - Print/export
+7. Parts Used Section (if completed):
+   - Table of parts with quantity and cost
+   - Total parts cost
 
-4. Status Management:
-   - Clear status workflow definitions
-   - Automatic notifications on status changes
-   - Required fields per status
-   - Status change validation rules
-   - Audit trail of all changes
+8. Activity Log:
+   - Chronological list of all changes
+   - Show who did what and when
+   - Filterable by action type
 
-Implement proper validation, error handling, and confirmation dialogs for destructive actions.
+9. Action Buttons (context-aware):
+   - If pending: "Approve" and "Reject" buttons (manager)
+   - If assigned: "Start Work" button (technician)
+   - If in_progress: "Complete" button (technician)
+   - If completed: "Rate Service" button (customer)
+
+Features:
+- Real-time updates using Laravel Echo for status changes
+- Confirmation modals for destructive actions
+- Loading states for async operations
+- Print-friendly CSS
+- Share button to generate public link
+- Export as PDF button
+
+Use responsive design with mobile-first approach.
+```
+
+#### **Prompt 3.3: Create Dashboard with Analytics**
+```
+Create an analytics dashboard (resources/views/dashboard.blade.php):
+
+Dashboard widgets (use grid layout):
+1. Statistics Cards (top row):
+   - Total Active Requests (with trend indicator)
+   - Requests This Week
+   - Average Response Time
+   - Customer Satisfaction Score
+   - Revenue This Month
+   - Pending Approvals (clickable)
+
+2. Charts Section:
+   - Requests by Status (doughnut chart)
+   - Requests by Priority (bar chart)
+   - Requests Over Time (line chart, last 30 days)
+   - Revenue Trend (area chart)
+
+3. Quick Actions Panel:
+   - Create New Request
+   - Schedule Maintenance
+   - View Reports
+   - Manage Inventory
+
+4. Recent Requests Table:
+   - Last 10 requests with quick view
+   - Click to see details
+
+5. Technician Performance (manager view):
+   - Table showing each technician with:
+     * Active jobs count
+     * Completed this week
+     * Average completion time
+     * Customer rating
+   - Click technician to see their schedule
+
+6. Overdue Requests Alert:
+   - Red alert box if any overdue
+   - List of overdue with action buttons
+
+7. Upcoming Schedule (calendar view):
+   - This week's scheduled requests
+   - Drag-and-drop to reschedule
+
+8. Low Stock Alerts (if inventory module):
+   - Parts below reorder level
+   - Link to inventory management
+
+Implementation details:
+- Use Chart.js for all charts
+- Make charts responsive and interactive
+- Add date range selector for filtering data
+- Implement real-time updates for statistics
+- Add loading skeletons while data loads
+- Make widgets draggable/reorderable (save preference)
+- Add export options for each widget
+- Use Alpine.js for interactivity
+- Fetch data via AJAX from dedicated API endpoints
+
+Create corresponding controller method: DashboardController@index
+```
 
 ---
 
-### Prompt 7: Mobile Work Order Interface for Technicians
+### **4. API DEVELOPMENT**
 
-Create a mobile-optimized work order interface for field technicians with:
+#### **Prompt 4.1: Create RESTful API for Service Requests**
+```
+Create a comprehensive RESTful API for ServiceRequests:
 
-1. Job List Screen:
-   - Large, touch-friendly job cards
-   - Swipe actions (call customer, navigate, start job)
-   - Color-coded priority borders
-   - Time-ordered or route-ordered sorting
-   - Pull-to-refresh
-   - Job counter badge
+API Controller: Api\ServiceRequestController
 
-2. Job Detail Screen:
-   
-   Top Section:
-   - Customer name and location (tappable for maps)
-   - One-tap call button
-   - One-tap message button
-   - Status change dropdown
-   
-   Problem Information:
-   - Clear problem description
-   - Photo gallery with pinch-to-zoom
-   - Equipment details expandable section
-   
-   Navigation:
-   - "Navigate Here" button (opens Maps app)
-   - Estimated travel time
-   - Address copy button
-   
-   Check-in/Status Controls:
-   - Large "Arrive at Site" button
-   - "Start Work" button
-   - "Request Help" button
-   - Timer display when working
+Endpoints to implement:
 
-3. Photo Capture Screen:
-   - Camera access with in-app capture
-   - Multiple photo support
-   - Auto-labeling (Before/During/After)
-   - Photo annotation tools
-   - Photo deletion option
-   - Upload progress indicator
+GET /api/v1/service-requests
+- List all service requests with pagination
+- Query parameters: page, per_page, status, priority, customer_id, technician_id, search, sort, order
+- Return paginated JSON with meta information
+- Include related data: customer, equipment, technician
 
-4. Work Notes Screen:
-   - Voice-to-text input support
-   - Template notes for common scenarios
-   - Time-stamped entries
-   - Note categories (diagnosis, repair, testing)
-   - Attachment support
+GET /api/v1/service-requests/{id}
+- Get single service request with all relations
+- Include: customer, equipment, technician, notes, attachments, activity_log
+- Return 404 if not found
 
-5. Parts Usage Screen:
-   - Barcode scanner for part lookup
-   - Quick add from favorites
-   - Search parts catalog
-   - Quantity selector
-   - Running cost total
-   - Available inventory indicator
+POST /api/v1/service-requests
+- Create new service request
+- Validate using API Form Request
+- Return 201 with created resource
+- Send notification to customer and dispatch team
 
-6. Time Tracking Screen:
-   - Large start/pause/stop timer
-   - Break time logging
-   - Activity categorization (diagnosis, repair, travel)
-   - Daily time summary
-   - Manual time entry option
+PUT /api/v1/service-requests/{id}
+- Update existing request
+- Return 200 with updated resource
+- Log changes in activity log
 
-7. Customer Sign-off Screen:
-   - Work summary display
-   - Signature pad (smooth drawing)
-   - Clear signature button
-   - Customer satisfaction quick rating
-   - Additional comments field
-   - Submit completion button
+DELETE /api/v1/service-requests/{id}
+- Soft delete request
+- Return 204 No Content
 
-8. Offline Mode:
-   - Queue actions when offline
-   - Show offline indicator
-   - Auto-sync when connection restored
-   - Local storage of job data
-   - Conflict resolution on sync
+POST /api/v1/service-requests/{id}/assign
+- Assign technician to request
+- Body: { technician_id, scheduled_at }
+- Send notification to technician
 
-9. Quick Actions Menu:
-   - Available from anywhere
-   - Emergency support contact
-   - Report problem
-   - Request parts delivery
-   - Check inventory
-   - View today's schedule
+PATCH /api/v1/service-requests/{id}/status
+- Update status
+- Body: { status, notes }
+- Validate status transitions
 
-Design for single-hand use with bottom navigation, large touch targets (minimum 44x44px), high contrast for outdoor visibility, and minimal data usage.
+GET /api/v1/service-requests/{id}/timeline
+- Get complete timeline of status changes
 
----
+POST /api/v1/service-requests/{id}/notes
+- Add note to request
+- Body: { note_type, content }
 
-## Phase 4: Scheduling & Assignment
+GET /api/v1/service-requests/statistics
+- Get dashboard statistics
+- Query params: date_from, date_to
+- Return counts and aggregates
 
-### Prompt 8: Intelligent Scheduling System
+API Features:
+- Use Laravel Sanctum for authentication
+- Implement API versioning (v1)
+- Add rate limiting (60 requests per minute)
+- Use API Resources for consistent response format
+- Implement proper HTTP status codes
+- Add CORS configuration
+- Include ETag headers for caching
+- Implement sorting and filtering
+- Add comprehensive error responses
+- Include API documentation in code (use Swagger annotations)
+- Log all API requests
+- Implement request validation
+- Add response compression
 
-Build an intelligent scheduling and assignment system with:
+Create API Resource classes:
+- ServiceRequestResource
+- ServiceRequestCollection
+- CustomerResource
+- TechnicianResource
+```
 
-1. Assignment Recommendation Engine:
-   
-   Algorithm should consider:
-   - Technician skill levels and certifications matching job requirements
-   - Geographic proximity to service location
-   - Current workload and availability
-   - Travel time from current/previous location
-   - Customer preferences for specific technicians
-   - Historical performance on similar jobs
-   - Work hour constraints and overtime rules
-   
-   Output should show:
-   - Ranked list of suitable technicians
-   - Score/match percentage for each
-   - Pros/cons for each option
-   - Impact on each technician's schedule
-   - Estimated start time for customer
+#### **Prompt 4.2: Create API Authentication with Sanctum**
+```
+Implement Laravel Sanctum for API authentication:
 
-2. Route Optimization:
-   - Multi-stop route calculation
-   - Traffic-aware timing (integration with mapping API)
-   - Reorder suggestions to minimize drive time
-   - Show time savings from optimization
-   - Consider customer time windows as constraints
-   - "Accept Optimization" one-click application
+Setup requirements:
+1. Install Laravel Sanctum
+2. Publish configuration
+3. Run migrations for personal_access_tokens table
 
-3. Schedule Conflict Detection:
-   - Real-time validation when assigning
-   - Detect overlapping appointments
-   - Identify insufficient travel time
-   - Flag violations of customer time preferences
-   - Warn about overtime/maximum hours
-   - Suggest alternatives when conflicts found
+Create Auth API Controller (Api\AuthController):
 
-4. Capacity Planning:
-   - Visual capacity indicators per technician
-   - Daily/weekly/monthly utilization metrics
-   - Forecast future capacity needs
-   - Identify under-utilized resources
-   - Alert when approaching capacity limits
-   - Suggest hiring needs based on trends
+POST /api/v1/register
+- Register new user
+- Validate: name, email, password, password_confirmation, role
+- Create user with hashed password
+- Return user and access token
+- Token abilities based on role
 
-5. Automated Scheduling Rules:
-   - Auto-assign based on configurable rules:
-     * Customer always gets same technician
-     * Specific equipment types → certified technicians
-     * Geographic territory assignments
-     * Round-robin distribution
-     * Skill-based routing
-   - Rule priority system
-   - Manual override capability
-   - Rule audit logging
+POST /api/v1/login
+- Authenticate user
+- Validate: email, password, device_name
+- Check credentials
+- Create token with device name
+- Return user and token
 
-6. Schedule Adjustment Tools:
-   - Drag-and-drop rescheduling
-   - Swap appointments between technicians
-   - Bulk reschedule operations
-   - Schedule compression (fill gaps)
-   - Emergency insertion (bump lower priority)
-   - Impact analysis before confirming changes
+POST /api/v1/logout
+- Revoke current token
+- Return 204 No Content
 
-7. Calendar Integration:
-   - Sync with Google Calendar, Outlook, Apple Calendar
-   - Two-way sync support
-   - Respect blocked time in personal calendars
-   - Automatic update propagation
-   - Conflict resolution preferences
+GET /api/v1/user
+- Get authenticated user info
+- Require valid token
 
-8. Recurring Appointment Management:
-   - Create recurring schedules (daily, weekly, monthly, custom)
-   - Preventive maintenance automation
-   - Series editing (single instance vs all)
-   - Skip/postpone individual occurrences
-   - End date or occurrence count limits
+POST /api/v1/refresh
+- Refresh token (delete old, create new)
 
-Implement with transaction safety to prevent double-booking and maintain schedule integrity.
+Token Management:
+- Set token expiration (24 hours for mobile apps)
+- Different abilities for different roles:
+  * admin: *
+  * manager: service-requests:*, customers:read, technicians:read
+  * technician: service-requests:read, service-requests:update-status
+  * customer: service-requests:read, service-requests:create
+
+Middleware setup:
+- Create custom middleware: CheckTokenAbility
+- Apply middleware to routes based on required abilities
+
+Security features:
+- Implement failed login attempt throttling
+- Hash tokens properly
+- Add token name/device tracking
+- Implement token revocation
+- Add IP address logging
+- Two-factor authentication option
+
+Create API requests:
+- RegisterRequest
+- LoginRequest
+- RefreshTokenRequest
+
+Error responses:
+- 401 for unauthenticated
+- 403 for unauthorized (wrong abilities)
+- 422 for validation errors
+- Include helpful error messages
+```
 
 ---
 
-## Phase 5: Equipment & Asset Management
+### **5. REAL-TIME FEATURES**
 
-### Prompt 9: Equipment Management System
+#### **Prompt 5.1: Implement WebSocket for Real-time Updates**
+```
+Set up Laravel WebSockets for real-time functionality:
 
-Create a comprehensive equipment tracking and management system with:
+Installation:
+1. Install beyondcode/laravel-websockets package
+2. Install pusher/pusher-php-server
+3. Configure broadcasting in config/broadcasting.php
+4. Publish WebSocket configuration
 
-1. Equipment Registration:
-   
-   Input Form:
-   - Equipment name/identifier
-   - Type/category (hierarchical taxonomy)
-   - Manufacturer (searchable dropdown)
-   - Model number (with auto-complete from database)
-   - Serial number (unique validation)
-   - Purchase information (date, price, vendor)
-   - Warranty details (provider, type, dates, coverage terms)
-   - Physical location (address, building, room)
-   - Primary user/owner
-   - Photo upload (multiple images)
-   - Technical specifications (JSON flexible schema)
-   - Custom fields per equipment type
-   
-   Validation:
-   - Duplicate serial number detection
-   - Required fields enforcement
-   - Date logic validation (purchase before warranty start)
-   - Format validation for serial numbers
+Events to broadcast:
+1. ServiceRequestCreated
+   - Channel: service-requests
+   - Data: request ID, customer name, priority, created_at
+   - Listeners: DispatchDashboard, NotifyManagers
 
-2. Equipment Inventory Views:
-   
-   List View:
-   - Tabular display with sortable columns
-   - Multi-criteria filtering:
-     * Customer/owner
-     * Equipment type
-     * Manufacturer
-     * Location
-     * Status (operational, needs service, decommissioned)
-     * Age range
-     * Warranty status
-   - Quick search across all fields
-   - Export to CSV/Excel
-   - Bulk edit capabilities
-   
-   Card/Grid View:
-   - Visual cards with equipment photos
-   - Status badges and health indicators
-   - Quick action menu per card
-   - Pagination or infinite scroll
-   
-   Location View:
-   - Group by physical location
-   - Hierarchical display (building → floor → room)
-   - Equipment count per location
-   - Interactive floor plans (if available)
+2. ServiceRequestStatusChanged
+   - Channel: service-request.{id}
+   - Data: request ID, old status, new status, changed_by
+   - Listeners: NotifyCustomer, NotifyTechnician, UpdateDashboard
 
-3. Equipment Detail Page:
-   
-   Overview Tab:
-   - High-quality photo gallery
-   - Status and health score
-   - Quick stats (age, total service costs, downtime days)
-   - QR code for mobile scanning
-   - Asset tag printing option
-   
-   Specifications Tab:
-   - Complete technical specifications
-   - Capacity/performance metrics
-   - Supported features list
-   - Network information (IP, MAC address)
-   - Physical dimensions and weight
-   
-   Warranty Tab:
-   - Coverage details with visual timeline
-   - Terms and conditions document
-   - Claim history
-   - Expiration countdown
-   - Renewal reminders
-   - Coverage gap warnings
-   
-   Service History Tab:
-   - Chronological timeline of all service events
-   - Each event shows:
-     * Date and duration
-     * Problem and resolution
-     * Technician who performed work
-     * Parts replaced
-     * Cost incurred
-     * Before/after photos
-   - Filter by date range or service type
-   - Export service history
-   
-   Documents Tab:
-   - User manuals (upload/link)
-   - Service manuals
-   - Warranty documents
-   - Purchase receipts
-   - Configuration documents
-   - Training materials
-   - File organization and versioning
-   
-   Metrics Tab:
-   - Total cost of ownership graph
-   - Mean time between failures
-   - Average repair time
-   - Downtime percentage
-   - Maintenance cost trend
-   - Comparison to similar equipment
+3. TechnicianAssigned
+   - Channel: technician.{technician_id}
+   - Data: request ID, customer name, scheduled_at
+   - Listeners: SendTechnicianNotification
 
-4. Equipment Health Scoring:
-   - Algorithm considering:
-     * Age vs expected lifespan
-     * Service frequency
-     * Repair cost trend
-     * Downtime incidents
-     * Critical component failures
-   - Score visualization (0-100 or letter grade)
-   - Health trend graph
-   - Predictive alerts (equipment likely to fail soon)
-   - Replacement recommendations
+4. MessageSent
+   - Channel: service-request.{id}.chat
+   - Data: message, sender, timestamp
+   - Private channel for customer and technician
 
-5. Lifecycle Management:
-   - Lifecycle status tracking:
-     * New/recently purchased
-     * Under warranty
-     * In service/operational
-     * End of warranty
-     * Frequent repairs
-     * Recommended for replacement
-     * Decommissioned
-   - Automated status progression
-   - Lifecycle policy configuration
-   - Replacement planning reports
+Create Event Classes with ShouldBroadcast interface:
+- Include channel authorization
+- Define broadcast data
+- Set queue for event broadcasting
 
-6. Equipment Relationships:
-   - Parent-child relationships (server → blade servers)
-   - Dependencies (UPS → connected equipment)
-   - Network topology visualization
-   - Impact analysis (if this fails, what else is affected)
+Frontend Integration (resources/js/echo.js):
+- Configure Laravel Echo with Pusher
+- Listen to channels:
+  ```javascript
+  Echo.channel('service-requests')
+      .listen('ServiceRequestCreated', (e) => {
+          // Update dashboard
+      });
+  
+  Echo.private('service-request.' + requestId)
+      .listen('ServiceRequestStatusChanged', (e) => {
+          // Update status display
+      });
+  ```
 
-7. Preventive Maintenance Scheduling:
-   - Define maintenance schedules per equipment type
-   - Automatic work order generation
-   - Maintenance checklist templates
-   - Completion tracking
-   - Missed maintenance alerts
+Channel Authorization (routes/channels.php):
+- Authorize private channels
+- Check user permissions
+- Return user data if authorized
 
-8. Equipment Import/Export:
-   - Bulk import via CSV upload
-   - Field mapping interface
-   - Data validation during import
-   - Error reporting and correction
-   - Export filtered equipment lists
+Create notification toasts when events received:
+- Use Alpine.js for toast notifications
+- Show: "New service request created", "Status updated", etc.
+- Auto-dismiss after 5 seconds
 
-Include barcode/QR code generation for equipment labeling and mobile scanning for quick equipment lookup.
+Dashboard real-time updates:
+- Update statistics counters
+- Refresh recent requests list
+- Update technician status indicators
+- Flash row when new item added
 
----
+WebSocket Dashboard (only for admins):
+- Monitor active connections
+- View channel statistics
+- Debug events in real-time
+```
 
-## Phase 6: Parts & Inventory Management
+#### **Prompt 5.2: Implement Notification System**
+```
+Create comprehensive Laravel notification system:
 
-### Prompt 10: Inventory Management System
+Notification Types (create Notification classes):
 
-Develop a comprehensive parts and inventory management system with:
+1. ServiceRequestCreatedNotification
+   - To: Customer, Dispatch managers
+   - Channels: database, mail, SMS (optional)
+   - Content: Request details, confirmation number
+   - Action: View request button
 
-1. Parts Catalog:
-   
-   Part Record Structure:
-   - Part ID (auto-generated)
-   - Part name/description
-   - Manufacturer
-   - Manufacturer part number
-   - Internal SKU/part number
-   - Category/subcategory (hierarchical)
-   - Technical specifications
-   - Compatibility information (which equipment uses this)
-   - Unit of measure
-   - Photos from multiple angles
-   - Datasheet/documentation links
-   - Supplier information (primary and alternatives)
-   
-   Catalog Management:
-   - Add/edit/deactivate parts
-   - Bulk import from supplier catalogs
-   - Duplicate detection
-   - Merge duplicate parts
-   - Part substitution/alternative suggestions
-   - Obsolescence marking
+2. TechnicianAssignedNotification
+   - To: Technician, Customer
+   - Channels: database, mail, push
+   - Content: Assignment details, customer info, scheduled time
+   - Action: View schedule, Contact customer
 
-2. Inventory Tracking:
-   
-   Stock Levels:
-   - Quantity on hand
-   - Quantity reserved (assigned to jobs)
-   - Quantity on order
-   - Available quantity (calculated)
-   - Multiple storage locations with quantities per location
-   - Bin/shelf location identifiers
-   
-   Inventory Transactions:
-   - Receiving (purchases, returns)
-   - Usage (consumed on jobs)
-   - Adjustments (corrections, damage, theft)
-   - Transfers (between locations)
-   - Returns to supplier
-   - Each transaction logs:
-     * Date/time
-     * User who performed it
-     * Quantity and reason
-     * Associated document (PO, work order)
-   
-   Reorder Management:
-   - Minimum stock level per part
-   - Reorder point
-   - Reorder quantity
-   - Automatic purchase order generation
-   - Reorder alerts for below-minimum parts
-   - Economic order quantity calculations
+3. ServiceStartedNotification
+   - To: Customer
+   - Channels: database, SMS, mail
+   - Content: Technician info, estimated completion
+   - Action: Track progress
 
-3. Financial Tracking:
-   
-   Cost Information:
-   - Unit cost (from supplier)
-   - Average cost (FIFO, LIFO, or weighted average)
-   - Cost history and trends
-   - Quantity discount tiers
-   - Retail/customer price
-   - Markup percentage
-   - Price history
-   
-   Valuation:
-   - Total inventory value calculation
-   - Value by category
-   - Aging analysis (identify slow-moving stock)
-   - Obsolete inventory identification
-   - Write-off tracking
+4. ServiceCompletedNotification
+   - To: Customer, Managers
+   - Channels: database, mail
+   - Content: Completion details, invoice
+   - Action: Rate service, View invoice, Pay online
 
-4. Usage Analytics:
-   
-   Reports and Dashboards:
-   - Parts usage by time period
-   - Most frequently used parts
-   - Parts with highest consumption cost
-   - Usage by technician
-   - Usage by customer
-   - Usage by equipment type
-   - Seasonal patterns
-   - Trend analysis and forecasting
-   
-   Visualizations:
-   - Bar charts for top parts
-   - Line graphs for usage trends
-   - Heat maps for seasonal patterns
-   - Pie charts for cost distribution
+5. ServiceRequestApprovedNotification
+   - To: Customer, Assigned technician
+   - Channels: database, mail
+   - Content: Approval confirmation
+   - Action: View details
 
-5. Supplier Management:
-   
-   Supplier Records:
-   - Supplier name and contact info
-   - Payment terms
-   - Lead times
-   - Minimum order quantities
-   - Shipping costs
-   - Performance ratings
-   - Preferred supplier flags
-   
-   Purchase Order System:
-   - PO creation from reorder suggestions
-   - Manual PO creation
-   - PO approval workflow (if over threshold)
-   - Send PO to supplier (email/EDI)
-   - PO tracking and status
-   - Receiving against PO
-   - Partial receipt handling
-   - Discrepancy resolution
+6. ServiceRequestRejectedNotification
+   - To: Customer
+   - Channels: database, mail, SMS
+   - Content: Rejection reason
+   - Action: Contact support, Modify request
 
-6. Technician Inventory Management:
-   
-   Vehicle Stock Tracking:
-   - Parts assigned to each technician
-   - Check-out/check-in system
-   - Restocking alerts
-   - Return unused parts
-   - Transfer between technicians
-   
-   Usage Recording:
-   - Scan barcode to log usage
-   - Manual entry with part lookup
-   - Quantity used
-   - Automatic work order association
-   - Automatic cost application
+7. UpcomingServiceReminderNotification
+   - To: Customer, Technician
+   - Channels: database, mail, SMS
+   - Content: Reminder 24h before scheduled service
+   - Action: Reschedule, Confirm
 
-7. Barcode/RFID Support:
-   - Generate barcode labels for parts
-   - Print barcode sheets
-   - Barcode scanning for receiving
-   - Barcode scanning for usage
-   - RFID tag support for tracking
+8. OverdueServiceAlertNotification
+   - To: Managers, Technicians
+   - Channels: database, mail
+   - Content: Overdue request details
+   - Action: Reassign, Contact customer
 
-8. Integration Capabilities:
-   - Sync with accounting system for financial data
-   - Import supplier catalogs
-   - Export for external analysis
-   - API for third-party connections
+Implementation:
+- Use database notifications table for in-app notifications
+- Create mail templates for each notification (Markdown mailable)
+- Implement SMS via Twilio (create TwilioChannel)
+- Add push notifications for mobile (FCM)
 
-9. Cycle Counting:
-   - Schedule regular inventory counts
-   - Generate count sheets
-   - Mobile app for counting
-   - Variance reporting
-   - Adjustment workflow
+Notification Preferences:
+- Create user preferences table
+- Allow users to opt in/out of notification types
+- Respect notification channels preference
 
-Build with real-time updates, transaction integrity, and comprehensive audit trails.
+Notification Center UI:
+- Bell icon with unread count badge
+- Dropdown with recent notifications
+- Mark as read functionality
+- Clear all button
+- Link to full notification history page
+
+Scheduled Notifications:
+- Queue notification jobs
+- Send reminders using Laravel's task scheduler
+- Example: Check for upcoming services daily at 9 AM
+
+Notification Templates (Blade):
+- Create in resources/views/notifications/
+- Make responsive email templates
+- Include company branding
+- Add clear call-to-action buttons
+
+Create Notification Helper Service:
+- NotificationService class with methods to send each type
+- Handle user preferences checking
+- Log notification sending
+- Retry failed notifications
+```
 
 ---
 
-## Phase 7: Customer Portal
+### **6. TESTING**
 
-### Prompt 11: Customer Self-Service Portal
+#### **Prompt 6.1: Create Feature Tests for Service Requests**
+```
+Create comprehensive PHPUnit feature tests for ServiceRequest functionality:
 
-Create a customer-facing web portal with:
+Test file: tests/Feature/ServiceRequestTest.php
 
-1. Account Dashboard:
-   
-   Overview Section:
-   - Welcome message with customer name
-   - Account summary card showing:
-     * Account status (active, suspended)
-     * Service agreement type
-     * Current balance (with payment due indicator)
-     * Next scheduled maintenance
-   
-   Active Service Requests:
-   - Cards for each open request
-   - Status badges with progress indicator
-   - Technician info with photo
-   - Estimated arrival/completion time
-   - Quick action buttons (message, cancel, reschedule)
-   - Live tracking link when technician en route
-   
-   Equipment Overview:
-   - Total device count
-   - Visual health indicators (pie chart: healthy/warning/critical)
-   - List of devices needing attention
-   - Quick link to equipment inventory
-   
-   Recent Activity Feed:
-   - Last 5-10 service requests with brief status
-   - Dates and technicians
-   - Cost for completed services
-   - Quick link to details
-   
-   Quick Actions Panel:
-   - Large "Request Service" button
-   - "View Equipment" button
-   - "Pay Invoice" button
-   - "Contact Support" button
-   - "Knowledge Base" button
+Tests to implement:
 
-2. Service Request Creation:
-   
-   Step 1: Select Equipment
-   - Visual grid of customer's equipment
-   - Filters: location, type, status
-   - "Equipment Not Listed?" option
-   
-   Step 2: Describe Problem
-   - Large text box with helper text
-   - Photo/video upload (drag & drop)
-   - Problem category selection
-   
-   Step 3: Priority & Schedule
-   - Priority level with clear cost implications
-   - Calendar with available dates
-   - Time preferences
-   - Special instructions
-   
-   Step 4: Review & Submit
-   - Summary of all information
-   - Cost estimate
-   - Terms acceptance
-   - Submit button
-   
-   Confirmation Page:
-   - Ticket number prominently displayed
-   - Summary of request
-   - Expected response time
-   - Next steps explanation
-   - Option to track request
+1. User Can Create Service Request:
+   - test_customer_can_create_service_request()
+   - Assert: database has new record
+   - Assert: customer receives notification
+   - Assert: redirected to request details page
 
-3. Service Request Tracking:
-   
-   Request Detail Page:
-   - Large ticket number
-   - Status progress bar
-   - Current status description
-   - Timeline of all activities
-   
-   Technician Information (when assigned):
-   - Name and photo
-   - Contact button (call or message)
-   - Customer ratings/reviews
-   - Qualifications/certifications
-   
-   Scheduled Appointment:
-   - Date and time window
-   - Countdown to appointment
-   - Add to calendar button
-   - Reschedule button
-   
-   Live Tracking (when technician en route):
-   - Map showing technician location
-   - Updated ETA
-   - "Technician nearby" notification
-   
-   Messaging Interface:
-   - Chat-style conversation
-   - Send messages to technician
-   - Receive updates
-   - Photo sharing
-   - Message history
-   
-   Work Completion:
-   - Detailed service report
-   - Before/during/after photos
-   - Parts used and costs
-   - Technician notes
-   - Digital signature option
-   - Satisfaction rating prompt
+2. User Cannot Create Invalid Request:
+   - test_service_request_validation_fails_without_description()
+   - test_service_request_validation_fails_with_invalid_priority()
+   - Assert: validation errors present
 
-4. Equipment Management:
-   
-   Equipment List:
-   - Grid or list view toggle
-   - Each item shows:
-     * Photo
-     * Name/description
-     * Type and manufacturer
-     * Status indicator
-     * Last service date
-     * Quick "Request Service" button
-   - Filter and sort options
-   - Add new equipment button
-   
-   Equipment Detail Page:
-   - Complete specifications
-   - Service history timeline
-   - Warranty information
-   - Documents and manuals
-   - Health score and recommendations
-   - Request service button
+3. Manager Can Assign Technician:
+   - test_manager_can_assign_technician_to_request()
+   - Assert: technician_id updated
+   - Assert: scheduled_at updated
+   - Assert: technician receives notification
+   - Assert: status changed to 'assigned'
 
-5. Billing & Payments:
-   
-   Invoice List:
-   - Table view of all invoices
-   - Status indicators (paid, unpaid, overdue)
-   - Date, amount, description
-   - Download PDF button per invoice
-   - Filter by status, date range
-   
-   Invoice Detail:
-   - Itemized breakdown
-   - Service description
-   - Parts and labor costs
-   - Tax calculation
-   - Total amount
-   - Payment history
-   - Dispute/question button
-   
-   Payment Interface:
-   - Select invoice(s) to pay
-   - Payment method selection
-   - Credit card form (PCI compliant)
-   - Bank account (ACH) form
-   - Digital wallet options
-   - Save payment method for future
-   - Submit payment button
-   - Receipt generation
-   
-   Auto-Pay Setup:
-   - Enroll in automatic payments
-   - Select payment method
-   - Choose payment date
-   - Modify or cancel anytime
+4. Technician Cannot Assign Themselves:
+   - test_technician_cannot_assign_themselves()
+   - Assert: 403 forbidden
 
-6. Communication Center:
-   
-   Message Inbox:
-   - List of conversations
-   - Unread message counter
-   - Search messages
-   - Filter by sender, date, work order
-   
-   Compose Message:
-   - Recipient selection
-   - Subject line
-   - Message body with formatting
-   - File attachments
-   - Link to related work order
-   
-   Notifications:
-   - Notification preferences panel
-   - Email, SMS, or in-app options
-   - Notification types:
-     * Service request updates
-     * Appointment reminders
-     * Invoice notifications
-     * Marketing messages
-   - Opt in/out per type
+5. Status Updates:
+   - test_technician_can_start_assigned_request()
+   - test_technician_can_complete_in_progress_request()
+   - test_cannot_skip_status_workflow()
+   - Assert: status changes correctly
+   - Assert: timestamps updated
+   - Assert: activity logged
 
-7. Knowledge Base:
-   
-   Browse Articles:
-   - Categorized topics
-   - Popular articles
-   - Recent additions
-   - Search functionality
-   
-   Article View:
-   - Step-by-step instructions
-   - Embedded images/videos
-   - Helpful/not helpful buttons
-   - Related articles
-   - "Still need help?" contact option
+6. Authorization Tests:
+   - test_customer_can_only_view_own_requests()
+   - test_customer_cannot_edit_others_requests()
+   - test_admin_can_view_all_requests()
 
-8. Account Settings:
-   
-   Profile Management:
-   - Personal information
-   - Contact details
-   - Password change
-   - MFA setup
-   
-   Service Addresses:
-   - Add/edit service locations
-   - Set default location
-   - Access instructions per location
-   
-   Preferences:
-   - Communication preferences
-   - Preferred service times
-   - Preferred technicians
-   - Special requirements
-   
-   Service Agreement:
-   - View agreement details
-   - Download contract
-   - Renewal information
-   - Upgrade options
+7. Soft Delete:
+   - test_request_can_be_soft_deleted()
+   - test_deleted_request_not_in_index()
+   - test_deleted_request_can_be_restored()
 
-Design with responsive layout, mobile-first approach, accessibility compliance (WCAG 2.1 AA), and intuitive navigation.
+8. Filtering:
+   - test_requests_can_be_filtered_by_status()
+   - test_requests_can_be_filtered_by_priority()
+   - test_requests_can_be_searched_by_keyword()
 
----
+9. Pagination:
+   - test_requests_are_paginated()
+   - test_pagination_respects_per_page_parameter()
 
-## Phase 8: Communication & Messaging
+10. Relationships:
+    - test_service_request_belongs_to_customer()
+    - test_service_request_belongs_to_equipment()
+    - test_service_request_has_many_notes()
 
-### Prompt 12: Integrated Messaging System
+Setup and Helpers:
+- Use RefreshDatabase trait
+- Create factories for models
+- Use setUp() to create test users with roles
+- Use faker for test data
+- Create helper methods: createServiceRequest(), assignTechnician()
 
-Build a comprehensive communication and messaging platform with:
+Assertions to use:
+- assertDatabaseHas
+- assertDatabaseMissing
+- assertRedirect
+- assertStatus (200, 201, 403, 404, 422)
+- assertSessionHas (flash messages)
+- assertJsonStructure (for API tests)
+- assertNotificationSent
 
-1. Message Infrastructure:
-   
-   Database Schema:
-   - messages table (id, thread_id, sender_id, recipient_id, subject, body, timestamp, is_read, related_work_order_id, parent_message_id)
-   - message_attachments table (id, message_id, file_name, file_path, file_type, file_size)
-   - message_participants table (for group messages)
-   - notification_preferences table (user_id, channel, frequency)
-   
-   Message Types:
-   - Direct messages (user to user)
-   - Group messages (multiple participants)
-   - System notifications (automated messages)
-   - Work order comments/notes
-   - Broadcast messages (admin to many users)
+Run tests with: php artisan test --filter ServiceRequestTest
+```
 
-2. Inbox Interface:
-   
-   Layout:
-   - Three-column layout (folders, message list, message content)
-   - Responsive collapse on mobile
-   
-   Folders/Categories:
-   - Inbox
-   - Sent
-   - Drafts
-   - Archived
-   - Starred
-   - Work Order Messages (grouped by ticket)
-   - Custom folders
-   
-   Message List:
-   - Preview shows: sender, subject, timestamp, snippet
-   - Unread indicator (bold text, counter badge)
-   - Star/flag capability
-   - Attachment indicator icon
-   - Related work order indicator
-   - Selection checkboxes
-   - Pagination or infinite scroll
-   
-   Bulk Actions:
-   - Mark as read/unread
-   - Archive
-   - Delete
-   - Move to folder
-   - Forward
-   
-   Filters and Search:
-   - Filter by: sender, date range, has attachments, work order
-   - Full-text search across subject and body
-   - Advanced search options
+#### **Prompt 6.2: Create Unit Tests for Models**
+```
+Create unit tests for ServiceRequest model:
 
-3. Message Composition:
-   
-   Compose Interface:
-   - To: field with auto-complete
-   - Multiple recipients support
-   - CC/BCC options
-   - Subject line
-   - Rich text editor:
-     * Bold, italic, underline
-     * Bulleted/numbered lists
-     * Links
-     * Text color/highlighting
-     * Font size
-   - File attachments:
-     * Drag and drop upload
-     * Multiple files support
-     * File size limits
-     * Progress indicators
-     * Preview thumbnails
-   - Link to work order
-   - Save as draft
-   - Send button with confirmation
+Test file: tests/Unit/ServiceRequestTest.php
 
-4. Message Templates:
-   
-   Template Management:
-   - Create templates for common scenarios:
-     * Appointment confirmation
-     * Running late notification
-     * Work completed
-     * Quote provided
-     * Payment reminder
-     * Follow-up message
-   
-   Template Features:
-   - Merge fields (customer name, appointment time, technician name, etc.)
-   - Subject and body templates
-   - Category organization
-   - Personal and shared templates
-   - Edit and delete templates
-   
-   Using Templates:
-   - Select from dropdown when composing
-   - Merge fields auto-populate
-   - Customize before sending
-   - Save customized version as new template
+Tests to implement:
 
-5. Email Integration:
-   
-   Outbound Email:
-   - Send messages via SMTP
-   - Branded email templates
-   - Track email opens (optional)
-   - Track link clicks (optional)
-   - Bounce handling
-   
-   Inbound Email:
-   - Parse incoming emails
-   - Create messages in system
-   - Attachment extraction
-   - Thread matching (reply to existing conversation)
-   - Auto-response for after-hours
+1. Model Configuration:
+   - test_service_request_uses_soft_deletes()
+   - test_service_request_has_correct_fillable_fields()
+   - test_service_request_has_correct_casts()
 
-6. SMS/Text Messaging:
-   
-   SMS Sending:
-   - Integration with SMS gateway (Twilio, AWS SNS)
-   - Character limit indicator
-   - Cost per message display
-   - Opt-in verification
-   - Unsubscribe handling
-   
-   SMS Receiving:
-   - Parse incoming texts
-   - Create messages in system
-   - Associate with customer account
-   - Auto-response capability
-   - Keywords for automated actions
+2. Relationships:
+   - test_service_request_belongs_to_customer()
+   - test_service_request_belongs_to_equipment()
+   - test_service_request_belongs_to_technician()
+   - test_service_request_has_many_notes()
+   - test_service_request_has_many_attachments()
 
-7. Push Notifications:
-   
-   Mobile App Notifications:
-   - New message alerts
-   - Work order updates
-   - Appointment reminders
-   - Payment due reminders
-   
-   Web Browser Notifications:
-   - Desktop notifications when app is closed
-   - Permission request workflow
-   - Notification settings per user
+3. Scopes:
+   - test_active_scope_returns_only_non_deleted()
+   - test_pending_scope_returns_only_pending()
+   - test_high_priority_scope_returns_correct_requests()
+   - test_overdue_scope_returns_overdue_requests()
 
-8. Real-Time Chat:
-   
-   Chat Interface:
-   - Live chat for immediate communication
-   - Typing indicators
-   - Message delivery/read receipts
-   - Online/offline status
-   - Quick emoji reactions
-   
-   Implementation:
-   - WebSocket connection
-   - Fallback to polling
-   - Message queuing when offline
-   - Auto-reconnect logic
+4. Accessors:
+   - test_status_label_accessor_returns_human_readable()
+   - test_priority_badge_accessor_returns_correct_html()
+   - test_is_overdue_accessor_returns_boolean()
 
-9. Automated Messaging:
-   
-   Trigger-Based Messages:
-   - Work order status changes
-   - Appointment upcoming (24hrs, 2hrs)
-   - Technician en route
-   - Work completed
-   - Invoice generated
-   - Payment received
-   - Payment overdue
-   - Satisfaction survey invitation
-   
-   Configuration:
-   - Enable/disable each message type
-   - Customize message content
-   - Set delivery channels (email, SMS, push)
-   - Define trigger conditions
-   - Schedule delivery times
+5. Mutators:
+   - test_priority_mutator_validates_enum()
+   - test_status_mutator_validates_enum()
 
-10. Message Threading:
-    - Group related messages together
-    - Show full conversation history
-    - Quote previous messages in replies
-    - Collapse old messages
-    - Expand to see all
+6. Methods:
+   - test_can_be_assigned_returns_true_when_pending()
+   - test_can_be_assigned_returns_false_when_completed()
+   - test_is_assigned_to_method_works_correctly()
+   - test_get_duration_method_calculates_correctly()
 
-11. Notification Preferences:
+7. Constants:
+   - test_status_constants_exist()
+   - test_priority_constants_exist()
+
+8. Business Logic:
+   - test_cannot_change_status_from_completed_to_pending()
+   - test_completion_requires_actual_hours_and_cost()
+
+Test Setup:
+- Don't use RefreshDatabase for unit tests
+- Mock dependencies where appropriate
+- Test model in isolation
+- Use setUp() to create test instances
+
+Example test structure:
+```php
+public function test_service_request_belongs_to_customer()
+{
+    $serviceRequest = new ServiceRequest();
+    $relation = $serviceRequest->customer();
     
-    Per User Settings:
-    - Delivery channels: email, SMS, push, in-app
-    - Frequency: immediate, hourly digest, daily digest
-    - Message types: which notifications to receive
-    - Quiet hours: no notifications during specified times
-    - VIP senders: always notify for certain senders
+    $this->assertInstanceOf(BelongsTo::class, $relation);
+    $this->assertEquals('customer_id', $relation->getForeignKeyName());
+}
+```
 
-12. Analytics Dashboard:
-    - Message volume over time
-    - Response time metrics
-    - Most active users
-    - Message templates usage
-    - Email open rates
-    - SMS delivery rates
-
-Include proper spam protection, rate limiting, and compliance with communication regulations (CAN-SPAM, TCPA, GDPR).
+Run with: php artisan test --filter ServiceRequestTest --testsuite=Unit
+```
 
 ---
 
-## Phase 9: Reporting & Analytics
+### **7. SECURITY & PERMISSIONS**
 
-### Prompt 13: Comprehensive Reporting System
+#### **Prompt 7.1: Implement Role-Based Access Control with Spatie**
+```
+Implement comprehensive RBAC using spatie/laravel-permission:
 
-Create an advanced reporting and analytics system with:
+Installation:
+1. Install package: composer require spatie/laravel-permission
+2. Publish config and migrations
+3. Run migrations
 
-1. Report Categories:
+Define Roles (create seeder: RolesAndPermissionsSeeder):
+- super_admin: Full system access
+- manager: Manage all service operations
+- dispatcher: Assign and schedule requests
+- technician: View and update assigned requests
+- customer: Create and view own requests
+- customer_business: Customer role + manage company users
 
-   A. Operational Reports:
-   
-   Daily Work Summary:
-   - Total jobs completed
-   - Jobs by status (in progress, completed, cancelled)
-   - Jobs by priority level
-   - Average completion time
-   - Technician productivity
-   - Filter by: date range, technician, customer, service type
-   
-   Technician Performance:
-   - Jobs completed per technician
-   - Average job duration vs estimates
-   - First-time fix rate
-   - Customer satisfaction scores
-   - On-time arrival percentage
-   - Overtime hours
-   - Billable vs non-billable hours
-   - Compare technicians side-by-side
-   
-   Schedule Adherence:
-   - On-time vs late arrivals
-   - Jobs completed within scheduled window
-   - Schedule deviation reasons
-   - Average delay duration
-   - Day-by-day breakdown
-   
-   Response Time Analysis:
-   - Time from request to assignment
-   - Time from assignment to start
-   - Time from start to completion
-   - By priority level
-   - By customer service tier
-   - SLA compliance percentage
-   
-   B. Financial Reports:
-   
-   Revenue Summary:
-   - Total revenue by period (day/week/month/quarter/year)
-   - Revenue by service type
-   - Revenue by customer segment
-   - Revenue by geographic region
-   - Revenue trend graph
-   - Comparison to previous period
-   - Comparison to budget/forecast
-   
-   Cost Analysis:
-   - Labor costs
-   - Parts costs
-   - Material costs
-   - Travel costs
-   - Overhead allocation
-   - Cost per job
-   - Cost trends over time
-   
-   Profitability Report:
-   - Revenue vs costs
-   - Gross profit by service type
-   - Gross profit by customer
-   - Profit margin percentages
-   - Loss-making jobs identification
-   - Break-even analysis
-   
-   Accounts Receivable Aging:
-   - Current (0-30 days)
-   - 31-60 days past due
-   - 61-90 days past due
-   - Over 90 days past due
-   - Total outstanding by customer
-   - Collection effectiveness
-   
-   Invoice History:
-   - All invoices by date range
-   - Invoice status breakdown
-   - Average days to payment
-   - Payment methods used
-   - Discount/adjustment analysis
-   
-   C. Customer Reports:
-   
-   Customer Satisfaction:
-   - Average rating by period
-   - Rating distribution (1-5 stars)
-   - Satisfaction by technician
-   - Satisfaction by service type
-   - Trend over time
-   - Low-rating analysis
-   - Comments and feedback summary
-   
-   Customer Activity:
-   - Service requests per customer
-   - Revenue per customer
-   - Frequency of service
-   - Customer lifetime value
-   - Customer acquisition date
-   - Churn risk scoring
-   
-   Service Level Agreement Compliance:
-   - SLA adherence percentage
-   - Violations by customer
-   - Violations by SLA metric
-   - Near-miss analysis
-   - Root cause of violations
-   
-   D. Equipment Reports:
-   
-   Equipment Reliability:
-   - Failure rate by equipment type
-   - Failure rate by manufacturer
-   - Failure rate by age
-   - Mean time between failures
-   - Most problematic equipment
-   
-   Maintenance Frequency:
-   - Service calls per equipment
-   - Service costs per equipment
-   - Equipment with most downtime
-   - Preventive vs reactive maintenance ratio
-   
-   Parts Usage:
-   - Most frequently used parts
-   - Parts cost analysis
-   - Parts by equipment type
-   - Parts inventory turnover
-   - Parts with highest consumption
-   
-   Lifecycle Analysis:
-   - Equipment age distribution
-   - Equipment near end-of-life
-   - Replacement recommendations
-   - Total cost of ownership by equipment
+Define Permissions:
+Service Requests:
+- view-service-requests
+- view-own-service-requests
+- create-service-requests
+- edit-service-requests
+- edit-own-service-requests
+- delete-service-requests
+- assign-service-requests
+- approve-service-requests
 
-2. Report Builder:
-   
-   Custom Report Creation:
-   - Select data source (work orders, invoices, equipment, etc.)
-   - Choose fields to include
-   - Apply filters (date range, customer, status, etc.)
-   - Group by dimensions
-   - Sort results
-   - Add calculated fields
-   - Define formulas
-   
-   Visualization Options:
-   - Table/grid view
-   - Bar charts (vertical/horizontal)
-   - Line graphs
-   - Pie charts
-   - Area charts
-   - Scatter plots
-   - Heat maps
-   - Gauges
-   
-   Save and Share:
-   - Save report definition
-   - Schedule automatic generation
-   - Email distribution lists
-   - Export formats (PDF, Excel, CSV)
-   - Public link generation
-   - Embed in dashboards
+Customers:
+- view-customers
+- create-customers
+- edit-customers
+- delete-customers
+- impersonate-customers
 
-3. Interactive Dashboards:
-   
-   Dashboard Types:
-   - Executive dashboard (high-level KPIs)
-   - Operations dashboard (daily metrics)
-   - Technician dashboard (individual performance)
-   - Customer success dashboard
-   - Financial dashboard
-   
-   Dashboard Features:
-   - Drag-and-drop widget arrangement
-   - Resize widgets
-   - Multiple dashboard support
-   - Set as default dashboard
-   - Real-time data updates
-   - Drill-down capabilities (click for details)
-   - Date range selector
-   - Filter panel
-   - Refresh button
-   
-   Widget Types:
-   - KPI cards (single number with trend)
-   - Charts and graphs
-   - Tables/grids
-   - Progress bars
-   - Sparklines
-   - Maps
-   - Lists
-   - Text/notes
+Technicians:
+- view-technicians
+- create-technicians
+- edit-technicians
+- delete-technicians
+- view-technician-schedule
 
-4. Scheduled Reports:
-   
-   Scheduling Options:
-   - Frequency: daily, weekly, monthly, quarterly, annually
-   - Day of week/month
-   - Time of day
-   - Time zone consideration
-   
-   Distribution:
-   - Email recipients list
-   - Attach as file or link
-   - Email subject and body template
-   - Success/failure notifications
-   
-   Parameters:
-   - Date range (last 7 days, last month, etc.)
-   - Dynamic filters
-   - Conditional generation (only if certain criteria met)
+Equipment:
+- view-equipment
+- create-equipment
+- edit-equipment
+- delete-equipment
 
-5. Data Export:
-   
-   Export Formats:
-   - PDF (formatted for printing)
-   - Excel (XLSX) with formatting
-   - CSV (comma-separated values)
-   - JSON (for integrations)
-   - XML
-   
-   Export Options:
-   - Include/exclude charts
-   - Page layout (portrait/landscape)
-   - Paper size
-   - Header/footer customization
-   - Logo inclusion
+Reports:
+- view-reports
+- view-financial-reports
+- export-reports
 
-6. Report Permissions:
-   
-   Access Control:
-   - Who can view each report
-   - Who can edit report definitions
-   - Who can create new reports
-   - Data filtering based on role
-   - Field-level permissions
+Assign permissions to roles:
+```php
+$manager->givePermissionTo([
+    'view-service-requests',
+    'create-service-requests',
+    'edit-service-requests',
+    'assign-service-requests',
+    'approve-service-requests',
+    'view-customers',
+    'view-technicians',
+    'view-reports',
+]);
 
-7. Benchmarking:
-   
-   Compare Performance:
-   - Current vs previous period
-   - Actual vs budget
-   - Actual vs industry standard
-   - Team vs individual
-   - Location vs location
-   
-   Variance Analysis:
-   - Highlight significant differences
-   - Calculate variance percentage
-   - Trend indicators (up/down/flat)
+$technician->givePermissionTo([
+    'view-own-service-requests',
+    'edit-own-service-requests',
+]);
 
-8. Predictive Analytics:
-   
-   Forecasting:
-   - Revenue projection
-   - Workload forecast
-   - Parts consumption prediction
-   - Equipment failure prediction
-   - Customer churn probability
-   
-   Trend Identification:
-   - Growth/decline patterns
-   - Seasonal variations
-   - Anomaly detection
-   - Statistical significance
+$customer->givePermissionTo([
+    'view-own-service-requests',
+    'create-service-requests',
+]);
+```
 
-Implement with efficient query optimization, caching for frequently-run reports, and export queue management for large reports.
+Create Policy: ServiceRequestPolicy
+```php
+public function view(User $user, ServiceRequest $request)
+{
+    return $user->can('view-service-requests') 
+        || ($user->can('view-own-service-requests') && $request->customer_id === $user->id)
+        || ($user->can('view-own-service-requests') && $request->technician_id === $user->id);
+}
 
----
-
-## Phase 10: Billing & Financial Management
-
-### Prompt 14: Complete Billing System
-
-Develop a comprehensive billing and financial management system with:
-
-1. Pricing Configuration:
-   
-   Labor Rates:
-   - Multiple rate tiers (standard, senior, specialist)
-   - Service type rates (installation, repair, maintenance, consultation)
-   - Time-based rates (regular hours, after-hours, weekend, holiday)
-   - Emergency/urgent service premiums
-   - Volume discounts
-   - Customer-specific rates (contract pricing)
-   
-   Parts Pricing:
-   - Cost basis (last cost, average cost, standard cost)
-   - Markup methods (percentage, fixed amount)
-   - Markup by part category
-   - Customer-specific pricing
-   - Quantity discounts
-   - Bundle pricing
-   
-   Service Fees:
-   - Trip/service call charges
-   - Diagnostic fees
-   - Mileage charges (per mile or tiered)
-   - Expedite fees
-   - Fuel surcharges
-   - Environmental fees
-   
-   Tax Configuration:
-   - Tax rates by jurisdiction
-   - Tax applicability (which services/parts are taxable)
-   - Multiple tax support (state, county, city)
-   - Tax-exempt customer handling
-   - Tax override capability
-
-2. Quote/Estimate Generation:
-   
-   Quote Creation:
-   - Work order association
-   - Customer selection with pricing rules
-   - Line item entry:
-     * Description
-     * Quantity
-     * Unit price
-     * Extended price
-     * Tax status
-   - Labor estimate (hours × rate)
-   - Parts list with costs
-   - Additional fees
-   - Subtotal, tax, total calculation
-   - Validity period (quote expires on date)
-   - Terms and conditions
-   - Notes/special instructions
-   
-   Quote Templates:
-   - Pre-defined service packages
-   - Common repair scenarios
-   - Preventive maintenance bundles
-   - Quick quote generation
-   
-   Quote Approval Workflow:
-   - Send to customer for approval
-   - Customer can view in portal
-   - Approve/decline actions
-   - Digital signature capture
-   - Negotiation/revision tracking
-   - Convert approved quote to work order
-
-3. Invoice Generation:
-   
-   Automatic Invoice Creation:
-   - Trigger on work order completion
-   - Pull data from work order:
-     * Labor time × rate
-     * Parts used × price
-     * Fees applied
-     * Tax calculated
-   - Generate unique invoice number
-   - Set due date based on payment terms
-   
-   Manual Invoice Creation:
-   - For services outside work orders
-   - For recurring charges
-   - For one-time fees
-   - Flexible line item entry
-   
-   Invoice Components:
-   - Header: invoice #, date, due date, customer info
-   - Line items: detailed breakdown
-   - Subtotals by category
-   - Tax calculation
-   - Discounts/adjustments
-   - Total amount due
-   - Payment instructions
-   - Terms and conditions
-   - Company branding (logo, contact info)
-   
-   Invoice Types:
-   - Standard invoice
-   - Progress invoice (partial billing)
-   - Final invoice
-   - Credit memo (refund)
-   - Debit memo (additional charges)
-
-4. Payment Processing:
-   
-   Payment Methods:
-   - Credit/debit card
-     * Integration with payment gateway (Stripe, Square, Authorize.Net)
-     * PCI compliance
-     * Card tokenization for security
-     * CVV verification
-   - ACH/bank transfer
-     * Bank account verification
-     * Processing time disclosure
-     * Failed payment retry logic
-   - Cash
-     * Receipt generation
-     * Reconciliation tracking
-   - Check
-     * Check number recording
-     * Deposit date tracking
-     * Cleared/bounced status
-   - Digital wallets (PayPal, Apple Pay, Google Pay)
-   - Store credit
-   
-   Payment Recording:
-   - Manual payment entry
-   - Automatic recording from gateway
-   - Payment amount
-   - Payment date
-   - Payment method
-   - Reference number
-   - Apply to specific invoice(s)
-   - Partial payment handling
-   - Overpayment handling (credit balance)
-   
-   Payment Plans:
-   - Installment setup
-   - Payment schedule definition
-   - Automatic recurring billing
-   - Payment reminder automation
-   - Late payment handling
-
-5. Recurring Billing:
-   
-   Subscription Management:
-   - Service agreement billing
-   - Monthly maintenance contracts
-   - Annual support packages
-   
-   Recurring Invoice Configuration:
-   - Billing frequency (monthly, quarterly, annually)
-   - Bill date (first of month, anniversary date, etc.)
-   - Amount
-   - Auto-charge vs send invoice
-   - Duration (ongoing or fixed term)
-   
-   Automatic Processing:
-   - Generate invoice on schedule
-   - Charge payment method on file
-   - Email invoice to customer
-   - Handle payment failures
-   - Retry logic
-   - Dunning process
-
-6. Accounts Receivable Management:
-   
-   Aging Reports:
-   - Current (0-30 days)
-   - 31-60 days past due
-   - 61-90 days past due
-   - 90+ days past due
-   - Total outstanding per customer
-   
-   Collections Management:
-   - Overdue invoice tracking
-   - Automated reminder emails
-   - Collection call scheduling
-   - Payment plan negotiation
-   - Collection agency referral
-   - Write-off handling
-   
-   Payment Reminders:
-   - Automatic reminder schedule:
-     * 7 days before due date
-     * On due date
-     * 7 days after due date
-     * 14 days after due date
-     * 30 days after due date
-   - Customizable message templates
-   - Escalating tone/urgency
-   - Include payment link
-
-7. Credit Management:
-   
-   Credit Limits:
-   - Set credit limit per customer
-   - Credit check before service
-   - Block service if over limit
-   - Credit increase requests
-   
-   Credit Memos:
-   - Issue for refunds
-   - Issue for service failures
-   - Issue for goodwill gestures
-   - Apply to future invoices or refund
-
-8. Financial Reporting:
-   
-   Revenue Reports:
-   - Revenue by period
-   - Revenue by service type
-   - Revenue by customer
-   - Revenue by technician
-   
-   Payment Reports:
-   - Payments received
-   - Payment methods used
-   - Average days to payment
-   - Payment success rates
-   
-   Outstanding Balance Reports:
-   - Total AR
-   - By customer
-   - By age
-   - At risk amounts
-
-9. Integration with Accounting:
-   
-   Export to Accounting Software:
-   - QuickBooks integration
-   - Xero integration
-   - Sage integration
-   - General ledger export
-   
-   Data Synchronization:
-   - Customers/vendors
-   - Invoices
-   - Payments
-   - Chart of accounts mapping
-   - Tax codes
-   - Two-way sync support
-
-10. Audit Trail:
-    - All financial transactions logged
-    - User who created/modified
-    - Timestamp
-    - Before/after values
-    - Reason for changes
-    - Tamper-proof logging
-
-Implement with strong security, transaction integrity, and compliance with financial regulations (PCI-DSS for payment card data).
-
----
-
-## Phase 11: Knowledge Base & Self-Service
-
-### Prompt 15: Knowledge Base System
-
-Create a comprehensive knowledge base and self-service support system with:
-
-1. Content Management:
-   
-   Article Structure:
-   - Title (clear, descriptive)
-   - Summary (brief overview)
-   - Category/subcategory assignment
-   - Tags/keywords
-   - Body content (rich text)
-   - Author information
-   - Creation date
-   - Last updated date
-   - Version history
-   - Visibility (public, customer-only, internal-only)
-   - Featured/promoted flag
-   
-   Content Types:
-   - How-to guides (step-by-step instructions)
-   - Troubleshooting articles (problem → solution)
-   - FAQs (question → answer format)
-   - Product documentation (specifications, features)
-   - Best practices
-   - Video tutorials
-   - Downloadable resources (PDFs, templates)
-   - Quick reference cards
-   
-   Rich Content Editor:
-   - WYSIWYG editing
-   - Text formatting (bold, italic, headings, lists)
-   - Insert images with captions
-   - Embed videos (YouTube, Vimeo, uploaded)
-   - Code snippets with syntax highlighting
-   - Tables
-   - Callout boxes (note, tip, warning)
-   - Collapsible sections
-   - Internal links to other articles
-   - External links
-   - File attachments
-
-2. Taxonomy & Organization:
-   
-   Category Hierarchy:
-   - Multi-level categories (3-4 levels deep)
-   - Examples:
-     * Hardware > Computers > Desktops > Won't Start
-     * Software > Operating Systems > Windows > Installation
-     * Network > WiFi > Connection Issues
-   - Drag-and-drop category organization
-   - Category descriptions
-   - Category icons
-   
-   Tagging System:
-   - Free-form tags
-   - Tag suggestions based on content
-   - Popular tags
-   - Tag management (merge, rename, delete)
-   - Filter articles by tag
-   
-   Article Relationships:
-   - Related articles (manually selected)
-   - Automatic suggestions based on tags
-   - "See also" links
-   - Prerequisites (read this article first)
-   - Series/sequence (part 1, part 2, etc.)
-
-3. Search Functionality:
-   
-   Search Implementation:
-   - Full-text search across title, summary, body
-   - Search within specific categories
-   - Filter by content type
-   - Filter by author
-   - Filter by date
-   - Sort results by relevance, date, popularity
-   
-   Search Features:
-   - Auto-complete suggestions as typing
-   - "Did you mean...?" spell correction
-   - Highlight search terms in results
-   - Search result snippets with context
-   - Advanced search operators (AND, OR, quotes)
-   
-   Search Analytics:
-   - Track search queries
-   - Identify searches with no results
-   - Popular searches
-   - Failed searches (clicking back without viewing article)
-   - Use data to improve content
-
-4. User Experience:
-   
-   Article Display:
-   - Clean, readable typography
-   - Table of contents for long articles
-   - Progress indicator (reading position)
-   - Estimated reading time
-   - Print-friendly version
-   - Download as PDF option
-   - Share via email, social media
-   - Breadcrumb navigation
-   
-   Navigation:
-   - Browse by category (expandable tree)
-   - Popular articles
-   - Recently updated
-   - Most viewed
-   - Trending articles
-   - Featured articles carousel
-   - "Staff picks" section
-   
-   Feedback & Rating:
-   - "Was this article helpful?" (yes/no)
-   - 5-star rating system
-   - Comment/feedback form
-   - Report inaccuracy button
-   - Request update button
-   - Aggregate ratings displayed
-   
-   Related Content:
-   - "Customers who read this also read..."
-   - Related videos
-   - Related forum discussions
-   - Related support tickets
-
-5. Multi-Language Support:
-   
-   Translation Management:
-   - Create article versions in multiple languages
-   - Language selector
-   - Track translation status (draft, in review, published)
-   - Translation workflow
-   - Machine translation integration (Google Translate API)
-   - Professional translation service integration
-   
-   Language Fallback:
-   - Display in user's preferred language if available
-   - Fall back to default language if translation missing
-   - Indicate when viewing translated vs original
-
-6. Access Control:
-   
-   Visibility Levels:
-   - Public (anyone can view)
-   - Customer-only (requires login)
-   - Internal-only (employees only)
-   - Role-based (specific roles can view)
-   
-   Draft and Published States:
-   - Draft articles (visible to authors only)
-   - Review state (visible to reviewers)
-   - Published (visible per permissions)
-   - Archived (searchable but not browsable)
-   
-   Approval Workflow:
-   - Submit for review
-   - Reviewer assignment
-   - Approve/reject with comments
-   - Revision requests
-   - Publication scheduling
-
-7. Analytics & Insights:
-   
-   Article Metrics:
-   - View count
-   - Unique visitors
-   - Average time on page
-   - Bounce rate
-   - Helpful votes
-   - Unhelpful votes
-   - Comments/feedback count
-   
-   Content Performance:
-   - Top viewed articles
-   - Lowest performing articles
-   - Articles with most feedback
-   - Articles needing updates (old, poor ratings)
-   
-   User Behavior:
-   - Most common search paths
-   - Entry points (how users find KB)
-   - Exit points
-   - Click-through rates
-   - Self-service resolution rate
-
-8. Integration with Support System:
-   
-   Contextual Help:
-   - Suggest relevant KB articles based on:
-     * Equipment type
-     * Problem description
-     * Error codes
-   - Display in support ticket interface
-   - "Before you submit, check these articles"
-   
-   Ticket Deflection:
-   - Encourage self-service before ticket submission
-   - Track how many potential tickets avoided
-   - Measure cost savings
-   
-   Link from Tickets:
-   - Support agents can attach KB articles to tickets
-   - Send article links to customers
-   - Create KB articles from ticket resolutions
-
-9. Community Features:
-   
-   Comments/Discussion:
-   - Allow comments on articles
-   - Upvote/downvote comments
-   - Mark comments as helpful
-   - Moderation queue
-   - Report inappropriate comments
-   
-   User Contributions:
-   - Allow customers to submit articles
-   - Community review and voting
-   - Author recognition/badges
-   - Contribution leaderboard
-
-10. Mobile Experience:
+public function update(User $user, ServiceRequest $request)
+{
+    if ($user->can('edit-service-requests')) {
+        return true;
+    }
     
-    Responsive Design:
-    - Mobile-optimized article layout
-    - Touch-friendly navigation
-    - Collapsible sections for space
-    - Offline article access (download for later)
+    if ($user->can('edit-own-service-requests')) {
+        return $request->technician_id === $user->id && $request->status !== 'completed';
+    }
     
-    Mobile App Integration:
-    - Deep links to specific articles
-    - Push notifications for new/updated articles
-    - In-app search
+    return false;
+}
+```
 
-11. Video Content:
-    
-    Video Library:
-    - Host video tutorials
-    - Organized by category
-    - Video player with controls
-    - Transcripts for accessibility
-    - Download option
-    
-    Video Features:
-    - Chapters/timestamps
-    - Playback speed control
-    - Quality selection
-    - Closed captions/subtitles
-    - Related videos
+Middleware:
+- Use permission middleware: 'permission:view-reports'
+- Use role middleware: 'role:manager|admin'
+- Create custom middleware: EnsureUserOwnsResource
 
-12. Maintenance & Management:
-    
-    Content Lifecycle:
-    - Review schedule (annual review of all articles)
-    - Expiration dates (flag outdated content)
-    - Automated alerts for stale content
-    - Bulk operations (update, categorize, archive)
-    
-    Content Templates:
-    - Pre-formatted templates for consistency
-    - Templates per content type
-    - Include standard sections
-    - Style guide enforcement
+Blade Directives:
+```blade
+@can('create-service-requests')
+    <button>Create Request</button>
+@endcan
 
-Build with fast page load times, SEO optimization, and accessibility standards compliance (WCAG 2.1 AA).
+@role('manager')
+    <a href="{{ route('reports') }}">Reports</a>
+@endrole
 
----
+@hasanyrole('manager|admin')
+    <!-- Admin panel -->
+@endhasanyrole
+```
 
-## Phase 12: System Administration & Configuration
+Create Permission Management UI:
+- Page for admins to manage roles and permissions
+- Assign/revoke permissions from roles
+- Assign/revoke roles from users
+- View permission matrix (role vs permission grid)
+```
 
-### Prompt 16: Admin Control Panel
+#### **Prompt 7.2: Implement Two-Factor Authentication**
+```
+Add two-factor authentication (2FA) for enhanced security:
 
-Create a comprehensive system administration and configuration interface with:
+Use: pragmarx/google2fa-laravel package
 
-1. Company Profile Management:
-   
-   Basic Information:
-   - Company name
-   - Legal entity name
-   - Tax ID/EIN
-   - Business registration numbers
-   - Industry classification
-   - Year established
-   
-   Contact Information:
-   - Primary business address
-   - Mailing address (if different)
-   - Phone numbers (main, support, billing)
-   - Email addresses (general, support, billing, sales)
-   - Website URL
-   - Social media links
-   
-   Branding:
-   - Company logo upload (multiple sizes/formats)
-   - Color scheme (primary, secondary, accent colors)
-   - Font selection
-   - Email header/footer templates
-   - Letterhead template
-   - Document watermarks
-   
-   Operating Hours:
-   - Standard business hours by day of week
-   - Closed days/holidays
-   - After-hours service availability
-   - Emergency service hours
-   - Time zone
+Implementation steps:
 
-2. Service Configuration:
-   
-   Service Types:
-   - Define service categories
-   - Create subcategories
-   - Set default durations
-   - Assign skill requirements
-   - Set pricing
-   - Enable/disable service offerings
-   
-   Equipment Types:
-   - Define equipment categories
-   - Create equipment subtypes
-   - Define custom fields per type
-   - Set maintenance schedules
-   - Define compatibility rules
-   
-   Priority Levels:
-   - Define priority levels (names, descriptions)
-   - Set SLA targets per priority
-   - Configure cost multipliers
-   - Set visual indicators (colors, icons)
-   - Define escalation rules
+1. Migration for 2FA fields on users table:
+   - google2fa_secret (string, nullable)
+   - google2fa_enabled (boolean, default false)
+   - backup_codes (json, nullable)
 
-3. SLA (Service Level Agreement) Configuration:
-   
-   Customer Tiers:
-   - Economy tier settings
-   - Standard tier settings
-   - Premium tier settings
-   - Enterprise tier settings
-   - Custom tiers
-   
-   SLA Metrics:
-   - Response time targets (time to assign technician)
-   - Resolution time targets (time to complete)
-   - First-time fix rate targets
-   - Uptime guarantees
-   - Communication frequency requirements
-   
-   SLA Actions:
-   - Automatic escalation when approaching deadline
-   - Notification recipients for violations
-   - Reporting on compliance
-   - Penalty/credit calculations for violations
+2. Create TwoFactorController:
+   - showEnableForm(): Display QR code and setup instructions
+   - enable(): Store secret and show backup codes
+   - disable(): Remove 2FA and backup codes
+   - verifyCode(): Verify 2FA code during login
 
-4. Workflow Automation:
-   
-   Automation Rules:
-   - If-then condition builder:
-     * Trigger: when work order created/updated/completed
-     * Conditions: if priority = urgent AND customer tier = premium
-     * Actions: send notification, auto-assign, set flag
-   
-   Common Automations:
-   - Auto-assign to specific technician based on criteria
-   - Escalate unassigned requests after X minutes
-   - Send customer notifications at status changes
-   - Create follow-up tasks automatically
-   - Apply discounts based on conditions
-   - Flag potential issues (overdue, over budget)
-   
-   Scheduling Rules:
-   - Auto-schedule preventive maintenance
-   - Generate recurring work orders
-   - Assign based on geographic territory
-   - Balance workload across technicians
-   - Prefer customer's favorite technician
-   
-   Rule Management:
-   - Enable/disable rules
-   - Set rule priority/order
-   - Test rules with sample data
-   - View rule execution history
-   - Export/import rules
+3. Modify Login Flow:
+   - After successful password verification
+   - Check if user has 2FA enabled
+   - If yes, redirect to 2FA verification page
+   - Store partial authentication in session
+   - Verify 2FA code before completing login
 
-5. User & Permission Management:
-   
-   Role Management:
-   - View all roles
-   - Create new roles
-   - Edit role permissions
-   - Delete/deactivate roles
-   - Clone roles
-   
-   Permission Granularity:
-   - Module access (can access work orders module?)
-   - Action permissions (can create, read, update, delete?)
-   - Field-level permissions (can see customer pricing?)
-   - Data scope (can see all customers or only assigned?)
-   - Administrative functions (can manage users, change settings?)
-   
-   Permission Matrix View:
-   - Grid showing roles × permissions
-   - Quick enable/disable checkboxes
-   - Visual permission comparison
-   - Identify permission overlaps
-   
-   User Management:
-   - View all users
-   - Create new accounts
-   - Edit user details
-   - Reset passwords
-   - Enable/disable accounts
-   - Deactivate terminated employees
-   - Bulk user operations
-   - Import users from CSV
-   
-   Session Management:
-   - View active sessions
-   - Force logout specific users
-   - Set session timeout duration
-   - Require re-authentication for sensitive actions
-   - IP whitelist/blacklist
+4. Generate QR Code:
+   ```php
+   $qrCodeUrl = $google2fa->getQRCodeUrl(
+       config('app.name'),
+       $user->email,
+       $user->google2fa_secret
+   );
+   ```
 
-6. Email & Communication Settings:
-   
-   Email Configuration:
-   - SMTP server settings
-   - Sender name and email address
-   - Reply-to address
-   - Test email functionality
-   - Email signature
-   
-   Email Templates:
-   - List all templates
-   - Edit template content
-   - Preview templates
-   - Use merge fields
-   - HTML and plain text versions
-   - Template categories
-   
-   Notification Settings:
-   - Configure which events trigger emails
-   - Set recipient rules
-   - Enable/disable specific notifications
-   - Batch notifications (digest mode)
-   - Notification frequency limits (don't spam)
-   
-   SMS Configuration:
-   - SMS gateway integration
-   - Sender ID/number
-   - Character limit warnings
-   - Cost per message
-   - Opt-in/opt-out management
+5. Backup Codes:
+   - Generate 8 random 8-character codes
+   - Store hashed in database
+   - Show once during setup
+   - Allow usage if 2FA code unavailable
+   - Regenerate after use
 
-7. Integration Settings:
-   
-   Accounting Software:
-   - QuickBooks connection
-   - Xero connection
-   - Sync frequency
-   - Field mapping
-   - Sync direction (one-way or two-way)
-   - Error handling and logging
-   
-   Payment Gateways:
-   - Stripe configuration
-   - Square configuration
-   - Authorize.Net configuration
-   - Test mode vs live mode
-   - Webhook setup
-   - Supported payment methods
-   
-   Calendar Integration:
-   - Google Calendar API setup
-   - Microsoft 365/Outlook setup
-   - Sync settings
-   - Calendar selection
-   - Conflict handling
-   
-   Mapping Services:
-   - Google Maps API key
-   - Usage limits
-   - Geocoding settings
-   - Route optimization preferences
-   
-   Third-Party APIs:
-   - API keys management
-   - Rate limit monitoring
-   - Usage statistics
-   - Error logs
-   - Test connections
+6. Middleware: TwoFactorAuthentication
+   - Check if user has completed 2FA
+   - Allow access to verification routes
+   - Redirect others to 2FA verification
 
-8. Security Settings:
-   
-   Password Policies:
-   - Minimum length
-   - Complexity requirements
-   - Password expiration (days)
-   - Password history (prevent reuse)
-   - Account lockout (after X failed attempts)
-   - Lockout duration
-   
-   Multi-Factor Authentication:
-   - Enforce MFA for all users / specific roles
-   - Allowed MFA methods
+7. UI Components:
+   - Enable 2FA page with QR code
+   - 2FA code input during login (6-digit)
+   - Backup codes display
+   - Disable 2FA button with password confirmation
+   - Trusted devices option (remember for 30 days)
+
+8. Security Features:
+   - Rate limit 2FA verification attempts
+   - Lock account after 5 failed attempts
+   - Log all 2FA events
+   - Email notification when 2FA is enabled/disabled
+   - Require password confirmation before setup
+
+9. Recovery Options:
    - Backup codes
-   - Remember device settings
-   
-   Session Security:
-   - Session timeout duration
-   - Concurrent session limits
-   - Require re-login for sensitive actions
-   - Log all login attempts
-   
-   IP Restrictions:
-   - Allowed IP addresses
-   - Blocked IP addresses
-   - Geographic restrictions
-   
-   Audit Logging:
-   - What actions to log
-   - Log retention period
-   - Tamper-proof logging
-   - Log export functionality
+   - Email recovery link (sends temp code)
+   - Admin can disable 2FA for locked accounts
 
-9. Data Management:
-   
-   Backup Settings:
-   - Automated backup schedule
-   - Backup retention policy
-   - Backup storage location
-   - Incremental vs full backups
-   - Backup encryption
-   - Test restore functionality
-   
-   Data Archival:
-   - Archive old records rules
-   - Archived data location
-   - Archive access permissions
-   - Restore from archive process
-   
-   Data Export:
-   - Export entire database
-   - Export specific data sets
-   - Export format selection
-   - Schedule automated exports
-   - Export encryption
-   
-   Data Import:
-   - Import from CSV/Excel
-   - Field mapping interface
-   - Validation during import
-   - Error handling
-   - Preview before commit
-   - Import history/logs
+10. Make 2FA mandatory for:
+    - Admin users
+    - Manager users
+    - Users with financial access
 
-10. System Maintenance:
-    
-    System Health:
-    - Server status monitoring
-    - Database health checks
-    - Storage usage
-    - Memory usage
-    - CPU usage
-    - Network connectivity
-    - Background job queue status
-    
-    Maintenance Tasks:
-    - Database optimization
-    - Index rebuilding
-    - Cache clearing
-    - Log file rotation
-    - Temporary file cleanup
-    - Schedule maintenance windows
-    
-    Version & Updates:
-    - Current system version
-    - Available updates
-    - Update history
-    - Release notes
-    - Schedule updates
-    - Rollback capability
-
-11. Compliance & Legal:
-    
-    Privacy Settings:
-    - GDPR compliance mode
-    - CCPA compliance mode
-    - Cookie consent management
-    - Privacy policy display
-    - Terms of service display
-    
-    Data Subject Requests:
-    - View personal data (export)
-    - Delete personal data
-    - Anonymize personal data
-    - Request tracking
-    - Fulfillment deadlines
-    
-    Consent Management:
-    - Track consent types
-    - Record consent timestamps
-    - Consent withdrawal
-    - Consent audit trail
-
-12. Customization:
-    
-    Custom Fields:
-    - Add custom fields to entities
-    - Field types (text, number, date, dropdown, etc.)
-    - Required/optional
-    - Default values
-    - Validation rules
-    - Display order
-    
-    Custom Statuses:
-    - Define custom work order statuses
-    - Define custom equipment statuses
-    - Status colors and icons
-    - Status transitions (which statuses can follow which)
-    
-    Labels & Terminology:
-    - Customize field labels
-    - Customize menu names
-    - Customize button text
-    - Multi-language label support
-
-Build with comprehensive validation, confirm dialogs for destructive actions, and clear documentation of each setting's impact.
+Routes:
+- /2fa/enable (GET, POST)
+- /2fa/verify (GET, POST)
+- /2fa/disable (POST)
+- /2fa/backup-codes (GET)
+```
 
 ---
 
-## END OF PROMPTS
+### **8. PERFORMANCE OPTIMIZATION**
+
+#### **Prompt 8.1: Implement Caching Strategy**
+```
+Create comprehensive caching strategy for the application:
+
+Cache Configuration:
+- Driver: Redis (update .env)
+- Set up Redis connection in config/database.php
+- Install predis/predis package
+
+Areas to Cache:
+
+1. Service Request Statistics:
+```php
+// In DashboardController
+public function getStatistics()
+{
+    return Cache::remember('dashboard.statistics', 300, function () {
+        return [
+            'total_active' => ServiceRequest::active()->count(),
+            'pending' => ServiceRequest::where('status', 'pending')->count(),
+            'in_progress' => ServiceRequest::where('status', 'in_progress')->count(),
+            'completed_today' => ServiceRequest::completedToday()->count(),
+            'avg_response_time' => ServiceRequest::getAverageResponseTime(),
+        ];
+    });
+}
+```
+
+2. Customer Details:
+```php
+// Cache customer data that doesn't change often
+$customer = Cache::remember("customer.{$customerId}", 3600, function () use ($customerId) {
+    return Customer::with('equipment', 'serviceRequests')->find($customerId);
+});
+```
+
+3. Equipment Types and Catalogs:
+```php
+// Cache reference data
+$equipmentTypes = Cache::rememberForever('equipment.types', function () {
+    return EquipmentType::all();
+});
+```
+
+4. User Permissions:
+```php
+// Cache user permissions after login
+Cache::remember("user.{$userId}.permissions", 3600, function () use ($user) {
+    return $user->getAllPermissions()->pluck('name');
+});
+```
+
+5. Reports and Analytics:
+```php
+// Cache expensive report queries
+$monthlyReport = Cache::remember('reports.monthly.' . $month, 86400, function () use ($month) {
+    return ServiceRequest::generateMonthlyReport($month);
+});
+```
+
+Cache Invalidation:
+
+1. Model Events (in ServiceRequest model):
+```php
+protected static function booted()
+{
+    static::saved(function ($request) {
+        Cache::tags(['service-requests', "customer.{$request->customer_id}"])
+             ->flush();
+    });
+    
+    static::deleted(function ($request) {
+        Cache::tags(['service-requests', "customer.{$request->customer_id}"])
+             ->flush();
+    });
+}
+```
+
+2. Manual Cache Clearing:
+```php
+// When status changes
+Cache::forget('dashboard.statistics');
+Cache::tags('service-requests')->flush();
+
+// When customer updated
+Cache::forget("customer.{$customerId}");
+```
+
+Cache Tags:
+- Use tags for related cache items
+- 'service-requests': All service request data
+- 'customers': Customer data
+- 'reports': Report data
+- 'dashboard': Dashboard statistics
+
+Create CacheService:
+```php
+class CacheService
+{
+    public function rememberServiceRequest($id, $ttl = 3600)
+    {
+        return Cache::tags('service-requests')
+            ->remember("service-request.{$id}", $ttl, function () use ($id) {
+                return ServiceRequest::with('customer', 'equipment', 'technician')->find($id);
+            });
+    }
+    
+    public function forgetServiceRequest($id)
+    {
+        Cache::tags('service-requests')->forget("service-request.{$id}");
+    }
+    
+    public function flushServiceRequests()
+    {
+        Cache::tags('service-requests')->flush();
+    }
+}
+```
+
+Query Result Caching:
+- Cache expensive database queries
+- Use query builder cache() method for simple queries
+- Set appropriate TTL based on data volatility
+
+Cache Warming:
+- Create command to pre-populate cache
+- Run during deployment
+```php
+// app/Console/Commands/WarmCache.php
+public function handle()
+{
+    Cache::remember('equipment.types', now()->addDay(), function () {
+        return EquipmentType::all();
+    });
+    
+    // Warm other critical caches
+}
+```
+
+Monitoring:
+- Log cache hits/misses
+- Monitor cache size
+- Track cache performance with Laravel Telescope
+```
+
+#### **Prompt 8.2: Optimize Database Queries**
+```
+Optimize database performance across the application:
+
+1. Add Database Indexes (create migration):
+```php
+public function up()
+{
+    Schema::table('service_requests', function (Blueprint $table) {
+        // Single column indexes
+        $table->index('customer_id');
+        $table->index('technician_id');
+        $table->index('equipment_id');
+        $table->index('status');
+        $table->index('priority');
+        $table->index('scheduled_at');
+        $table->index('created_at');
+        
+        // Composite indexes for common queries
+        $table->index(['status', 'priority']);
+        $table->index(['customer_id', 'status']);
+        $table->index(['technician_id', 'status']);
+        $table->index(['scheduled_at', 'status']);
+        
+        // Full-text index for search
+        $table->fullText(['description', 'customer_notes']);
+    });
+    
+    Schema::table('equipment', function (Blueprint $table) {
+        $table->index('customer_id');
+        $table->index('equipment_type_id');
+        $table->index(['customer_id', 'status']);
+        $table->index('serial_number');
+    });
+}
+```
+
+2. Prevent N+1 Queries - Update Controllers:
+```php
+// BAD - N+1 Query
+$requests = ServiceRequest::all();
+foreach ($requests as $request) {
+    echo $request->customer->name; // Additional query for each request
+}
+
+// GOOD - Eager Loading
+$requests = ServiceRequest::with(['customer', 'equipment', 'technician'])->get();
+foreach ($requests as $request) {
+    echo $request->customer->name; // No additional queries
+}
+```
+
+3. Optimize ServiceRequest Index Query:
+```php
+public function index(Request $request)
+{
+    $query = ServiceRequest::query()
+        ->with(['customer:id,name,email', 'equipment:id,model,serial_number', 'technician:id,name'])
+        ->select('id', 'customer_id', 'equipment_id', 'technician_id', 'priority', 'status', 'scheduled_at', 'created_at');
+    
+    // Apply filters
+    when($request->status, fn($q, $status) => $q->where('status', $status));
+    
+    // Use chunk for large datasets
+    if ($request->export) {
+        return $query->chunk(1000, function ($requests) {
+            // Process in chunks
+        });
+    }
+    
+    return $query->paginate(15);
+}
+```
+
+4. Use Query Scopes Efficiently:
+```php
+// In ServiceRequest model
+public function scopeWithRelations($query)
+{
+    return $query->with([
+        'customer' => fn($q) => $q->select('id', 'name', 'email'),
+        'equipment' => fn($q) => $q->select('id', 'model', 'serial_number'),
+        'technician' => fn($q) => $q->select('id', 'name', 'avatar'),
+    ]);
+}
+
+// Usage
+$requests = ServiceRequest::withRelations()->paginate();
+```
+
+5. Optimize Counting Queries:
+```php
+// BAD
+$pendingCount = ServiceRequest::where('status', 'pending')->get()->count();
+
+// GOOD
+$pendingCount = ServiceRequest::where('status', 'pending')->count();
+
+// BETTER - Use cache for frequent counts
+$pendingCount = Cache::remember('requests.pending.count', 300, function () {
+    return ServiceRequest::where('status', 'pending')->count();
+});
+```
+
+6. Use Lazy Collections for Large Datasets:
+```php
+// For exports or batch processing
+ServiceRequest::where('status', 'completed')
+    ->cursor() // Returns lazy collection
+    ->each(function ($request) {
+        // Process without loading all into memory
+    });
+```
+
+7. Optimize Exists Checks:
+```php
+// BAD
+if (ServiceRequest::where('customer_id', $id)->count() > 0) { }
+
+// GOOD
+if (ServiceRequest::where('customer_id', $id)->exists()) { }
+```
+
+8. Database Connection Pooling:
+```php
+// config/database.php
+'connections' => [
+    'mysql' => [
+        'options' => [
+            PDO::ATTR_PERSISTENT => true, // Connection pooling
+        ],
+    ],
+],
+```
+
+9. Select Only Needed Columns:
+```php
+// BAD - Loads all columns
+$customers = Customer::all();
+
+// GOOD - Only needed columns
+$customers = Customer::select('id', 'name', 'email')->get();
+```
+
+10. Create DatabaseOptimizationService:
+```php
+class DatabaseOptimizationService
+{
+    public function analyzeSlowQueries()
+    {
+        // Enable query logging
+        DB::enableQueryLog();
+        
+        // Execute operation
+        
+        // Get queries
+        $queries = DB::getQueryLog();
+        
+        // Identify slow queries (>100ms)
+        return collect($queries)->filter(fn($q) => $q['time'] > 100);
+    }
+    
+    public function optimizeTable($table)
+    {
+        DB::statement("OPTIMIZE TABLE {$table}");
+    }
+}
+```
+
+Monitor with Laravel Telescope:
+- Install telescope for development
+- Identify slow queries
+- Track duplicate queries
+- Monitor query count per request
+```
 
 ---
 
-## Usage Instructions
+### **9. DEPLOYMENT & CI/CD**
 
-1. **Sequential Implementation**: These prompts are designed to be implemented in order, as later phases build upon earlier ones.
+#### **Prompt 9.1: Create Docker Configuration**
+```
+Create Docker setup for the Taisykla application:
 
-2. **Technology Stack Flexibility**: While these prompts don't specify particular technologies, they can be implemented using:
-   - Frontend: React, Vue.js, Angular, or similar
-   - Backend: Node.js, Python (Django/Flask), Ruby on Rails, Java Spring, or similar
-   - Database: PostgreSQL, MySQL, MongoDB, or similar
-   - Mobile: React Native, Flutter, or native iOS/Android
+Create Dockerfile:
+```dockerfile
+FROM php:8.2-fpm
 
-3. **Customization**: Each prompt can be customized based on:
-   - Specific business requirements
-   - Target market (B2B vs B2C)
-   - Scale of operations
-   - Budget constraints
-   - Technical expertise available
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    nginx \
+    supervisor \
+    redis-tools
 
-4. **Iterative Development**: Consider implementing features in iterations:
-   - Phase 1: MVP (Core authentication, basic work orders, simple scheduling)
-   - Phase 2: Enhanced features (Equipment management, parts inventory)
-   - Phase 3: Advanced features (Analytics, automation, integrations)
-   - Phase 4: Optimization (Performance tuning, advanced analytics)
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-5. **Testing Strategy**: For each component, implement:
-   - Unit tests for business logic
-   - Integration tests for API endpoints
-   - End-to-end tests for critical user flows
-   - Performance testing for high-load scenarios
-   - Security testing for authentication and data access
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-6. **Documentation**: Maintain comprehensive documentation including:
-   - API documentation
-   - Database schema documentation
-   - User guides and training materials
-   - System administration manuals
-   - Deployment and maintenance procedures
-2
----
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs
 
-## Total System Components Summary
+# Set working directory
+WORKDIR /var/www
 
-**Database Tables**: 13+ core tables with proper relationships
-**User Roles**: 11 distinct role types
-**Major Modules**: 12 functional areas
-**Dashboard Types**: 3 specialized dashboards (Technician, Dispatcher, Admin)
-**Integration Points**: 6+ external system integrations
-**Report Categories**: 4 main categories with 15+ report types
-**Mobile Interfaces**: 2 apps (Technician field app, Customer app)
+# Copy application files
+COPY . .
 
-This comprehensive system provides enterprise-grade maintenance management capabilities suitable for organizations ranging from small service businesses to large enterprise operations.
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader && \
+    npm install && npm run build
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www && \
+    chmod -R 755 /var/www/storage
+
+# Copy configuration files
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/supervisor.conf /etc/supervisor/conf.d/supervisor.conf
+
+EXPOSE 80
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisor.conf"]
+```
+
+Create docker-compose.yml:
+```yaml
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taisykla-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php.ini:/usr/local/etc/php/php.ini
+    networks:
+      - taisykla-network
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: mysql:8.0
+    container_name: taisykla-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - taisykla-network
+    ports:
+      - "3306:3306"
+
+  redis:
+    image: redis:alpine
+    container_name: taisykla-redis
+    restart: unless-stopped
+    networks:
+      - taisykla-network
+    ports:
+      - "6379:6379"
+
+  nginx:
+    image: nginx:alpine
+    container_name: taisykla-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - taisykla-network
+    depends_on:
+      - app
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taisykla-queue
+    restart: unless-stopped
+    command: php artisan queue:work --tries=3
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - taisykla-network
+    depends_on:
+      - db
+      - redis
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taisykla-scheduler
+    restart: unless-stopped
+    command: while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    networks:
+      - taisykla-network
+    depends_on:
+      - db
+      - redis
+
+networks:
+  taisykla-network:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
+```
+
+Create docker/nginx/conf.d/app.conf:
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /var/www/public;
+    index index.php index.html;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass app:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+```
+
+Create docker/supervisor.conf:
+```ini
+[supervisord]
+nodaemon=true
+
+[program:nginx]
+command=nginx -g 'daemon off;'
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/nginx/access.log
+stderr_logfile=/var/log/nginx/error.log
+
+[program:php-fpm]
+command=php-fpm
+autostart=true
+autorestart=true
+stdout_logfile=/var/log/php-fpm.log
+stderr_logfile=/var/log/php-fpm-error.log
+
+[program:laravel-worker]
+command=php /var/www/artisan queue:work --tries=3
+autostart=true
+autorestart=true
+numprocs=2
+stdout_logfile=/var/log/worker.log
+stderr_logfile=/var/log/worker-error.log
+```
+
+Create .dockerignore:
+```
+node_modules/
+vendor/
+.git/
+.env
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+```
+
+Setup commands in README.md:
+```bash
+# Build and start containers
+docker-compose up -d --build
+
+# Run migrations
+docker-compose exec app php artisan migrate --seed
+
+# Generate app key
+docker-compose exec app php artisan key:generate
+
+# Create storage link
+docker-compose exec app php artisan storage:link
+
+# View logs
+docker-compose logs -f app
+
+# Stop containers
+docker-compose down
+```
+```
+
+#### **Prompt 9.2: Create GitHub Actions CI/CD Pipeline**
+```
+Create comprehensive GitHub Actions workflow for CI/CD:
+
+Create .github/workflows/laravel.yml:
+```yaml
+name: Laravel CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  tests:
+    name: Tests (PHP ${{ matrix.php-versions }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php-versions: ['8.1', '8.2']
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: mbstring, dom, fileinfo, mysql, redis
+          coverage: xdebug
+      
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install NPM Dependencies
+        run: npm ci
+      
+      - name: Build Assets
+        run: npm run build
+      
+      - name: Copy Environment File
+        run: cp .env.example .env
+      
+      - name: Generate Application Key
+        run: php artisan key:generate
+      
+      - name: Directory Permissions
+        run: chmod -R 777 storage bootstrap/cache
+      
+      - name: Run Migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: password
+      
+      - name: Execute PHPUnit Tests
+        run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: testing
+          DB_USERNAME: root
+          DB_PASSWORD: password
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+      
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: true
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: phpcs, phpstan
+      
+      - name: Install Dependencies
+        run: composer install --prefer-dist --no-interaction
+      
+      - name: Run PHP CS Fixer (Dry Run)
+        run: vendor/bin/pint --test
+      
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=2G
+      
+      - name: Run Larastan
+        run: vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=2G
+
+  security:
+    name: Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      
+      - name: Install Dependencies
+        run: composer install --prefer-dist --no-interaction
+      
+      - name: Security Check
+        run: |
+          composer require --dev enlightn/security-checker
+          php vendor/bin/security-checker security:check composer.lock
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [tests, code-quality, security]
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USERNAME }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            cd /var/www/taisykla-staging
+            git pull origin develop
+            composer install --no-dev --optimize-autoloader
+            npm install && npm run build
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan queue:restart
+            php artisan octane:reload || true
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [tests, code-quality, security]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://taisykla.com
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Create Deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ github.token }}
+          environment: production
+      
+      - name: Deploy to Production Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USERNAME }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /var/www/taisykla-production
+            
+            # Backup database
+            php artisan backup:run --only-db
+            
+            # Enable maintenance mode
+            php artisan down --retry=60
+            
+            # Pull latest code
+            git pull origin main
+            
+            # Install dependencies
+            composer install --no-dev --optimize-autoloader
+            npm install && npm run build
+            
+            # Run migrations
+            php artisan migrate --force
+            
+            # Clear and cache
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan event:cache
+            
+            # Restart services
+            php artisan queue:restart
+            php artisan octane:reload || true
+            
+            # Disable maintenance mode
+            php artisan up
+      
+      - name: Deployment Success Notification
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "🚀 Production deployment successful!",
+              attachments: [{
+                color: 'good',
+                text: `Deployed ${process.env.AS_COMMIT} to production`
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+Create phpstan.neon for static analysis:
+```neon
+includes:
+    - ./vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    paths:
+        - app
+    level: 5
+    ignoreErrors:
+        - '#Unsafe usage of new static#'
+    excludePaths:
+        - ./*/*/FileToBeExcluded.php
+```
+
+Create deployment scripts in scripts/deploy.sh:
+```bash
+#!/bin/bash
+set -e
+
+echo "Starting deployment..."
+
+# Backup
+php artisan backup:run
+
+# Maintenance mode
+php artisan down
+
+# Update code
+git pull origin main
+
+# Dependencies
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+
+# Database
+php artisan migrate --force
+
+# Cache
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Queue
+php artisan queue:restart
+
+# Up
+php artisan up
+
+echo "Deployment complete!"
+```
+```

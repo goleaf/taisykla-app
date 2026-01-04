@@ -136,6 +136,15 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
         ->middleware('can:' . PermissionCatalog::SCHEDULE_MANAGE)
         ->name('schedule.intelligent');
 
+    // Service Requests
+    Route::controller(\App\Http\Controllers\ServiceRequestController::class)->group(function () {
+        Route::post('service-requests/{id}/assign', 'assign')->name('service-requests.assign');
+        Route::post('service-requests/{id}/status', 'updateStatus')->name('service-requests.update-status');
+        Route::post('service-requests/{id}/approve', 'approve')->name('service-requests.approve');
+        Route::post('service-requests/{id}/reject', 'reject')->name('service-requests.reject');
+    });
+    Route::resource('service-requests', \App\Http\Controllers\ServiceRequestController::class);
+
     Route::view('profile', 'profile')->name('profile');
 });
 
