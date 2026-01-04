@@ -32,6 +32,9 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('dispatch', \App\Livewire\DispatchDashboard::class)
         ->middleware('can:' . PermissionCatalog::SCHEDULE_MANAGE)
         ->name('dispatch.dashboard');
+    Route::get('admin', \App\Livewire\AdminDashboard::class)
+        ->middleware('can:' . PermissionCatalog::SETTINGS_VIEW)
+        ->name('admin.dashboard');
     Route::get('work-orders', WorkOrdersIndex::class)
         ->middleware('can:' . PermissionCatalog::WORK_ORDERS_VIEW)
         ->name('work-orders.index');
