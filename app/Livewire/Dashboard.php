@@ -56,12 +56,12 @@ class Dashboard extends Component
 
     public function updateAvailability(string $status): void
     {
-        if (! array_key_exists($status, $this->availabilityOptions)) {
+        if (!array_key_exists($status, $this->availabilityOptions)) {
             return;
         }
 
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return;
         }
 
@@ -118,7 +118,7 @@ class Dashboard extends Component
 
     private function roleKey(?User $user): string
     {
-        if (! $user) {
+        if (!$user) {
             return 'user';
         }
 
@@ -126,12 +126,14 @@ class Dashboard extends Component
             return RoleCatalog::ADMIN;
         }
 
-        if ($user->hasAnyRole([
-            RoleCatalog::OPERATIONS_MANAGER,
-            RoleCatalog::DISPATCH,
-            RoleCatalog::INVENTORY_SPECIALIST,
-            RoleCatalog::BILLING_SPECIALIST,
-        ])) {
+        if (
+            $user->hasAnyRole([
+                RoleCatalog::OPERATIONS_MANAGER,
+                RoleCatalog::DISPATCH,
+                RoleCatalog::INVENTORY_SPECIALIST,
+                RoleCatalog::BILLING_SPECIALIST,
+            ])
+        ) {
             return RoleCatalog::DISPATCH;
         }
 
@@ -160,7 +162,7 @@ class Dashboard extends Component
 
     private function primaryRole(?User $user): ?string
     {
-        if (! $user) {
+        if (!$user) {
             return null;
         }
 
@@ -189,12 +191,12 @@ class Dashboard extends Component
 
     private function availabilityData(?User $user): array
     {
-        if (! $user) {
+        if (!$user) {
             return ['show' => false];
         }
 
         $show = $user->canViewSchedule();
-        if (! $show) {
+        if (!$show) {
             return ['show' => false];
         }
 
@@ -259,8 +261,8 @@ class Dashboard extends Component
                     ->count()),
                 $this->card('My Equipment', Equipment::where('assigned_user_id', $user->id)->count()),
                 $this->card('Open Invoices', Invoice::whereHas('workOrder', function ($builder) use ($user) {
-                    $builder->where('requested_by_user_id', $user->id);
-                })
+                        $builder->where('requested_by_user_id', $user->id);
+                    })
                     ->whereIn('status', ['sent', 'overdue'])
                     ->count()),
             ],
@@ -385,8 +387,8 @@ class Dashboard extends Component
                 $this->section(
                     'Recent Invoices',
                     $this->invoiceItems(Invoice::whereHas('workOrder', function ($builder) use ($user) {
-                        $builder->where('requested_by_user_id', $user->id);
-                    })
+                            $builder->where('requested_by_user_id', $user->id);
+                        })
                         ->latest()
                         ->take(6)
                         ->get()),
@@ -438,11 +440,11 @@ class Dashboard extends Component
     public function sendQuickReply(int $threadId): void
     {
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return;
         }
 
-        if (! $this->threadExistsForUser($threadId, $user->id)) {
+        if (!$this->threadExistsForUser($threadId, $user->id)) {
             return;
         }
 
@@ -475,7 +477,7 @@ class Dashboard extends Component
     public function reservePart(int $partId, int $quantity = 1): void
     {
         $user = auth()->user();
-        if (! $user || $quantity < 1) {
+        if (!$user || $quantity < 1) {
             return;
         }
 
@@ -484,7 +486,7 @@ class Dashboard extends Component
             ->orderByRaw('(quantity - reserved_quantity) desc')
             ->first();
 
-        if (! $item) {
+        if (!$item) {
             $this->addError('reservePart', 'No inventory found for this part.');
             return;
         }
@@ -632,18 +634,18 @@ class Dashboard extends Component
         });
 
         $overdueAppointments = $appointments->filter(function (Appointment $appointment) {
-            if (! $appointment->scheduled_end_at) {
+            if (!$appointment->scheduled_end_at) {
                 return false;
             }
 
             $status = $appointment->workOrder?->status;
-            return $appointment->scheduled_end_at->isPast() && ! in_array($status, ['completed', 'closed', 'canceled'], true);
+            return $appointment->scheduled_end_at->isPast() && !in_array($status, ['completed', 'closed', 'canceled'], true);
         });
 
         $technicianCards = $technicians->map(function (User $tech) use ($appointmentsByTech, $activeOrders, $durationStats, $overdueAppointments) {
             $todayAppointments = $appointmentsByTech->get($tech->id, collect());
             $activeForTech = $activeOrders->get($tech->id, collect());
-            $hasOverdue = $overdueAppointments->contains(fn (Appointment $appointment) => $appointment->assigned_to_user_id === $tech->id);
+            $hasOverdue = $overdueAppointments->contains(fn(Appointment $appointment) => $appointment->assigned_to_user_id === $tech->id);
 
             $status = $this->technicianStatus($tech, $activeForTech, $todayAppointments, $hasOverdue);
             $scheduledMinutes = $todayAppointments->sum(function (Appointment $appointment) {
@@ -699,7 +701,7 @@ class Dashboard extends Component
         ];
 
         $roleCounts = collect(RoleCatalog::all())
-            ->mapWithKeys(fn (string $role) => [$role => User::role($role)->count()])
+            ->mapWithKeys(fn(string $role) => [$role => User::role($role)->count()])
             ->toArray();
 
         $recentUsers = User::orderByDesc('created_at')->take(6)->get();
@@ -923,7 +925,7 @@ class Dashboard extends Component
 
     private function labelize(?string $value): string
     {
-        if (! $value) {
+        if (!$value) {
             return 'Unknown';
         }
 
@@ -998,6 +1000,7 @@ class Dashboard extends Component
         ];
     }
 
+
     private function buildRouteStops(User $user, $appointments): array
     {
         $originLat = $user->current_latitude;
@@ -1017,9 +1020,13 @@ class Dashboard extends Component
                 'travel_minutes' => $order?->travel_minutes,
                 'map_url' => $hasCoords ? $this->mapRouteUrl($originLat, $originLng, $lat, $lng) : null,
                 'has_coords' => $hasCoords,
+                'lat' => $lat,
+                'lng' => $lng,
+                'priority' => $order?->priority ?? 'standard',
             ];
         })->all();
     }
+
 
     private function recentMessageThreads(User $user, int $limit): array
     {
@@ -1198,7 +1205,7 @@ class Dashboard extends Component
             ->whereNotNull('completed_at')
             ->where('completed_at', '>=', $today->copy()->subDays(7))
             ->get(['assigned_at', 'completed_at'])
-            ->map(fn (WorkOrder $order) => $order->assigned_at->diffInMinutes($order->completed_at))
+            ->map(fn(WorkOrder $order) => $order->assigned_at->diffInMinutes($order->completed_at))
             ->filter()
             ->avg();
 
@@ -1222,8 +1229,8 @@ class Dashboard extends Component
     private function dispatchHeatMap($queueOrders): array
     {
         return $queueOrders
-            ->groupBy(fn (WorkOrder $order) => $order->location_name ?: ($order->organization?->name ?? 'Unknown'))
-            ->map(fn ($orders, $label) => ['label' => $label, 'count' => $orders->count()])
+            ->groupBy(fn(WorkOrder $order) => $order->location_name ?: ($order->organization?->name ?? 'Unknown'))
+            ->map(fn($orders, $label) => ['label' => $label, 'count' => $orders->count()])
             ->sortByDesc('count')
             ->values()
             ->take(6)
@@ -1234,7 +1241,7 @@ class Dashboard extends Component
     {
         $alerts = [];
 
-        $urgent = $queueItems->filter(fn ($item) => $item['order']->priority === 'urgent');
+        $urgent = $queueItems->filter(fn($item) => $item['order']->priority === 'urgent');
         if ($urgent->isNotEmpty()) {
             $alerts[] = [
                 'label' => 'Urgent requests in queue',
@@ -1252,7 +1259,7 @@ class Dashboard extends Component
         }
 
         $slaBreaches = $queueItems->filter(function ($item) {
-            if (! $item['sla_minutes']) {
+            if (!$item['sla_minutes']) {
                 return false;
             }
 
@@ -1268,7 +1275,7 @@ class Dashboard extends Component
         }
 
         $nearBreaches = $queueItems->filter(function ($item) {
-            if (! $item['sla_minutes']) {
+            if (!$item['sla_minutes']) {
                 return false;
             }
 
@@ -1321,7 +1328,7 @@ class Dashboard extends Component
 
     private function systemUptime(): string
     {
-        $startedAt = Cache::rememberForever('system_started_at', fn () => now()->toDateTimeString());
+        $startedAt = Cache::rememberForever('system_started_at', fn() => now()->toDateTimeString());
         return Carbon::parse($startedAt)->diffForHumans();
     }
 
@@ -1343,7 +1350,7 @@ class Dashboard extends Component
         $total = @disk_total_space($path);
         $free = @disk_free_space($path);
 
-        if (! $total || ! $free) {
+        if (!$total || !$free) {
             return [
                 'total' => null,
                 'used' => null,
@@ -1365,7 +1372,7 @@ class Dashboard extends Component
 
     private function tableCount(string $table): int
     {
-        if (! Schema::hasTable($table)) {
+        if (!Schema::hasTable($table)) {
             return 0;
         }
 
@@ -1386,11 +1393,11 @@ class Dashboard extends Component
         $participant = $thread->participants->firstWhere('user_id', $userId);
         $lastMessage = $thread->messages->first();
 
-        if (! $lastMessage) {
+        if (!$lastMessage) {
             return false;
         }
 
-        if (! $participant?->last_read_at) {
+        if (!$participant?->last_read_at) {
             return true;
         }
 

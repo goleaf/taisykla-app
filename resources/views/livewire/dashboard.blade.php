@@ -16,7 +16,9 @@
             <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
                 <div class="space-y-1">
                     <p>Name: {{ $user->name }}</p>
-                    <p>Role: {{ $roles ? collect($roles)->map(fn ($role) => RoleCatalog::label($role))->implode(', ') : '—' }}</p>
+                    <p>Role:
+                        {{ $roles ? collect($roles)->map(fn($role) => RoleCatalog::label($role))->implode(', ') : '—' }}
+                    </p>
                     <p>Department: {{ $user->department ?? '—' }}</p>
                     <p>Employee ID: {{ $user->employee_id ?? '—' }}</p>
                 </div>
@@ -30,15 +32,18 @@
         </div>
 
         @if ($availability['show'] ?? false)
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div
+                class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-500">Availability</p>
-                    <p class="text-lg font-semibold {{ $availability['color'] ?? 'text-gray-500' }}">{{ $availability['label'] ?? 'Offline' }}</p>
+                    <p class="text-lg font-semibold {{ $availability['color'] ?? 'text-gray-500' }}">
+                        {{ $availability['label'] ?? 'Offline' }}</p>
                     <p class="text-xs text-gray-500">Updated {{ $availability['updated'] ?? 'just now' }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($availabilityOptions as $value => $label)
-                        <button class="px-3 py-1 border border-gray-300 rounded-md text-sm" wire:click="updateAvailability('{{ $value }}')">
+                        <button class="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                            wire:click="updateAvailability('{{ $value }}')">
                             {{ $label }}
                         </button>
                     @endforeach
@@ -51,7 +56,7 @@
                 <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
                     <p class="text-xs uppercase tracking-wide text-gray-500">{{ $card['label'] }}</p>
                     <p class="text-2xl font-semibold text-gray-900">{{ $card['value'] }}</p>
-                    @if (! empty($card['subtext']))
+                    @if (!empty($card['subtext']))
                         <p class="text-xs text-gray-500">{{ $card['subtext'] }}</p>
                     @endif
                 </div>
@@ -63,7 +68,8 @@
                 <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-900">Today's Work Queue</h2>
-                        <a class="text-sm text-indigo-600" href="{{ route('schedule.index') }}" wire:navigate>View schedule</a>
+                        <a class="text-sm text-indigo-600" href="{{ route('schedule.index') }}" wire:navigate>View
+                            schedule</a>
                     </div>
                     <div class="space-y-4">
                         @forelse ($technicianData['appointments'] as $appointment)
@@ -82,29 +88,41 @@
                                 <summary class="cursor-pointer">
                                     <div class="flex flex-wrap items-center justify-between gap-3">
                                         <div>
-                                            <p class="text-sm font-semibold text-gray-900">{{ $order?->organization?->name ?? $order?->requestedBy?->name ?? 'Customer' }}</p>
-                                            <p class="text-xs text-gray-500">{{ $order?->location_address ?? 'No address provided' }}</p>
+                                            <p class="text-sm font-semibold text-gray-900">
+                                                {{ $order?->organization?->name ?? $order?->requestedBy?->name ?? 'Customer' }}
+                                            </p>
+                                            <p class="text-xs text-gray-500">
+                                                {{ $order?->location_address ?? 'No address provided' }}</p>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                            <span>{{ $appointment->scheduled_start_at?->format('H:i') ?? 'TBD' }} {{ $appointment->time_window ? '• '.$appointment->time_window : '' }}</span>
+                                            <span>{{ $appointment->scheduled_start_at?->format('H:i') ?? 'TBD' }}
+                                                {{ $appointment->time_window ? '• ' . $appointment->time_window : '' }}</span>
                                             <span>{{ $order?->category?->name ?? 'Service' }}</span>
-                                            <span>{{ $estimatedMinutes ? $estimatedMinutes.' min' : '—' }}</span>
-                                            <span class="inline-flex items-center rounded-full px-2 py-0.5 {{ $priorityClass }}">{{ ucfirst($order?->priority ?? 'standard') }}</span>
+                                            <span>{{ $estimatedMinutes ? $estimatedMinutes . ' min' : '—' }}</span>
+                                            <span
+                                                class="inline-flex items-center rounded-full px-2 py-0.5 {{ $priorityClass }}">{{ ucfirst($order?->priority ?? 'standard') }}</span>
                                         </div>
                                     </div>
                                 </summary>
                                 <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm text-gray-700">
                                     <div class="space-y-2">
                                         <p class="text-xs uppercase text-gray-500">Customer Details</p>
-                                        <p>Contact: {{ $order?->organization?->primary_contact_name ?? $order?->requestedBy?->name ?? '—' }}</p>
-                                        <p>Email: {{ $order?->organization?->primary_contact_email ?? $order?->requestedBy?->email ?? '—' }}</p>
-                                        <p>Phone: {{ $order?->organization?->primary_contact_phone ?? $order?->requestedBy?->phone ?? '—' }}</p>
+                                        <p>Contact:
+                                            {{ $order?->organization?->primary_contact_name ?? $order?->requestedBy?->name ?? '—' }}
+                                        </p>
+                                        <p>Email:
+                                            {{ $order?->organization?->primary_contact_email ?? $order?->requestedBy?->email ?? '—' }}
+                                        </p>
+                                        <p>Phone:
+                                            {{ $order?->organization?->primary_contact_phone ?? $order?->requestedBy?->phone ?? '—' }}
+                                        </p>
                                         <p>Location notes: {{ $appointment->notes ?? $order?->location_name ?? '—' }}</p>
                                         <p>Description: {{ $order?->description ?? 'No description.' }}</p>
                                     </div>
                                     <div class="space-y-2">
                                         <p class="text-xs uppercase text-gray-500">Equipment</p>
-                                        <p>{{ $order?->equipment?->name ?? '—' }} {{ $order?->equipment?->model ? '• '.$order->equipment->model : '' }}</p>
+                                        <p>{{ $order?->equipment?->name ?? '—' }}
+                                            {{ $order?->equipment?->model ? '• ' . $order->equipment->model : '' }}</p>
                                         <p>Serial: {{ $order?->equipment?->serial_number ?? '—' }}</p>
                                         <p>Location: {{ $order?->equipment?->location_name ?? '—' }}</p>
                                         <p class="text-xs uppercase text-gray-500 mt-3">Parts to Bring</p>
@@ -124,8 +142,11 @@
                                     @if ($order?->attachments && $order->attachments->isNotEmpty())
                                         <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
                                             @foreach ($order->attachments->take(4) as $attachment)
-                                                <a href="{{ asset('storage/'.$attachment->file_path) }}" target="_blank" rel="noreferrer">
-                                                    <img class="h-20 w-full rounded-md object-cover border border-gray-200" src="{{ asset('storage/'.$attachment->file_path) }}" alt="{{ $attachment->label ?? 'Attachment' }}" />
+                                                <a href="{{ asset('storage/' . $attachment->file_path) }}" target="_blank"
+                                                    rel="noreferrer">
+                                                    <img class="h-20 w-full rounded-md object-cover border border-gray-200"
+                                                        src="{{ asset('storage/' . $attachment->file_path) }}"
+                                                        alt="{{ $attachment->label ?? 'Attachment' }}" />
                                                 </a>
                                             @endforeach
                                         </div>
@@ -134,7 +155,9 @@
                                     @endif
                                 </div>
                                 <div class="mt-4">
-                                    <a class="text-sm text-indigo-600" href="{{ $order ? route('work-orders.show', $order) : '#' }}" wire:navigate>Open work order</a>
+                                    <a class="text-sm text-indigo-600"
+                                        href="{{ $order ? route('work-orders.show', $order) : '#' }}" wire:navigate>Open work
+                                        order</a>
                                 </div>
                             </details>
                         @empty
@@ -143,32 +166,53 @@
                     </div>
                 </div>
 
+
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                         <h2 class="text-lg font-semibold text-gray-900 mb-4">Intelligent Route Planning</h2>
-                        <div class="space-y-3">
+
+                        {{-- Interactive Route Map --}}
+                        <x-route-map :stops="collect($technicianData['routeStops'])->map(fn($stop) => [
+                'sequence' => $stop['sequence'],
+                'label' => $stop['label'],
+                'address' => $stop['address'] ?? null,
+                'time' => $stop['time'] ?? null,
+                'travel_minutes' => $stop['travel_minutes'] ?? null,
+                'lat' => $stop['lat'] ?? null,
+                'lng' => $stop['lng'] ?? null,
+                'priority' => $stop['priority'] ?? 'standard',
+            ])->toArray()" :current-lat="$user->current_latitude" :current-lng="$user->current_longitude"
+                            height="280px" />
+
+                        {{-- Text-based Route List --}}
+                        <div class="mt-4 space-y-3">
                             @forelse ($technicianData['routeStops'] as $stop)
                                 <div class="flex items-start justify-between gap-3 text-sm text-gray-700">
                                     <div>
-                                        <p class="font-medium text-gray-900">Stop {{ $stop['sequence'] }} • {{ $stop['label'] }}</p>
+                                        <p class="font-medium text-gray-900">Stop {{ $stop['sequence'] }} • {{ $stop['label'] }}
+                                        </p>
                                         <p class="text-xs text-gray-500">{{ $stop['address'] ?? 'No address' }}</p>
                                         <p class="text-xs text-gray-500">
-                                            {{ $stop['time'] ? 'ETA window: '.$stop['time'] : 'ETA TBD' }}
-                                            {{ $stop['travel_minutes'] ? '• Travel '.$stop['travel_minutes'].' min' : '' }}
+                                            {{ $stop['time'] ? 'ETA window: ' . $stop['time'] : 'ETA TBD' }}
+                                            {{ $stop['travel_minutes'] ? '• Travel ' . $stop['travel_minutes'] . ' min' : '' }}
                                         </p>
                                     </div>
                                     @if ($stop['map_url'])
-                                        <a class="text-xs text-indigo-600" href="{{ $stop['map_url'] }}" target="_blank" rel="noreferrer">Open map</a>
+                                        <a class="text-xs text-indigo-600" href="{{ $stop['map_url'] }}" target="_blank"
+                                            rel="noreferrer">Navigate</a>
                                     @else
                                         <span class="text-xs text-gray-400">No coords</span>
                                     @endif
                                 </div>
                             @empty
-                                <p class="text-sm text-gray-500">Route planning will appear once stops are scheduled with locations.</p>
+                                <p class="text-sm text-gray-500">Route planning will appear once stops are scheduled with
+                                    locations.</p>
                             @endforelse
                         </div>
-                        <p class="mt-4 text-xs text-gray-500">Reorder stops from the schedule view if you need to optimize today’s route.</p>
+                        <p class="mt-4 text-xs text-gray-500">Reorder stops from the schedule view if you need to optimize
+                            today's route.</p>
                     </div>
+
 
                     <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                         <h2 class="text-lg font-semibold text-gray-900 mb-4">Time Tracking Summary</h2>
@@ -176,11 +220,12 @@
                             @if ($technicianData['timeSummary']['current'])
                                 <div class="rounded-md bg-indigo-50 p-3">
                                     <p class="text-xs uppercase text-indigo-600">Active Job</p>
-                                    <p class="font-medium text-indigo-900">{{ $technicianData['timeSummary']['current']['subject'] }}</p>
+                                    <p class="font-medium text-indigo-900">
+                                        {{ $technicianData['timeSummary']['current']['subject'] }}</p>
                                     <p class="text-xs text-indigo-700">
                                         Started {{ $technicianData['timeSummary']['current']['started_at']->format('H:i') }}
                                         • {{ $technicianData['timeSummary']['current']['elapsed_minutes'] }} min elapsed
-                                        {{ $technicianData['timeSummary']['current']['estimated_minutes'] ? '• Est '.$technicianData['timeSummary']['current']['estimated_minutes'].' min' : '' }}
+                                        {{ $technicianData['timeSummary']['current']['estimated_minutes'] ? '• Est ' . $technicianData['timeSummary']['current']['estimated_minutes'] . ' min' : '' }}
                                     </p>
                                 </div>
                             @else
@@ -189,19 +234,24 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <p class="text-xs text-gray-500">Work Time</p>
-                                    <p class="text-base font-semibold text-gray-900">{{ $technicianData['timeSummary']['labor_minutes'] }} min</p>
+                                    <p class="text-base font-semibold text-gray-900">
+                                        {{ $technicianData['timeSummary']['labor_minutes'] }} min</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500">Travel Time</p>
-                                    <p class="text-base font-semibold text-gray-900">{{ $technicianData['timeSummary']['travel_minutes'] }} min</p>
+                                    <p class="text-base font-semibold text-gray-900">
+                                        {{ $technicianData['timeSummary']['travel_minutes'] }} min</p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500">Break Time</p>
-                                    <p class="text-base font-semibold text-gray-900">{{ $technicianData['timeSummary']['break_minutes'] !== null ? $technicianData['timeSummary']['break_minutes'].' min' : 'Not tracked' }}</p>
+                                    <p class="text-base font-semibold text-gray-900">
+                                        {{ $technicianData['timeSummary']['break_minutes'] !== null ? $technicianData['timeSummary']['break_minutes'] . ' min' : 'Not tracked' }}
+                                    </p>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-500">Billable</p>
-                                    <p class="text-base font-semibold text-gray-900">{{ $technicianData['timeSummary']['billable_minutes'] }} min</p>
+                                    <p class="text-base font-semibold text-gray-900">
+                                        {{ $technicianData['timeSummary']['billable_minutes'] }} min</p>
                                 </div>
                             </div>
                         </div>
@@ -224,15 +274,20 @@
                                         @endif
                                     </div>
                                     <p class="text-xs text-gray-500">
-                                        {{ $thread->workOrder ? 'WO #'.$thread->workOrder->id.' • ' : '' }}
-                                        {{ $lastMessage?->user?->name ?? 'System' }} • {{ $lastMessage?->created_at?->diffForHumans() ?? '—' }}
+                                        {{ $thread->workOrder ? 'WO #' . $thread->workOrder->id . ' • ' : '' }}
+                                        {{ $lastMessage?->user?->name ?? 'System' }} •
+                                        {{ $lastMessage?->created_at?->diffForHumans() ?? '—' }}
                                     </p>
                                     <p class="text-sm text-gray-700 mt-2">{{ $lastMessage?->body ?? 'No messages yet.' }}</p>
                                     <form wire:submit.prevent="sendQuickReply({{ $thread->id }})" class="mt-3">
-                                        <textarea wire:model.defer="quickReplies.{{ $thread->id }}" class="w-full rounded-md border-gray-300 text-sm" rows="2" placeholder="Quick reply"></textarea>
-                                        @error('quickReplies.'.$thread->id) <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                                        <textarea wire:model.defer="quickReplies.{{ $thread->id }}"
+                                            class="w-full rounded-md border-gray-300 text-sm" rows="2"
+                                            placeholder="Quick reply"></textarea>
+                                        @error('quickReplies.' . $thread->id) <p class="text-xs text-red-600">{{ $message }}</p>
+                                        @enderror
                                         <div class="mt-2 flex items-center justify-between">
-                                            <a class="text-xs text-indigo-600" href="{{ route('messages.index') }}" wire:navigate>Open thread</a>
+                                            <a class="text-xs text-indigo-600" href="{{ route('messages.index') }}"
+                                                wire:navigate>Open thread</a>
                                             <button class="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md">Send</button>
                                         </div>
                                     </form>
@@ -256,16 +311,14 @@
                                         @foreach ($technicianData['parts']['needed'] as $part)
                                             <li class="flex items-center justify-between gap-2">
                                                 <span>
-                                                    {{ $part['name'] }}{{ $part['sku'] ? ' • '.$part['sku'] : '' }} • Qty {{ $part['quantity'] }}
+                                                    {{ $part['name'] }}{{ $part['sku'] ? ' • ' . $part['sku'] : '' }} • Qty
+                                                    {{ $part['quantity'] }}
                                                     <span class="text-xs text-gray-500">• Available {{ $part['available'] }}</span>
                                                 </span>
                                                 @if ($part['part_id'])
-                                                    <button
-                                                        type="button"
-                                                        class="px-2 py-1 text-xs border border-gray-300 rounded-md"
+                                                    <button type="button" class="px-2 py-1 text-xs border border-gray-300 rounded-md"
                                                         wire:click="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
-                                                        @disabled($part['available'] < 1)
-                                                    >
+                                                        @disabled($part['available'] < 1)>
                                                         Reserve
                                                     </button>
                                                 @endif
@@ -284,7 +337,8 @@
                                             <div class="flex items-center justify-between">
                                                 <div>
                                                     <p class="font-medium text-gray-900">{{ $part['name'] }}</p>
-                                                    <p class="text-xs text-gray-500">Usage: {{ $part['usage'] }} • SKU: {{ $part['sku'] ?? '—' }}</p>
+                                                    <p class="text-xs text-gray-500">Usage: {{ $part['usage'] }} • SKU:
+                                                        {{ $part['sku'] ?? '—' }}</p>
                                                 </div>
                                                 <div class="text-xs text-gray-500 text-right">
                                                     <p>Available: {{ $part['available'] }}</p>
@@ -404,9 +458,17 @@
                 }
 
                 @keyframes dispatch-pulse {
-                    0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.45); }
-                    70% { box-shadow: 0 0 0 10px rgba(22, 163, 74, 0); }
-                    100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+                    0% {
+                        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.45);
+                    }
+
+                    70% {
+                        box-shadow: 0 0 0 10px rgba(22, 163, 74, 0);
+                    }
+
+                    100% {
+                        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+                    }
                 }
 
                 .dispatch-stat {
@@ -478,7 +540,7 @@
                     overflow: hidden;
                 }
 
-                .dispatch-bar > span {
+                .dispatch-bar>span {
                     display: block;
                     height: 100%;
                     width: var(--value, 50%);
@@ -492,7 +554,7 @@
                     overflow: hidden;
                 }
 
-                .dispatch-kpi-bar > span {
+                .dispatch-kpi-bar>span {
                     display: block;
                     height: 100%;
                     width: var(--value, 60%);
@@ -517,16 +579,50 @@
                     border-radius: 9999px;
                 }
 
-                .dispatch-status.available { background: rgba(22, 163, 74, 0.15); color: #166534; }
-                .dispatch-status.available .dot { background: var(--dispatch-success); }
-                .dispatch-status.traveling { background: rgba(14, 165, 233, 0.15); color: #0c4a6e; }
-                .dispatch-status.traveling .dot { background: var(--dispatch-info); }
-                .dispatch-status.working { background: rgba(249, 115, 22, 0.2); color: #9a3412; }
-                .dispatch-status.working .dot { background: var(--dispatch-warning); }
-                .dispatch-status.overdue { background: rgba(220, 38, 38, 0.18); color: #991b1b; }
-                .dispatch-status.overdue .dot { background: var(--dispatch-danger); }
-                .dispatch-status.off { background: rgba(148, 163, 184, 0.2); color: #475569; }
-                .dispatch-status.off .dot { background: var(--dispatch-off); }
+                .dispatch-status.available {
+                    background: rgba(22, 163, 74, 0.15);
+                    color: #166534;
+                }
+
+                .dispatch-status.available .dot {
+                    background: var(--dispatch-success);
+                }
+
+                .dispatch-status.traveling {
+                    background: rgba(14, 165, 233, 0.15);
+                    color: #0c4a6e;
+                }
+
+                .dispatch-status.traveling .dot {
+                    background: var(--dispatch-info);
+                }
+
+                .dispatch-status.working {
+                    background: rgba(249, 115, 22, 0.2);
+                    color: #9a3412;
+                }
+
+                .dispatch-status.working .dot {
+                    background: var(--dispatch-warning);
+                }
+
+                .dispatch-status.overdue {
+                    background: rgba(220, 38, 38, 0.18);
+                    color: #991b1b;
+                }
+
+                .dispatch-status.overdue .dot {
+                    background: var(--dispatch-danger);
+                }
+
+                .dispatch-status.off {
+                    background: rgba(148, 163, 184, 0.2);
+                    color: #475569;
+                }
+
+                .dispatch-status.off .dot {
+                    background: var(--dispatch-off);
+                }
 
                 .dispatch-map {
                     position: relative;
@@ -634,8 +730,8 @@
                         && $item['waiting_minutes'] < $item['sla_minutes']
                         && $item['waiting_minutes'] >= (int) ($item['sla_minutes'] * 0.75);
                 })->count();
-                $overdueCount = $techCards->filter(fn ($tech) => $tech['has_overdue'])->count();
-                $availableCount = $techCards->filter(fn ($tech) => $tech['status']['label'] === 'Available')->count();
+                $overdueCount = $techCards->filter(fn($tech) => $tech['has_overdue'])->count();
+                $availableCount = $techCards->filter(fn($tech) => $tech['status']['label'] === 'Available')->count();
                 $coverageScore = $techCards->count() > 0 ? (int) round(($availableCount / $techCards->count()) * 100) : 0;
                 $focusItem = $queueItems->first();
                 $focusOrder = $focusItem['order'] ?? null;
@@ -706,14 +802,16 @@
                         <div>
                             <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Operations Control</p>
                             <h2 class="dispatch-title text-3xl text-slate-900">Dispatch Manager Dashboard</h2>
-                            <p class="text-sm text-slate-600">Real-time coordination for field response, assignments, and coverage.</p>
+                            <p class="text-sm text-slate-600">Real-time coordination for field response, assignments, and
+                                coverage.</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
                             <span class="dispatch-pill"><span class="dispatch-live-dot"></span>Live sync</span>
                             <span class="dispatch-pill neutral">WebSocket ready</span>
                             <span class="dispatch-pill neutral">Polling fallback 20s</span>
                             <span class="dispatch-pill neutral">Updated {{ now()->format('H:i:s') }}</span>
-                            <button class="px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-300 rounded-full bg-white/70">
+                            <button
+                                class="px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-300 rounded-full bg-white/70">
                                 Refresh
                             </button>
                         </div>
@@ -801,14 +899,17 @@
                                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
                                         <div class="lg:col-span-1 flex items-center gap-3">
                                             <input type="checkbox" class="rounded border-slate-300 text-teal-600" />
-                                            <div class="dispatch-score" style="--score: {{ min(100, $item['priority_score']) }}%;">
+                                            <div class="dispatch-score"
+                                                style="--score: {{ min(100, $item['priority_score']) }}%;">
                                                 <span>{{ $item['priority_score'] }}</span>
                                             </div>
                                         </div>
                                         <div class="lg:col-span-4">
-                                            <p class="text-sm font-semibold text-slate-900">{{ $order->organization?->name ?? 'Customer' }}</p>
+                                            <p class="text-sm font-semibold text-slate-900">
+                                                {{ $order->organization?->name ?? 'Customer' }}</p>
                                             <p class="text-xs text-slate-500">Service level: {{ $serviceLevel }}</p>
-                                            <p class="text-xs text-slate-500">Problem: {{ $order->category?->name ?? 'Service' }}</p>
+                                            <p class="text-xs text-slate-500">Problem:
+                                                {{ $order->category?->name ?? 'Service' }}</p>
                                         </div>
                                         <div class="lg:col-span-3 space-y-2 text-xs text-slate-600">
                                             <div class="flex items-center gap-2">
@@ -821,7 +922,8 @@
                                         <div class="lg:col-span-2 space-y-2 text-xs text-slate-600">
                                             <p class="text-xs uppercase text-slate-500">SLA countdown</p>
                                             <span class="{{ $slaTone }}">{{ $slaLabel }}</span>
-                                            <p class="text-xs text-slate-500">Deadline {{ $item['sla_minutes'] ? $item['sla_minutes'].'m' : 'N/A' }}</p>
+                                            <p class="text-xs text-slate-500">Deadline
+                                                {{ $item['sla_minutes'] ? $item['sla_minutes'] . 'm' : 'N/A' }}</p>
                                         </div>
                                         <div class="lg:col-span-2 space-y-2 text-xs">
                                             <select class="w-full rounded-full border-slate-300 bg-white px-3 py-2 text-xs">
@@ -830,10 +932,12 @@
                                                     <option>{{ $tech['user']->name }}</option>
                                                 @endforeach
                                             </select>
-                                            <button class="w-full rounded-full bg-teal-600 px-3 py-2 text-xs font-semibold text-white">
+                                            <button
+                                                class="w-full rounded-full bg-teal-600 px-3 py-2 text-xs font-semibold text-white">
                                                 Assign now
                                             </button>
-                                            <button class="w-full rounded-full border border-slate-300 bg-white px-3 py-2 text-xs">
+                                            <button
+                                                class="w-full rounded-full border border-slate-300 bg-white px-3 py-2 text-xs">
                                                 View details
                                             </button>
                                         </div>
@@ -870,11 +974,14 @@
                                             <span class="{{ $deltaClass }}">{{ $deltaLabel }}</span>
                                         </div>
                                         <p class="mt-2 text-2xl font-semibold text-slate-900">
-                                            {{ $value !== null ? $value : 'N/A' }}<span class="text-xs text-slate-500"> {{ $kpi['unit'] }}</span>
+                                            {{ $value !== null ? $value : 'N/A' }}<span class="text-xs text-slate-500">
+                                                {{ $kpi['unit'] }}</span>
                                         </p>
-                                        <div class="mt-3 dispatch-kpi-bar" style="--value: {{ $barValue }}%;"><span></span></div>
+                                        <div class="mt-3 dispatch-kpi-bar" style="--value: {{ $barValue }}%;"><span></span>
+                                        </div>
                                         <p class="mt-2 text-xs text-slate-500">
-                                            Historical avg {{ $history !== null ? $history : 'N/A' }}{{ $history !== null ? $kpi['unit'] : '' }}
+                                            Historical avg
+                                            {{ $history !== null ? $history : 'N/A' }}{{ $history !== null ? $kpi['unit'] : '' }}
                                         </p>
                                     </div>
                                 @endforeach
@@ -905,8 +1012,10 @@
                                         </div>
                                         <div class="mt-3 flex flex-wrap gap-2 text-xs">
                                             <button class="px-3 py-1 rounded-full bg-slate-900 text-white">Resolve</button>
-                                            <button class="px-3 py-1 rounded-full border border-slate-300 bg-white">Reassign</button>
-                                            <button class="px-3 py-1 rounded-full border border-slate-300 bg-white">Notify</button>
+                                            <button
+                                                class="px-3 py-1 rounded-full border border-slate-300 bg-white">Reassign</button>
+                                            <button
+                                                class="px-3 py-1 rounded-full border border-slate-300 bg-white">Notify</button>
                                         </div>
                                     </div>
                                 @endforeach
@@ -970,7 +1079,7 @@
                                         default => 'traveling',
                                     };
                                     $capacityMinutes = max(0, 480 - $tech['scheduled_minutes']);
-                                    $capacityLabel = $capacityMinutes > 0 ? intdiv($capacityMinutes, 60).'h '.($capacityMinutes % 60).'m free' : 'Fully booked';
+                                    $capacityLabel = $capacityMinutes > 0 ? intdiv($capacityMinutes, 60) . 'h ' . ($capacityMinutes % 60) . 'm free' : 'Fully booked';
                                     $currentAppointment = $tech['appointments']->first(function ($appointment) {
                                         return $appointment->workOrder?->status === 'in_progress';
                                     }) ?? $tech['appointments']->first();
@@ -991,13 +1100,18 @@
                                     <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
                                         <div>
                                             <p class="text-xs uppercase text-slate-500">Current job</p>
-                                            <p class="text-sm text-slate-900">{{ $currentOrder?->subject ?? 'No active job' }}</p>
-                                            <p class="text-xs text-slate-500">{{ $currentOrder?->location_name ?? $currentOrder?->organization?->name ?? 'Awaiting assignment' }}</p>
+                                            <p class="text-sm text-slate-900">{{ $currentOrder?->subject ?? 'No active job' }}
+                                            </p>
+                                            <p class="text-xs text-slate-500">
+                                                {{ $currentOrder?->location_name ?? $currentOrder?->organization?->name ?? 'Awaiting assignment' }}
+                                            </p>
                                         </div>
                                         <div>
                                             <p class="text-xs uppercase text-slate-500">Performance</p>
-                                            <p class="text-sm text-slate-900">{{ $tech['avg_actual'] ? $tech['avg_actual'].' min' : 'N/A' }}
-                                                <span class="text-xs text-slate-500">{{ $tech['avg_estimated'] ? 'vs '.$tech['avg_estimated'].' min' : '' }}</span>
+                                            <p class="text-sm text-slate-900">
+                                                {{ $tech['avg_actual'] ? $tech['avg_actual'] . ' min' : 'N/A' }}
+                                                <span
+                                                    class="text-xs text-slate-500">{{ $tech['avg_estimated'] ? 'vs ' . $tech['avg_estimated'] . ' min' : '' }}</span>
                                             </p>
                                             <p class="text-xs text-slate-500">Capacity {{ $capacityLabel }}</p>
                                         </div>
@@ -1007,7 +1121,8 @@
                                             <span>Today schedule</span>
                                             <span>{{ $tech['appointments']->count() }} jobs</span>
                                         </div>
-                                        <div class="mt-2 relative h-8 rounded-full bg-white/70 border border-slate-200 overflow-hidden">
+                                        <div
+                                            class="mt-2 relative h-8 rounded-full bg-white/70 border border-slate-200 overflow-hidden">
                                             @php
                                                 $slotMinutes = max(1, $tech['appointments']->sum(function ($appointment) {
                                                     if ($appointment->scheduled_start_at && $appointment->scheduled_end_at) {
@@ -1027,22 +1142,26 @@
                                                     $left = $offset;
                                                     $offset = min(100, $offset + $width);
                                                 @endphp
-                                                <span class="absolute top-1 bottom-1 rounded-full bg-teal-500/70" style="left: {{ $left }}%; width: {{ $width }}%;"></span>
+                                                <span class="absolute top-1 bottom-1 rounded-full bg-teal-500/70"
+                                                    style="left: {{ $left }}%; width: {{ $width }}%;"></span>
                                             @endforeach
                                         </div>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <div class="text-xs text-slate-500">
                                             @if ($tech['map_url'])
-                                                <a class="text-teal-700" href="{{ $tech['map_url'] }}" target="_blank" rel="noreferrer">
+                                                <a class="text-teal-700" href="{{ $tech['map_url'] }}" target="_blank"
+                                                    rel="noreferrer">
                                                     Open map
                                                 </a>
                                             @else
                                                 Location unavailable
                                             @endif
                                         </div>
-                                        <div class="relative h-12 w-16 rounded-lg border border-slate-200 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
-                                            <span class="absolute h-2 w-2 rounded-full bg-teal-600" style="top: {{ $miniMapPos['top'] }}; left: {{ $miniMapPos['left'] }};"></span>
+                                        <div
+                                            class="relative h-12 w-16 rounded-lg border border-slate-200 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                                            <span class="absolute h-2 w-2 rounded-full bg-teal-600"
+                                                style="top: {{ $miniMapPos['top'] }}; left: {{ $miniMapPos['left'] }};"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -1065,14 +1184,17 @@
                                         $pos = $zonePositions[$loop->index % count($zonePositions)];
                                         $size = 60 + min(80, $zone['count'] * 8);
                                     @endphp
-                                    <div class="dispatch-heat" style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }}; width: {{ $size }}px; height: {{ $size }}px;"></div>
+                                    <div class="dispatch-heat"
+                                        style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }}; width: {{ $size }}px; height: {{ $size }}px;">
+                                    </div>
                                 @endforeach
                                 @foreach ($dispatchData['technicians'] as $tech)
                                     @php
                                         $pos = $techPositions[$loop->index % count($techPositions)];
                                         $pinClass = $tech['status']['label'] === 'Available' ? 'available' : '';
                                     @endphp
-                                    <div class="dispatch-map-pin {{ $pinClass }}" style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }};"></div>
+                                    <div class="dispatch-map-pin {{ $pinClass }}"
+                                        style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }};"></div>
                                 @endforeach
                             </div>
                             <div class="dispatch-map-legend flex flex-wrap items-center gap-3">
@@ -1196,7 +1318,8 @@
                                                 $width = max(6, min(100 - $left, $widthRaw));
                                                 $jobClass = $appointment->workOrder?->status === 'in_progress' ? 'dispatch-job planned' : 'dispatch-job scheduled';
                                             @endphp
-                                            <div class="{{ $jobClass }}" style="left: {{ $left }}%; width: {{ $width }}%;" title="Drag to reschedule">
+                                            <div class="{{ $jobClass }}" style="left: {{ $left }}%; width: {{ $width }}%;"
+                                                title="Drag to reschedule">
                                                 {{ $appointment->workOrder?->subject ?? 'Job' }}
                                             </div>
                                         @endforeach
@@ -1207,10 +1330,10 @@
                                     <div class="text-right">
                                         <div class="flex items-center justify-end gap-2">
                                             <span class="{{ $conflicts > 0 ? 'dispatch-chip risk' : 'dispatch-chip good' }}">
-                                                {{ $conflicts > 0 ? $conflicts.' conflict' : 'No conflicts' }}
+                                                {{ $conflicts > 0 ? $conflicts . ' conflict' : 'No conflicts' }}
                                             </span>
                                             <span class="dispatch-chip neutral">
-                                                Gap {{ $largestGap > 0 ? $largestGap.'m' : 'N/A' }}
+                                                Gap {{ $largestGap > 0 ? $largestGap . 'm' : 'N/A' }}
                                             </span>
                                         </div>
                                     </div>
@@ -1231,8 +1354,10 @@
                             <p class="text-xs uppercase text-slate-500">Request in focus</p>
                             @if ($focusOrder)
                                 <p class="text-sm font-semibold text-slate-900 mt-1">{{ $focusOrder->subject }}</p>
-                                <p class="text-xs text-slate-500">{{ $focusOrder->organization?->name ?? 'Customer' }} • {{ $focusOrder->category?->name ?? 'Service' }}</p>
-                                <p class="text-xs text-slate-500">Window: {{ $focusOrder->time_window ?? 'Flexible' }} • Priority: {{ ucfirst($focusOrder->priority) }}</p>
+                                <p class="text-xs text-slate-500">{{ $focusOrder->organization?->name ?? 'Customer' }} •
+                                    {{ $focusOrder->category?->name ?? 'Service' }}</p>
+                                <p class="text-xs text-slate-500">Window: {{ $focusOrder->time_window ?? 'Flexible' }} •
+                                    Priority: {{ ucfirst($focusOrder->priority) }}</p>
                             @else
                                 <p class="text-sm text-slate-500 mt-1">No requests in queue.</p>
                             @endif
@@ -1241,7 +1366,8 @@
                             <p class="text-xs uppercase text-slate-500">Suggested technicians</p>
                             <div class="flex items-center gap-2">
                                 <button class="px-3 py-1 rounded-full bg-slate-900 text-white text-xs">Auto-assign</button>
-                                <button class="px-3 py-1 rounded-full border border-slate-300 bg-white text-xs">Manual override</button>
+                                <button class="px-3 py-1 rounded-full border border-slate-300 bg-white text-xs">Manual
+                                    override</button>
                             </div>
                         </div>
                         <div class="mt-3 space-y-3">
@@ -1259,19 +1385,25 @@
                                     <div class="flex items-start justify-between">
                                         <div>
                                             <p class="text-sm font-semibold text-slate-900">{{ $tech['user']->name }}</p>
-                                            <p class="text-xs text-slate-500">Skills: {{ $skillSets[$index % count($skillSets)] }}</p>
-                                            <p class="text-xs text-slate-500">Proximity: {{ $proximityBands[$index % count($proximityBands)] }} • Workload {{ $tech['utilization'] }}%</p>
-                                            <p class="text-xs text-slate-500">Customer pref: {{ $focusOrder?->time_window ?? 'Flexible' }}</p>
+                                            <p class="text-xs text-slate-500">Skills:
+                                                {{ $skillSets[$index % count($skillSets)] }}</p>
+                                            <p class="text-xs text-slate-500">Proximity:
+                                                {{ $proximityBands[$index % count($proximityBands)] }} • Workload
+                                                {{ $tech['utilization'] }}%</p>
+                                            <p class="text-xs text-slate-500">Customer pref:
+                                                {{ $focusOrder?->time_window ?? 'Flexible' }}</p>
                                         </div>
                                         <span class="dispatch-chip info">Fit {{ $score }}</span>
                                     </div>
                                     <div class="mt-2 flex flex-wrap gap-2 text-xs">
                                         <span class="dispatch-chip neutral">ETA {{ $eta }}m</span>
-                                        <span class="dispatch-chip {{ $impact === 'SLA safe' ? 'good' : 'risk' }}">{{ $impact }}</span>
+                                        <span
+                                            class="dispatch-chip {{ $impact === 'SLA safe' ? 'good' : 'risk' }}">{{ $impact }}</span>
                                         <span class="dispatch-chip neutral">Route +{{ $routeAdd }}m</span>
                                     </div>
                                     <div class="mt-3 flex items-center justify-between text-xs">
-                                        <p class="text-slate-500">Impact: {{ $impact }} • Overtime risk {{ $tech['utilization'] > 85 ? 'High' : 'Low' }}</p>
+                                        <p class="text-slate-500">Impact: {{ $impact }} • Overtime risk
+                                            {{ $tech['utilization'] > 85 ? 'High' : 'Low' }}</p>
                                         <button class="px-3 py-1 rounded-full bg-teal-600 text-white">Assign</button>
                                     </div>
                                 </div>
@@ -1374,7 +1506,8 @@
                 ];
             @endphp
             <div class="space-y-6">
-                <div class="rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
+                <div
+                    class="rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <p class="text-xs uppercase tracking-widest text-slate-500">Administrator dashboard</p>
@@ -1387,7 +1520,8 @@
                                 Live monitoring
                             </div>
                             <div class="text-xs text-slate-500">Last refresh {{ now()->format('H:i') }}</div>
-                            <button class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                            <button
+                                class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
                                 Export all
                             </button>
                         </div>
@@ -1438,7 +1572,8 @@
                         </label>
                         <label class="flex flex-col gap-1 text-xs text-slate-500">
                             Search
-                            <input type="search" class="rounded-md border-slate-200 text-sm text-slate-700" placeholder="Filter by host, user, or ticket" />
+                            <input type="search" class="rounded-md border-slate-200 text-sm text-slate-700"
+                                placeholder="Filter by host, user, or ticket" />
                         </label>
                     </div>
                     <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
@@ -1464,7 +1599,8 @@
                                 <option>Last 7d</option>
                                 <option>Last 30d</option>
                             </select>
-                            <button class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                            <button
+                                class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                         </div>
                     </div>
 
@@ -1476,17 +1612,20 @@
                                         <span class="h-2 w-2 rounded-full {{ $statusMeta[$uptimeStatus]['dot'] }}"></span>
                                         Server uptime
                                     </div>
-                                    <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$uptimeStatus]['pill'] }}">
+                                    <span
+                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$uptimeStatus]['pill'] }}">
                                         {{ $statusMeta[$uptimeStatus]['label'] }}
                                     </span>
                                 </div>
                                 <div class="mt-3 flex items-end justify-between gap-4">
                                     <div>
-                                        <p class="text-2xl font-semibold text-slate-900">{{ number_format($uptimePercent, 2) }}%</p>
+                                        <p class="text-2xl font-semibold text-slate-900">
+                                            {{ number_format($uptimePercent, 2) }}%</p>
                                         <p class="text-xs text-slate-500">Historical trend: +0.04%</p>
                                     </div>
                                     <svg viewBox="0 0 120 40" class="h-10 w-24 text-emerald-500">
-                                        <polyline fill="none" stroke="currentColor" stroke-width="2" points="0,30 20,28 40,20 60,22 80,15 100,18 120,10" />
+                                        <polyline fill="none" stroke="currentColor" stroke-width="2"
+                                            points="0,30 20,28 40,20 60,22 80,15 100,18 120,10" />
                                     </svg>
                                 </div>
                             </div>
@@ -1497,7 +1636,8 @@
                                         <span class="h-2 w-2 rounded-full {{ $statusMeta[$responseStatus]['dot'] }}"></span>
                                         Response time
                                     </div>
-                                    <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$responseStatus]['pill'] }}">
+                                    <span
+                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$responseStatus]['pill'] }}">
                                         {{ $statusMeta[$responseStatus]['label'] }}
                                     </span>
                                 </div>
@@ -1513,13 +1653,16 @@
                                         <span class="h-2 w-2 rounded-full {{ $statusMeta[$dbStatus]['dot'] }}"></span>
                                         Database performance
                                     </div>
-                                    <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$dbStatus]['pill'] }}">
+                                    <span
+                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$dbStatus]['pill'] }}">
                                         {{ $statusMeta[$dbStatus]['label'] }}
                                     </span>
                                 </div>
                                 <div class="mt-3 space-y-1 text-sm text-slate-600">
-                                    <p><span class="font-semibold text-slate-900">{{ $dbMs ?? 0 }} ms</span> avg query latency</p>
-                                    <p>Connection pool <span class="font-semibold text-slate-900">72%</span> • Writes 1.2k/s</p>
+                                    <p><span class="font-semibold text-slate-900">{{ $dbMs ?? 0 }} ms</span> avg query
+                                        latency</p>
+                                    <p>Connection pool <span class="font-semibold text-slate-900">72%</span> • Writes 1.2k/s
+                                    </p>
                                 </div>
                             </div>
 
@@ -1529,7 +1672,8 @@
                                         <span class="h-2 w-2 rounded-full {{ $statusMeta[$storageStatus]['dot'] }}"></span>
                                         Storage utilization
                                     </div>
-                                    <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$storageStatus]['pill'] }}">
+                                    <span
+                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$storageStatus]['pill'] }}">
                                         {{ $statusMeta[$storageStatus]['label'] }}
                                     </span>
                                 </div>
@@ -1539,8 +1683,10 @@
                                         <span>Projected {{ $storageProjected }}% in 30d</span>
                                     </div>
                                     <div class="relative mt-2 h-2 rounded-full bg-slate-200">
-                                        <div class="h-2 rounded-full bg-slate-700" style="width: {{ $storagePercent }}%;"></div>
-                                        <span class="absolute top-[-6px] h-5 w-0.5 bg-amber-500" style="left: {{ $storageProjected }}%;"></span>
+                                        <div class="h-2 rounded-full bg-slate-700" style="width: {{ $storagePercent }}%;">
+                                        </div>
+                                        <span class="absolute top-[-6px] h-5 w-0.5 bg-amber-500"
+                                            style="left: {{ $storageProjected }}%;"></span>
                                     </div>
                                 </div>
                             </div>
@@ -1551,7 +1697,8 @@
                                         <span class="h-2 w-2 rounded-full {{ $statusMeta[$sessionStatus]['dot'] }}"></span>
                                         Active sessions
                                     </div>
-                                    <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$sessionStatus]['pill'] }}">
+                                    <span
+                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$sessionStatus]['pill'] }}">
                                         {{ $statusMeta[$sessionStatus]['label'] }}
                                     </span>
                                 </div>
@@ -1567,13 +1714,16 @@
                                         <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
                                         API health summary
                                     </div>
-                                    <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                    <span
+                                        class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
                                         12 healthy
                                     </span>
                                 </div>
                                 <div class="mt-3 text-sm text-slate-600">
                                     <p>Degraded endpoints: <span class="font-semibold text-slate-900">2</span></p>
-                                    <p>Queue backlog: <span class="font-semibold text-slate-900">{{ $queueBacklog }}</span> • Failed jobs: <span class="font-semibold text-slate-900">{{ $failedJobs }}</span></p>
+                                    <p>Queue backlog: <span class="font-semibold text-slate-900">{{ $queueBacklog }}</span>
+                                        • Failed jobs: <span class="font-semibold text-slate-900">{{ $failedJobs }}</span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -1595,9 +1745,11 @@
                                                 <span class="h-2 w-2 rounded-full {{ $endpointMeta['dot'] }}"></span>
                                                 <p class="font-medium text-slate-900">{{ $endpoint['name'] }}</p>
                                             </div>
-                                            <p class="text-xs text-slate-500">Uptime {{ $endpoint['uptime'] }} • {{ $endpoint['latency'] }} ms</p>
+                                            <p class="text-xs text-slate-500">Uptime {{ $endpoint['uptime'] }} •
+                                                {{ $endpoint['latency'] }} ms</p>
                                         </div>
-                                        <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $endpointMeta['pill'] }}">
+                                        <span
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $endpointMeta['pill'] }}">
                                             {{ $endpointMeta['label'] }}
                                         </span>
                                     </div>
@@ -1619,7 +1771,8 @@
                                 <option>Last 24h</option>
                                 <option>Last 30d</option>
                             </select>
-                            <button class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                            <button
+                                class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                         </div>
                     </div>
 
@@ -1627,17 +1780,20 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Failed logins</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['failed_logins'] }}</p>
+                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['failed_logins'] }}
+                                </p>
                                 <p class="text-xs text-slate-500">Spike detected in last 2 hours</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Geo anomalies</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['geo_anomalies'] }}</p>
+                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['geo_anomalies'] }}
+                                </p>
                                 <p class="text-xs text-slate-500">Access from 3 new regions</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Unusual data access</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['data_access_flags'] }}</p>
+                                <p class="text-2xl font-semibold text-slate-900">
+                                    {{ $securityOverview['data_access_flags'] }}</p>
                                 <p class="text-xs text-slate-500">Downloads above normal threshold</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
@@ -1647,7 +1803,8 @@
                             </div>
                             <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Account lockouts</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['account_lockouts'] }}</p>
+                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['account_lockouts'] }}
+                                </p>
                                 <p class="text-xs text-slate-500">Automatic lockout policy active</p>
                             </div>
                         </div>
@@ -1663,16 +1820,19 @@
                                         $logStatus = $log['status'] ?? 'warning';
                                         $logMeta = $statusMeta[$logStatus] ?? $statusMeta['warning'];
                                     @endphp
-                                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 p-3">
+                                    <div
+                                        class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 p-3">
                                         <div>
                                             <div class="flex items-center gap-2">
                                                 <span class="h-2 w-2 rounded-full {{ $logMeta['dot'] }}"></span>
                                                 <p class="font-medium text-slate-900">{{ $log['event'] }}</p>
                                             </div>
-                                            <p class="text-xs text-slate-500">{{ $log['actor'] }} • {{ $log['location'] }} • {{ $log['ip'] }}</p>
+                                            <p class="text-xs text-slate-500">{{ $log['actor'] }} • {{ $log['location'] }} •
+                                                {{ $log['ip'] }}</p>
                                         </div>
                                         <div class="text-xs text-slate-500">{{ $log['time'] }}</div>
-                                        <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $logMeta['pill'] }}">
+                                        <span
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $logMeta['pill'] }}">
                                             {{ $logMeta['label'] }}
                                         </span>
                                     </div>
@@ -1695,14 +1855,16 @@
                                     <option>Last 7d</option>
                                     <option>All time</option>
                                 </select>
-                                <button class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                                <button
+                                    class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                             </div>
                         </div>
 
                         <div class="mt-6 grid grid-cols-2 gap-3 text-sm text-slate-700">
                             @foreach ($adminData['roleCounts'] ?? [] as $role => $count)
                                 <div class="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                                    <p class="text-xs uppercase tracking-wide text-slate-500">{{ RoleCatalog::label($role) }}</p>
+                                    <p class="text-xs uppercase tracking-wide text-slate-500">{{ RoleCatalog::label($role) }}
+                                    </p>
                                     <p class="text-xl font-semibold text-slate-900">{{ $count }}</p>
                                 </div>
                             @endforeach
@@ -1740,7 +1902,8 @@
                                     @foreach ($adminData['recentUsers'] ?? [] as $recentUser)
                                         <div class="flex items-center justify-between">
                                             <span>{{ $recentUser->name }}</span>
-                                            <span class="text-xs text-slate-500">{{ $recentUser->created_at?->diffForHumans() }}</span>
+                                            <span
+                                                class="text-xs text-slate-500">{{ $recentUser->created_at?->diffForHumans() }}</span>
                                         </div>
                                     @endforeach
                                 </div>
@@ -1764,7 +1927,8 @@
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <h2 class="text-lg font-semibold text-slate-900">Business Intelligence Overview</h2>
-                                <p class="text-xs text-slate-500">Revenue, volume, and profitability • Range: current month</p>
+                                <p class="text-xs text-slate-500">Revenue, volume, and profitability • Range: current month
+                                </p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <select class="rounded-md border-slate-200 text-xs text-slate-700">
@@ -1772,14 +1936,16 @@
                                     <option>Last month</option>
                                     <option>Quarter to date</option>
                                 </select>
-                                <button class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                                <button
+                                    class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                             </div>
                         </div>
 
                         <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Revenue vs projection</p>
-                                <p class="mt-2 text-2xl font-semibold text-slate-900">${{ number_format($revenueMonth, 2) }}</p>
+                                <p class="mt-2 text-2xl font-semibold text-slate-900">${{ number_format($revenueMonth, 2) }}
+                                </p>
                                 <div class="mt-3 space-y-1 text-sm text-slate-600">
                                     <div class="flex items-center justify-between">
                                         <span>Projection</span>
@@ -1791,7 +1957,9 @@
                                     </div>
                                 </div>
                                 <div class="mt-3 h-2 rounded-full bg-slate-200">
-                                    <div class="h-2 rounded-full bg-emerald-500" style="width: {{ $revenueProjection > 0 ? min(100, ($revenueMonth / $revenueProjection) * 100) : 0 }}%;"></div>
+                                    <div class="h-2 rounded-full bg-emerald-500"
+                                        style="width: {{ $revenueProjection > 0 ? min(100, ($revenueMonth / $revenueProjection) * 100) : 0 }}%;">
+                                    </div>
                                 </div>
                             </div>
 
@@ -1802,7 +1970,8 @@
                                 </div>
                                 <div class="mt-3">
                                     <svg viewBox="0 0 200 80" class="h-20 w-full text-slate-700">
-                                        <polyline fill="none" stroke="currentColor" stroke-width="2" points="0,60 20,50 40,45 60,55 80,40 100,35 120,38 140,30 160,28 180,22 200,18" />
+                                        <polyline fill="none" stroke="currentColor" stroke-width="2"
+                                            points="0,60 20,50 40,45 60,55 80,40 100,35 120,38 140,30 160,28 180,22 200,18" />
                                     </svg>
                                     <div class="mt-2 flex items-center justify-between text-sm text-slate-600">
                                         <span>Jobs (7d)</span>
@@ -1820,15 +1989,19 @@
                                 <div class="mt-3 grid grid-cols-2 gap-3 text-sm text-slate-600">
                                     <div>
                                         <p class="text-xs text-slate-500">New customers</p>
-                                        <p class="text-lg font-semibold text-slate-900">{{ $business['new_customers'] ?? 0 }}</p>
+                                        <p class="text-lg font-semibold text-slate-900">
+                                            {{ $business['new_customers'] ?? 0 }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-500">Churned customers</p>
-                                        <p class="text-lg font-semibold text-slate-900">{{ $business['inactive_customers'] ?? 0 }}</p>
+                                        <p class="text-lg font-semibold text-slate-900">
+                                            {{ $business['inactive_customers'] ?? 0 }}</p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-500">Net growth</p>
-                                        <p class="text-lg font-semibold text-slate-900">{{ ($business['new_customers'] ?? 0) - ($business['inactive_customers'] ?? 0) }}</p>
+                                        <p class="text-lg font-semibold text-slate-900">
+                                            {{ ($business['new_customers'] ?? 0) - ($business['inactive_customers'] ?? 0) }}
+                                        </p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-500">Churn rate</p>
@@ -1840,7 +2013,9 @@
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Service type breakdown</p>
                                 <div class="mt-3 flex items-center gap-4">
-                                    <div class="h-24 w-24 rounded-full border border-slate-100" style="background: conic-gradient(#0ea5e9 0 38%, #22c55e 38% 62%, #f97316 62% 82%, #ef4444 82% 100%);"></div>
+                                    <div class="h-24 w-24 rounded-full border border-slate-100"
+                                        style="background: conic-gradient(#0ea5e9 0 38%, #22c55e 38% 62%, #f97316 62% 82%, #ef4444 82% 100%);">
+                                    </div>
                                     <div class="space-y-2 text-xs text-slate-600">
                                         <div class="flex items-center gap-2">
                                             <span class="h-2 w-2 rounded-full bg-sky-500"></span>
@@ -1865,8 +2040,11 @@
                             <div class="rounded-xl border border-slate-100 p-4 lg:col-span-2">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Average profitability per job</p>
                                 <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
-                                    <p class="text-2xl font-semibold text-slate-900">${{ number_format($avgRevenuePerJob, 2) }}</p>
-                                    <span class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Margin 28%</span>
+                                    <p class="text-2xl font-semibold text-slate-900">
+                                        ${{ number_format($avgRevenuePerJob, 2) }}</p>
+                                    <span
+                                        class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">Margin
+                                        28%</span>
                                 </div>
                                 <p class="mt-2 text-xs text-slate-500">Includes labor, materials, and travel costs.</p>
                             </div>
@@ -1887,14 +2065,16 @@
                                     <option>Quarter to date</option>
                                     <option>Year to date</option>
                                 </select>
-                                <button class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                                <button
+                                    class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                             </div>
                         </div>
 
                         <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Data backup status</p>
-                                <p class="mt-2 text-lg font-semibold text-slate-900">{{ $compliance['backup_last_run'] ?? 'Not recorded' }}</p>
+                                <p class="mt-2 text-lg font-semibold text-slate-900">
+                                    {{ $compliance['backup_last_run'] ?? 'Not recorded' }}</p>
                                 <p class="text-xs text-slate-500">Last backup time</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 p-4">
@@ -1905,7 +2085,8 @@
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Audit log integrity</p>
                                 <p class="mt-2 text-lg font-semibold text-slate-900">Verified</p>
-                                <p class="text-xs text-slate-500">Last 24h: {{ $compliance['audit_events'] ?? 0 }} events</p>
+                                <p class="text-xs text-slate-500">Last 24h: {{ $compliance['audit_events'] ?? 0 }} events
+                                </p>
                             </div>
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Data privacy compliance</p>
@@ -1927,7 +2108,8 @@
                                             <span class="h-2 w-2 rounded-full {{ $itemMeta['dot'] }}"></span>
                                             <span>{{ $item['label'] }}</span>
                                         </div>
-                                        <span class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $itemMeta['pill'] }}">
+                                        <span
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $itemMeta['pill'] }}">
                                             {{ $itemMeta['label'] }}
                                         </span>
                                     </div>
@@ -1943,16 +2125,29 @@
                                 <p class="text-xs text-slate-500">Launch core administration actions</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                                <button
+                                    class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                             </div>
                         </div>
                         <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <button class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">User account creation</button>
-                            <button class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">System settings adjustment</button>
-                            <button class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">Database maintenance</button>
-                            <button class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">Data export and backup</button>
-                            <button class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">System logs review</button>
-                            <button class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">Integration management</button>
+                            <button
+                                class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">User
+                                account creation</button>
+                            <button
+                                class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">System
+                                settings adjustment</button>
+                            <button
+                                class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">Database
+                                maintenance</button>
+                            <button
+                                class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">Data
+                                export and backup</button>
+                            <button
+                                class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">System
+                                logs review</button>
+                            <button
+                                class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left text-sm font-semibold text-slate-700">Integration
+                                management</button>
                         </div>
                     </div>
                 </div>
@@ -1961,7 +2156,8 @@
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <h2 class="text-lg font-semibold text-slate-900">Alert Center</h2>
-                            <p class="text-xs text-slate-500">Critical notifications, maintenance schedules, and warnings</p>
+                            <p class="text-xs text-slate-500">Critical notifications, maintenance schedules, and warnings
+                            </p>
                         </div>
                         <div class="flex items-center gap-2">
                             <select class="rounded-md border-slate-200 text-xs text-slate-700">
@@ -1970,7 +2166,8 @@
                                 <option>Warnings</option>
                                 <option>Maintenance</option>
                             </select>
-                            <button class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                            <button
+                                class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                         </div>
                     </div>
 
@@ -1980,7 +2177,8 @@
                                 $alertStatus = $alert['status'] ?? 'warning';
                                 $alertMeta = $statusMeta[$alertStatus] ?? $statusMeta['warning'];
                             @endphp
-                            <div class="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-100 p-4">
+                            <div
+                                class="flex flex-wrap items-start justify-between gap-4 rounded-xl border border-slate-100 p-4">
                                 <div>
                                     <div class="flex items-center gap-2">
                                         <span class="h-2 w-2 rounded-full {{ $alertMeta['dot'] }}"></span>
@@ -2006,7 +2204,7 @@
                 <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-900">{{ $section['title'] }}</h2>
-                        @if (! empty($section['action']))
+                        @if (!empty($section['action']))
                             <a class="text-sm text-indigo-600" href="{{ $section['action']['href'] }}" wire:navigate>
                                 {{ $section['action']['label'] }}
                             </a>
@@ -2019,9 +2217,10 @@
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <p class="text-sm font-medium text-gray-900">{{ $item['title'] }}</p>
-                                        @if (! empty($item['badges']))
+                                        @if (!empty($item['badges']))
                                             @foreach ($item['badges'] as $badge)
-                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs {{ $badge['class'] }}">
+                                                <span
+                                                    class="inline-flex items-center rounded-full px-2 py-0.5 text-xs {{ $badge['class'] }}">
                                                     {{ $badge['label'] }}
                                                 </span>
                                             @endforeach
@@ -2029,7 +2228,7 @@
                                     </div>
                                     <p class="text-xs text-gray-500">{{ $item['meta'] }}</p>
                                 </div>
-                                @if (! empty($item['href']))
+                                @if (!empty($item['href']))
                                     <a class="text-xs text-indigo-600" href="{{ $item['href'] }}" wire:navigate>View</a>
                                 @endif
                             </div>

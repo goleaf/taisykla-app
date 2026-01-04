@@ -105,11 +105,192 @@
                 @endif
             </div>
             <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-                <button type="button" class="text-indigo-600" wire:click="clearFilters">Clear filters</button>
-                <span>{{ $workOrders->total() }} work orders</span>
+                <div class="flex items-center gap-3">
+                    <button type="button" class="text-indigo-600" wire:click="clearFilters">Clear filters</button>
+                    <span>{{ $workOrders->total() }} work orders</span>
+                </div>
+                
+                {{-- View Switcher --}}
+                <div class="flex items-center gap-1 rounded-lg bg-gray-100 p-1">
+                    @foreach ($viewOptions as $viewOption)
+                        <button
+                            type="button"
+                            wire:click="$set('view', '{{ $viewOption }}')"
+                            class="px-3 py-1.5 rounded-md text-xs font-medium transition {{ $view === $viewOption ? 'bg-white shadow text-indigo-600' : 'text-gray-600 hover:text-gray-900' }}"
+                        >
+                            @if ($viewOption === 'list')
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                            @elseif ($viewOption === 'board')
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>
+                            @elseif ($viewOption === 'calendar')
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            @elseif ($viewOption === 'map')
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            @endif
+                            {{ ucfirst($viewOption) }}
+                        </button>
+                    @endforeach
+                </div>
             </div>
         </div>
 
+        {{-- Kanban Board View --}}
+        @if ($view === 'board' && $boardColumns)
+            <div class="overflow-x-auto pb-4">
+                <div class="flex gap-4 min-w-max">
+                    @foreach ($boardColumns as $status => $column)
+                        @php
+                            $columnColors = [
+                                'submitted' => 'border-t-gray-400',
+                                'assigned' => 'border-t-blue-400',
+                                'in_progress' => 'border-t-indigo-500',
+                                'on_hold' => 'border-t-yellow-400',
+                                'awaiting_approval' => 'border-t-orange-400',
+                                'completed' => 'border-t-green-500',
+                                'closed' => 'border-t-emerald-600',
+                            ];
+                            $borderColor = $columnColors[$status] ?? 'border-t-gray-300';
+                        @endphp
+                        <div class="w-72 flex-shrink-0 bg-gray-50 rounded-lg border-t-4 {{ $borderColor }}">
+                            <div class="p-3 border-b border-gray-200 bg-white rounded-t-lg">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="font-semibold text-gray-700">{{ $column['label'] }}</h3>
+                                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">
+                                        {{ $column['items']->count() }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="p-2 space-y-2 max-h-[70vh] overflow-y-auto">
+                                @forelse ($column['items'] as $workOrder)
+                                    @php
+                                        $priorityColors = [
+                                            'urgent' => 'border-l-red-500 bg-red-50',
+                                            'high' => 'border-l-orange-400 bg-orange-50',
+                                            'standard' => 'border-l-blue-400 bg-white',
+                                        ];
+                                        $cardStyle = $priorityColors[$workOrder->priority] ?? 'border-l-gray-300 bg-white';
+                                    @endphp
+                                    <div 
+                                        class="p-3 rounded-lg shadow-sm border border-gray-200 border-l-4 {{ $cardStyle }} cursor-pointer hover:shadow-md transition-shadow"
+                                        wire:key="board-card-{{ $workOrder->id }}"
+                                    >
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-xs text-gray-500">#{{ $workOrder->id }}</p>
+                                                <p class="font-medium text-gray-900 text-sm truncate">{{ $workOrder->subject }}</p>
+                                            </div>
+                                            @if ($workOrder->priority === 'urgent')
+                                                <span class="flex-shrink-0 w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                                            @endif
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1 truncate">{{ $workOrder->organization?->name ?? 'No organization' }}</p>
+                                        <div class="mt-2 flex items-center justify-between text-xs">
+                                            @if ($workOrder->assignedTo)
+                                                <span class="inline-flex items-center gap-1 text-gray-500">
+                                                    <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-medium">
+                                                        {{ strtoupper(substr($workOrder->assignedTo->name, 0, 1)) }}
+                                                    </span>
+                                                    {{ Str::words($workOrder->assignedTo->name, 1, '') }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">Unassigned</span>
+                                            @endif
+                                            <a href="{{ route('work-orders.show', $workOrder) }}" class="text-indigo-600 hover:underline" wire:navigate>View</a>
+                                        </div>
+                                        @if ($workOrder->scheduled_start_at)
+                                            <p class="mt-2 text-xs text-gray-400">
+                                                📅 {{ $workOrder->scheduled_start_at->format('M d, H:i') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <div class="p-4 text-center text-xs text-gray-400">
+                                        No work orders
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @elseif ($view === 'map' && $mapOrders)
+            {{-- Map View --}}
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+                <x-route-map
+                    :stops="collect($mapOrders)->map(fn($order) => [
+                        'sequence' => $loop->iteration ?? 1,
+                        'label' => $order['subject'] ?? 'Work Order',
+                        'address' => $order['location_address'] ?? null,
+                        'lat' => $order['lat'] ?? null,
+                        'lng' => $order['lng'] ?? null,
+                        'priority' => $order['priority'] ?? 'standard',
+                    ])->toArray()"
+                    height="500px"
+                />
+                <p class="mt-3 text-xs text-gray-500 text-center">{{ count($mapOrders) }} work orders with location data</p>
+            </div>
+        @elseif ($view === 'calendar' && $calendarGroups)
+            {{-- Calendar View (simplified week view) --}}
+            <div class="bg-white shadow-sm rounded-lg border border-gray-100 p-4">
+                <div class="text-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Schedule Overview</h3>
+                    <p class="text-sm text-gray-500">Work orders grouped by scheduled date</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+                    @foreach ($calendarGroups as $group)
+                        @php
+                            $date = $group['date'] ?? 'Unscheduled';
+                            $orders = $group['items'] ?? collect();
+                            $capacity = $group['capacity'] ?? 'empty';
+                            $isValidDate = $date !== 'Unscheduled' && strtotime($date);
+                            $dayName = $isValidDate ? \Carbon\Carbon::parse($date)->format('D') : '';
+                            $dayNum = $isValidDate ? \Carbon\Carbon::parse($date)->format('j') : '';
+                            $monthName = $isValidDate ? \Carbon\Carbon::parse($date)->format('M') : '';
+                            $isToday = $isValidDate && \Carbon\Carbon::parse($date)->isToday();
+                            $capacityColors = [
+                                'over' => 'border-red-400 bg-red-50',
+                                'tight' => 'border-yellow-400 bg-yellow-50',
+                                'open' => 'border-green-400 bg-green-50',
+                                'empty' => 'border-gray-200 bg-white',
+                            ];
+                            $borderStyle = $isToday ? 'border-indigo-500 bg-indigo-50' : ($capacityColors[$capacity] ?? 'border-gray-200');
+                        @endphp
+                        <div class="border-2 rounded-lg p-3 {{ $borderStyle }}">
+                            <div class="text-center mb-2">
+                                @if ($isValidDate)
+                                    <p class="text-xs text-gray-500">{{ $dayName }}, {{ $monthName }}</p>
+                                    <p class="text-xl font-bold {{ $isToday ? 'text-indigo-600' : 'text-gray-900' }}">{{ $dayNum }}</p>
+                                @else
+                                    <p class="text-sm font-medium text-gray-600">{{ $date }}</p>
+                                @endif
+                                <p class="text-xs {{ $capacity === 'over' ? 'text-red-600' : 'text-gray-400' }}">{{ $orders->count() }} {{ Str::plural('order', $orders->count()) }}</p>
+                            </div>
+                            <div class="space-y-1 max-h-48 overflow-y-auto">
+                                @forelse ($orders as $order)
+                                    @php
+                                        $priorityStyle = match ($order->priority) {
+                                            'urgent' => 'bg-red-100 text-red-700 border-l-2 border-red-500',
+                                            'high' => 'bg-orange-100 text-orange-700 border-l-2 border-orange-400',
+                                            default => 'bg-blue-50 text-blue-700 border-l-2 border-blue-400',
+                                        };
+                                    @endphp
+                                    <a href="{{ route('work-orders.show', $order) }}" 
+                                       class="block p-1.5 rounded text-xs truncate {{ $priorityStyle }}"
+                                       wire:navigate
+                                       title="{{ $order->subject }}"
+                                    >
+                                        {{ $order->scheduled_start_at?->format('H:i') ?? '—' }} {{ Str::limit($order->subject, 18) }}
+                                    </a>
+                                @empty
+                                    <p class="text-xs text-gray-400 text-center py-2">No orders</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @else
+        {{-- List View (existing) --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="{{ $canCreate ? 'lg:col-span-2' : 'lg:col-span-3' }} space-y-6">
                 <div class="bg-white shadow-sm rounded-lg border border-gray-100">
@@ -331,5 +512,6 @@
                 </div>
             @endif
         </div>
+        @endif
     </div>
 </div>
