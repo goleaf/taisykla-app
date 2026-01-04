@@ -50,6 +50,9 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('equipment/{equipment}', EquipmentShow::class)
         ->middleware('can:' . PermissionCatalog::EQUIPMENT_VIEW)
         ->name('equipment.show');
+    Route::get('equipment-topology', \App\Livewire\Equipment\Topology::class)
+        ->middleware('can:' . PermissionCatalog::EQUIPMENT_VIEW)
+        ->name('equipment.topology');
     Route::get('clients', ClientsIndex::class)
         ->middleware('can:' . PermissionCatalog::CLIENTS_VIEW)
         ->name('clients.index');
