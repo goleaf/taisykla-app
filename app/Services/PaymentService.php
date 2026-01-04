@@ -32,9 +32,10 @@ class PaymentService
 
         try {
             $customer = $this->getOrCreateStripeCustomer($invoice->organization);
+            $amountDue = (float) ($invoice->balance_due ?? $invoice->total);
 
             $intent = $this->stripe->paymentIntents->create([
-                'amount' => (int) ($invoice->total * 100), // Amount in cents
+                'amount' => (int) ($amountDue * 100), // Amount in cents
                 'currency' => config('services.stripe.currency', 'usd'),
                 'customer' => $customer->id,
                 'metadata' => [
@@ -48,7 +49,7 @@ class PaymentService
             return [
                 'client_secret' => $intent->client_secret,
                 'payment_intent_id' => $intent->id,
-                'amount' => $invoice->total,
+                'amount' => $amountDue,
             ];
         } catch (Exception $e) {
             Log::error('Stripe payment intent creation failed', [
@@ -98,16 +99,13 @@ class PaymentService
                 'method' => 'card',
                 'reference' => $paymentIntentId,
                 'paid_at' => now(),
+                'processed_at' => now(),
+                'status' => 'captured',
+                'gateway' => 'stripe',
+                'currency' => strtoupper((string) $intent->currency),
             ]);
 
-            // Update invoice status
-            $totalPaid = $invoice->payments()->sum('amount');
-            if ($totalPaid >= $invoice->total) {
-                $invoice->update([
-                    'status' => 'paid',
-                    'paid_at' => now(),
-                ]);
-            }
+            app(\App\Services\Billing\PaymentAllocationService::class)->applyToInvoice($payment, $invoice);
 
             return $payment;
         } catch (Exception $e) {
@@ -127,6 +125,7 @@ class PaymentService
         $this->ensureStripeConfigured();
 
         try {
+            $amountDue = (float) ($invoice->balance_due ?? $invoice->total);
             // Create a product for this invoice
             $product = $this->stripe->products->create([
                 'name' => "Invoice #{$invoice->id}",
@@ -136,7 +135,7 @@ class PaymentService
             // Create a price
             $price = $this->stripe->prices->create([
                 'product' => $product->id,
-                'unit_amount' => (int) ($invoice->total * 100),
+                'unit_amount' => (int) ($amountDue * 100),
                 'currency' => config('services.stripe.currency', 'usd'),
             ]);
 
@@ -300,6 +299,7 @@ class PaymentService
                 $payment->update([
                     'refunded_at' => now(),
                     'refund_amount' => ($refund->amount / 100),
+                    'status' => 'refunded',
                 ]);
                 return true;
             }

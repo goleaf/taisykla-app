@@ -14,15 +14,51 @@ class Payment extends Model
         'amount',
         'method',
         'reference',
+        'status',
+        'gateway',
+        'fee_amount',
+        'currency',
         'paid_at',
+        'processed_at',
+        'refund_amount',
+        'refunded_at',
+        'payment_method_id',
+        'check_number',
+        'deposited_at',
+        'cleared_at',
+        'bounced_at',
+        'bounce_reason',
+        'overpayment_amount',
+        'applied_amount',
+        'notes',
     ];
 
     protected $casts = [
+        'amount' => 'decimal:2',
+        'fee_amount' => 'decimal:2',
+        'refund_amount' => 'decimal:2',
+        'overpayment_amount' => 'decimal:2',
+        'applied_amount' => 'decimal:2',
         'paid_at' => 'datetime',
+        'processed_at' => 'datetime',
+        'refunded_at' => 'datetime',
+        'deposited_at' => 'datetime',
+        'cleared_at' => 'datetime',
+        'bounced_at' => 'datetime',
     ];
 
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(PaymentApplication::class);
     }
 }

@@ -18,6 +18,8 @@ class AuditLog extends Model
         'meta',
         'ip_address',
         'user_agent',
+        'previous_hash',
+        'hash',
     ];
 
     protected $casts = [
