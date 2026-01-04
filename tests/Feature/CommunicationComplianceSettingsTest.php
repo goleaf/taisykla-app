@@ -35,7 +35,7 @@ class CommunicationComplianceSettingsTest extends TestCase
         $this->assertDatabaseHas('system_settings', [
             'group' => 'notification',
             'key' => 'email_on_work_order_created',
-            'value' => '0',
+            'value' => 'false',
         ]);
     }
 
@@ -54,13 +54,13 @@ class CommunicationComplianceSettingsTest extends TestCase
         $this->assertDatabaseHas('system_settings', [
             'group' => 'compliance',
             'key' => 'gdpr_enabled',
-            'value' => '1',
+            'value' => 'true',
         ]);
 
         $this->assertDatabaseHas('system_settings', [
             'group' => 'compliance',
             'key' => 'privacy_policy_url',
-            'value' => 'https://example.com/privacy',
+            'value' => '"https:\/\/example.com\/privacy"',
         ]);
     }
 
