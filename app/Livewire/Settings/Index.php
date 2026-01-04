@@ -130,9 +130,18 @@ class Index extends Component
 
     protected $paginationTheme = 'tailwind';
 
+    public string $activeTab = 'general';
+    public bool $showRoleCreate = false;
+    public bool $showPriorityCreate = false;
+
+    public array $newRole = ['name' => ''];
+    public array $newPriority = ['name' => '', 'color' => '#3b82f6', 'response_time_minutes' => null, 'resolution_time_minutes' => null, 'description' => ''];
+
     public function mount(): void
     {
         abort_unless(auth()->user()?->can(PermissionCatalog::SETTINGS_VIEW), 403);
+
+        $this->activeTab = request()->query('tab', 'general');
 
         $this->resetNewUser();
         $this->resetNewAgreement();
@@ -150,6 +159,49 @@ class Index extends Component
         $this->loadSettingValues();
         $this->loadCompanyProfile();
         $this->backupLastRunAt = $this->loadBackupTimestamp();
+    }
+
+    public function createRole(): void
+    {
+        if (!$this->canManageUsers) {
+            return;
+        }
+
+        $this->validate([
+            'newRole.name' => ['required', 'string', 'max:255', 'unique:roles,name'],
+        ]);
+
+        Role::create(['name' => $this->newRole['name'], 'guard_name' => 'web']);
+
+        session()->flash('status', 'Role created.');
+        $this->newRole = ['name' => ''];
+        $this->showRoleCreate = false;
+    }
+
+    public function createPriorityLevel(): void
+    {
+        if (!$this->canManageSettings) {
+            return;
+        }
+
+        $this->validate([
+            'newPriority.name' => ['required', 'string', 'max:255'],
+            'newPriority.color' => ['required', 'string', 'max:50'],
+            'newPriority.response_time_minutes' => ['nullable', 'integer', 'min:0'],
+            'newPriority.resolution_time_minutes' => ['nullable', 'integer', 'min:0'],
+            'newPriority.description' => ['nullable', 'string'],
+        ]);
+
+        \App\Models\PriorityLevel::create($this->newPriority);
+
+        session()->flash('status', 'Priority level created.');
+        $this->newPriority = ['name' => '', 'color' => '#3b82f6', 'response_time_minutes' => null, 'resolution_time_minutes' => null, 'description' => ''];
+        $this->showPriorityCreate = false;
+    }
+
+    public function updatedActiveTab($value)
+    {
+        $this->dispatch('url-changed', url: route('settings.index', ['tab' => $value]));
     }
 
     public function resetNewUser(): void
@@ -310,7 +362,7 @@ class Index extends Component
         $this->statusTransitions = CustomStatusTransition::query()
             ->get()
             ->groupBy('from_status_id')
-            ->map(fn ($rows) => $rows->pluck('to_status_id')->map(fn ($id) => (int) $id)->values()->all())
+            ->map(fn($rows) => $rows->pluck('to_status_id')->map(fn($id) => (int) $id)->values()->all())
             ->toArray();
     }
 
@@ -351,7 +403,7 @@ class Index extends Component
 
     public function updateCompanyProfile(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -386,7 +438,7 @@ class Index extends Component
 
     public function markBackupComplete(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -417,7 +469,7 @@ class Index extends Component
 
     public function createUser(): void
     {
-        if (! $this->canManageUsers) {
+        if (!$this->canManageUsers) {
             return;
         }
 
@@ -462,7 +514,7 @@ class Index extends Component
 
     public function createAgreement(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -480,7 +532,7 @@ class Index extends Component
 
     public function createCategory(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -497,7 +549,7 @@ class Index extends Component
 
     public function createTemplate(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -524,7 +576,7 @@ class Index extends Component
 
     public function createLocation(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -542,7 +594,7 @@ class Index extends Component
 
     public function createSetting(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -579,7 +631,7 @@ class Index extends Component
 
     public function updateSetting(int $settingId): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -600,7 +652,7 @@ class Index extends Component
 
     public function createEquipmentCategory(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -628,7 +680,7 @@ class Index extends Component
 
     public function createAutomationRule(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -662,7 +714,7 @@ class Index extends Component
 
     public function createIntegrationSetting(): void
     {
-        if (! $this->canManageSettings) {
+        if (!$this->canManageSettings) {
             return;
         }
 
@@ -736,6 +788,7 @@ class Index extends Component
         $categories = WorkOrderCategory::orderBy('name')->paginate(10, pageName: 'categories');
         $templates = CommunicationTemplate::orderBy('name')->paginate(10, pageName: 'templates');
         $locations = InventoryLocation::orderBy('name')->paginate(10, pageName: 'locations');
+        $priorityLevels = \App\Models\PriorityLevel::orderBy('sort_order')->get();
         $systemSettings = SystemSetting::orderBy('group')->orderBy('key')->get();
         $equipmentCategories = EquipmentCategory::orderBy('name')->get();
         $automationRules = AutomationRule::orderBy('name')->get();
@@ -762,6 +815,7 @@ class Index extends Component
             'automationRules' => $automationRules,
             'integrationSettings' => $integrationSettings,
             'auditLogs' => $auditLogs,
+            'priorityLevels' => $priorityLevels,
             'activeUsers' => $activeUsers,
             'openWorkOrders' => $openWorkOrders,
             'overdueWorkOrders' => $overdueWorkOrders,
@@ -775,7 +829,7 @@ class Index extends Component
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
@@ -786,7 +840,7 @@ class Index extends Component
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 

@@ -123,7 +123,7 @@ class Index extends Component
     {
         $userId = auth()->id();
 
-        if (! $userId || ! $this->threadExistsForUser($threadId, $userId)) {
+        if (!$userId || !$this->threadExistsForUser($threadId, $userId)) {
             return;
         }
 
@@ -164,7 +164,7 @@ class Index extends Component
     public function markSelectedRead(): void
     {
         $userId = auth()->id();
-        if (! $userId || empty($this->selectedThreads)) {
+        if (!$userId || empty($this->selectedThreads)) {
             return;
         }
 
@@ -177,7 +177,7 @@ class Index extends Component
     public function markSelectedUnread(): void
     {
         $userId = auth()->id();
-        if (! $userId || empty($this->selectedThreads)) {
+        if (!$userId || empty($this->selectedThreads)) {
             return;
         }
 
@@ -190,7 +190,7 @@ class Index extends Component
     public function archiveSelected(): void
     {
         $userId = auth()->id();
-        if (! $userId || empty($this->selectedThreads)) {
+        if (!$userId || empty($this->selectedThreads)) {
             return;
         }
 
@@ -208,7 +208,7 @@ class Index extends Component
     public function deleteSelected(): void
     {
         $userId = auth()->id();
-        if (! $userId || empty($this->selectedThreads)) {
+        if (!$userId || empty($this->selectedThreads)) {
             return;
         }
 
@@ -224,7 +224,7 @@ class Index extends Component
     {
         $folder = trim($this->bulkMoveFolder);
         $userId = auth()->id();
-        if (! $userId || $folder === '' || empty($this->selectedThreads)) {
+        if (!$userId || $folder === '' || empty($this->selectedThreads)) {
             return;
         }
 
@@ -247,20 +247,20 @@ class Index extends Component
 
         $threadId = $this->selectedThreads[0];
         $thread = MessageThread::with('messages')->find($threadId);
-        if (! $thread) {
+        if (!$thread) {
             return;
         }
 
         $lastMessage = $thread->messages->sortByDesc('created_at')->first();
         $this->startComposer();
         $this->composer['subject'] = 'Fwd: ' . ($thread->subject ?? 'Conversation');
-        $this->composer['message'] = $lastMessage ? \"Forwarded message:\\n\\n\" . $lastMessage->body : '';
+        $this->composer['message'] = $lastMessage ? "Forwarded message:\n\n" . $lastMessage->body : '';
     }
 
     public function toggleStar(int $threadId): void
     {
         $userId = auth()->id();
-        if (! $userId) {
+        if (!$userId) {
             return;
         }
 
@@ -269,16 +269,16 @@ class Index extends Component
             ->where('user_id', $userId)
             ->first();
 
-        if (! $participant) {
+        if (!$participant) {
             return;
         }
 
-        $participant->update(['is_starred' => ! $participant->is_starred]);
+        $participant->update(['is_starred' => !$participant->is_starred]);
     }
 
     public function startComposer(): void
     {
-        if (! auth()->user()?->can(PermissionCatalog::MESSAGES_SEND)) {
+        if (!auth()->user()?->can(PermissionCatalog::MESSAGES_SEND)) {
             return;
         }
 
@@ -305,7 +305,7 @@ class Index extends Component
             'bcc' => 'bcc_ids',
         ];
 
-        if (! isset($searchMap[$type], $keyMap[$type])) {
+        if (!isset($searchMap[$type], $keyMap[$type])) {
             return;
         }
 
@@ -319,14 +319,14 @@ class Index extends Component
             ->orWhere('name', $value)
             ->first();
 
-        if (! $user) {
+        if (!$user) {
             $this->addError($searchMap[$type], 'User not found.');
             return;
         }
 
         $key = $keyMap[$type];
         $current = $this->composer[$key] ?? [];
-        if (! in_array($user->id, $current, true)) {
+        if (!in_array($user->id, $current, true)) {
             $current[] = $user->id;
             $this->composer[$key] = $current;
         }
@@ -343,11 +343,11 @@ class Index extends Component
             'bcc' => 'bcc_ids',
         ];
         $key = $keyMap[$type] ?? null;
-        if (! $key) {
+        if (!$key) {
             return;
         }
         $current = $this->composer[$key] ?? [];
-        $this->composer[$key] = array_values(array_filter($current, fn ($id) => (int) $id !== $userId));
+        $this->composer[$key] = array_values(array_filter($current, fn($id) => (int) $id !== $userId));
     }
 
     public function createFolder(): void
@@ -355,7 +355,7 @@ class Index extends Component
         $user = auth()->user();
         $name = trim($this->newFolderName);
 
-        if (! $user || $name === '') {
+        if (!$user || $name === '') {
             return;
         }
 
@@ -373,7 +373,7 @@ class Index extends Component
     public function saveNotificationPreferences(): void
     {
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return;
         }
 
@@ -398,11 +398,11 @@ class Index extends Component
     public function toggleAutomation(int $automationId): void
     {
         $automation = MessageAutomation::find($automationId);
-        if (! $automation) {
+        if (!$automation) {
             return;
         }
 
-        $automation->update(['is_enabled' => ! $automation->is_enabled]);
+        $automation->update(['is_enabled' => !$automation->is_enabled]);
     }
 
     protected function rules(): array
@@ -427,7 +427,7 @@ class Index extends Component
     public function applyTemplate(int $templateId): void
     {
         $template = CommunicationTemplate::find($templateId);
-        if (! $template) {
+        if (!$template) {
             return;
         }
 
@@ -440,7 +440,7 @@ class Index extends Component
     public function saveTemplateFromComposer(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canSend) {
+        if (!$user || !$this->canSend) {
             return;
         }
 
@@ -460,7 +460,7 @@ class Index extends Component
     public function saveDraft(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canSend) {
+        if (!$user || !$this->canSend) {
             return;
         }
 
@@ -499,18 +499,18 @@ class Index extends Component
 
     public function sendMessage(): void
     {
-        if (! $this->canSend) {
+        if (!$this->canSend) {
             return;
         }
 
         $this->validate();
 
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return;
         }
 
-        if (! $this->checkRateLimit($user->id, 'send')) {
+        if (!$this->checkRateLimit($user->id, 'send')) {
             return;
         }
 
@@ -524,7 +524,7 @@ class Index extends Component
         }
 
         $messageType = $this->composer['message_type'] ?? 'direct';
-        if (! empty($this->composer['broadcast_all'])) {
+        if (!empty($this->composer['broadcast_all'])) {
             $messageType = 'broadcast';
         }
         if (count($recipientIds) > 1 && $messageType === 'direct') {
@@ -559,7 +559,7 @@ class Index extends Component
 
         $this->storeMessageAttachments($message, $user->id);
         $recipientMap = [
-            'to' => ! empty($this->composer['broadcast_all']) ? $recipientIds : $toIds,
+            'to' => !empty($this->composer['broadcast_all']) ? $recipientIds : $toIds,
             'cc' => $ccIds,
             'bcc' => $bccIds,
         ];
@@ -577,16 +577,16 @@ class Index extends Component
 
     public function sendReply(): void
     {
-        if (! $this->canSend || ! $this->activeThreadId) {
+        if (!$this->canSend || !$this->activeThreadId) {
             return;
         }
 
         $userId = auth()->id();
-        if (! $userId || ! $this->threadExistsForUser($this->activeThreadId, $userId)) {
+        if (!$userId || !$this->threadExistsForUser($this->activeThreadId, $userId)) {
             return;
         }
 
-        if (! $this->checkRateLimit($userId, 'reply')) {
+        if (!$this->checkRateLimit($userId, 'reply')) {
             return;
         }
 
@@ -595,13 +595,13 @@ class Index extends Component
         ]);
 
         $thread = MessageThread::find($this->activeThreadId);
-        if (! $thread) {
+        if (!$thread) {
             return;
         }
 
         $participantIds = $thread->participants
             ->pluck('user_id')
-            ->filter(fn ($id) => (int) $id !== $userId)
+            ->filter(fn($id) => (int) $id !== $userId)
             ->values()
             ->all();
 
@@ -628,7 +628,7 @@ class Index extends Component
     public function render()
     {
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return view('livewire.messages.index', [
                 'threads' => collect(),
                 'activeThread' => null,
@@ -726,7 +726,7 @@ class Index extends Component
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
@@ -762,7 +762,7 @@ class Index extends Component
                 return;
             }
 
-            if (! in_array($folder, ['inbox', 'sent', 'work_orders'], true)) {
+            if (!in_array($folder, ['inbox', 'sent', 'work_orders'], true)) {
                 $builder->where('folder', $folder);
                 return;
             }
@@ -813,7 +813,7 @@ class Index extends Component
 
     private function applyFilters(Builder $query, array $filters, int $userId): void
     {
-        if (! empty($filters['sender'])) {
+        if (!empty($filters['sender'])) {
             $sender = trim((string) $filters['sender']);
             $query->whereHas('messages.user', function (Builder $builder) use ($sender) {
                 $builder->where('name', 'like', '%' . $sender . '%')
@@ -821,38 +821,38 @@ class Index extends Component
             });
         }
 
-        if (! empty($filters['date_start'])) {
+        if (!empty($filters['date_start'])) {
             $query->whereDate('updated_at', '>=', $filters['date_start']);
         }
 
-        if (! empty($filters['date_end'])) {
+        if (!empty($filters['date_end'])) {
             $query->whereDate('updated_at', '<=', $filters['date_end']);
         }
 
-        if (! empty($filters['work_order_id'])) {
+        if (!empty($filters['work_order_id'])) {
             $query->where('work_order_id', (int) $filters['work_order_id']);
         }
 
-        if (! empty($filters['message_type'])) {
+        if (!empty($filters['message_type'])) {
             $query->whereHas('messages', function (Builder $builder) use ($filters) {
                 $builder->where('message_type', $filters['message_type']);
             });
         }
 
-        if (! empty($filters['channel'])) {
+        if (!empty($filters['channel'])) {
             $query->whereHas('messages', function (Builder $builder) use ($filters) {
                 $builder->where('channel', $filters['channel']);
             });
         }
 
-        if (! empty($filters['has_attachments'])) {
+        if (!empty($filters['has_attachments'])) {
             $query->whereHas('messages', function (Builder $builder) {
                 $builder->whereHas('messageAttachments')
                     ->orWhereHas('attachments');
             });
         }
 
-        if (! empty($filters['unread'])) {
+        if (!empty($filters['unread'])) {
             $query->whereHas('participants', function (Builder $builder) use ($userId) {
                 $builder->where('user_id', $userId)->whereNull('last_read_at');
             });
@@ -884,14 +884,14 @@ class Index extends Component
     private function threadIsUnread(MessageThread $thread, int $userId): bool
     {
         $lastMessage = $thread->messages->first();
-        if (! $lastMessage) {
+        if (!$lastMessage) {
             return false;
         }
 
         $participant = $thread->participants->firstWhere('user_id', $userId);
         $lastReadAt = $participant?->last_read_at;
 
-        if (! $lastReadAt) {
+        if (!$lastReadAt) {
             return true;
         }
 
@@ -901,12 +901,15 @@ class Index extends Component
     private function unreadThreadCount(int $userId): int
     {
         $threads = $this->threadBaseQuery($userId)
-            ->with(['participants', 'messages' => function ($builder) {
-                $builder->latest()->limit(1);
-            }])
+            ->with([
+                'participants',
+                'messages' => function ($builder) {
+                    $builder->latest()->limit(1);
+                }
+            ])
             ->get();
 
-        return $threads->filter(fn (MessageThread $thread) => $this->threadIsUnread($thread, $userId))->count();
+        return $threads->filter(fn(MessageThread $thread) => $this->threadIsUnread($thread, $userId))->count();
     }
 
     private function folderCounts(int $userId): array
@@ -920,7 +923,7 @@ class Index extends Component
             'archived' => (clone $base)->where('is_archived', true)->count(),
             'starred' => (clone $base)->where('is_starred', true)->count(),
             'work_orders' => MessageThread::query()
-                ->whereHas('participants', fn ($builder) => $builder->where('user_id', $userId)->whereNull('deleted_at'))
+                ->whereHas('participants', fn($builder) => $builder->where('user_id', $userId)->whereNull('deleted_at'))
                 ->whereNotNull('work_order_id')
                 ->count(),
         ];
@@ -929,7 +932,7 @@ class Index extends Component
     private function currentThreadIds(): array
     {
         $userId = auth()->id();
-        if (! $userId) {
+        if (!$userId) {
             return [];
         }
 
@@ -943,7 +946,7 @@ class Index extends Component
 
     private function resolveRecipients(int $senderId): array
     {
-        if (! empty($this->composer['broadcast_all'])) {
+        if (!empty($this->composer['broadcast_all'])) {
             return User::query()
                 ->where('id', '!=', $senderId)
                 ->pluck('id')
@@ -1053,7 +1056,7 @@ class Index extends Component
     private function loadPreferences(): void
     {
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             $this->notificationPreferences = [];
             return;
         }
@@ -1100,7 +1103,7 @@ class Index extends Component
 
         $this->notificationPreferences = collect($defaults)->map(function ($default, $channel) use ($existing) {
             $record = $existing->get($channel);
-            if (! $record) {
+            if (!$record) {
                 return $default;
             }
 
@@ -1120,7 +1123,7 @@ class Index extends Component
         $channel = $this->composer['channel'] ?? 'in_app';
         $policy = app(MessagingPolicyService::class);
 
-        if (! $policy->checkRateLimit($userId, $channel, $action)) {
+        if (!$policy->checkRateLimit($userId, $channel, $action)) {
             $this->addError('composer.message', 'You are sending messages too quickly. Please wait a moment.');
             return false;
         }
