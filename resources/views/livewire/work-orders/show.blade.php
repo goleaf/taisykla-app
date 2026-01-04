@@ -22,20 +22,66 @@
 
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-                <a href="{{ route('work-orders.index') }}" class="text-sm text-indigo-600" wire:navigate>← Back to Work Orders</a>
+                <a href="{{ route('work-orders.index') }}" class="inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800" wire:navigate>
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    Back to Work Orders
+                </a>
                 <h1 class="text-2xl font-semibold text-gray-900">Work Order #{{ $workOrder->id }}</h1>
                 <p class="text-sm text-gray-500">{{ $workOrder->subject }}</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs {{ $statusBadge }}">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium {{ $statusBadge }}">
                     {{ $statusLabel }}
                 </span>
-                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs {{ $priorityBadge }}">
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium {{ $priorityBadge }}">
                     {{ $priorityLabel }}
                 </span>
-                <span class="text-xs text-gray-500">Updated {{ $workOrder->updated_at?->diffForHumans() }}</span>
+                
+                {{-- Actions Dropdown --}}
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        Actions
+                        <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-2" x-cloak>
+                        @if($canCreate)
+                            <button wire:click="cloneWorkOrder" @click="open = false" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                Clone Work Order
+                            </button>
+                        @endif
+                        <button onclick="window.print()" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            Print
+                        </button>
+                        @if($workOrder->status === 'completed' || $workOrder->status === 'closed')
+                            <a href="{{ route('billing.index') }}" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2" wire:navigate>
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                View Invoice
+                            </a>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
+
+        {{-- Flash Messages --}}
+        @if(session('status'))
+            <div class="rounded-lg bg-green-50 p-4 border border-green-200">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm text-green-700">{{ session('status') }}</span>
+                </div>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="rounded-lg bg-red-50 p-4 border border-red-200">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                    <span class="text-sm text-red-700">{{ session('error') }}</span>
+                </div>
+            </div>
+        @endif
 
         <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -47,7 +47,7 @@ class Show extends Component
     public function mount(WorkOrder $workOrder): void
     {
         $user = auth()->user();
-        if (! $this->canViewWorkOrder($user, $workOrder)) {
+        if (!$this->canViewWorkOrder($user, $workOrder)) {
             abort(403);
         }
 
@@ -69,11 +69,11 @@ class Show extends Component
 
     private function canViewWorkOrder(?User $user, WorkOrder $workOrder): bool
     {
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
-        if (! $user->can(PermissionCatalog::WORK_ORDERS_VIEW)) {
+        if (!$user->can(PermissionCatalog::WORK_ORDERS_VIEW)) {
             return false;
         }
 
@@ -85,9 +85,11 @@ class Show extends Component
             return true;
         }
 
-        if ($user->can(PermissionCatalog::WORK_ORDERS_VIEW_ORG)
+        if (
+            $user->can(PermissionCatalog::WORK_ORDERS_VIEW_ORG)
             && $user->organization_id
-            && $workOrder->organization_id === $user->organization_id) {
+            && $workOrder->organization_id === $user->organization_id
+        ) {
             return true;
         }
 
@@ -177,16 +179,16 @@ class Show extends Component
     private function statusUpdates(WorkOrder $workOrder, string $status): array
     {
         $updates = ['status' => $status];
-        if ($status === 'assigned' && ! $workOrder->assigned_at) {
+        if ($status === 'assigned' && !$workOrder->assigned_at) {
             $updates['assigned_at'] = now();
         }
-        if ($status === 'in_progress' && ! $workOrder->started_at) {
+        if ($status === 'in_progress' && !$workOrder->started_at) {
             $updates['started_at'] = now();
         }
-        if ($status === 'completed' && ! $workOrder->completed_at) {
+        if ($status === 'completed' && !$workOrder->completed_at) {
             $updates['completed_at'] = now();
         }
-        if ($status === 'canceled' && ! $workOrder->canceled_at) {
+        if ($status === 'canceled' && !$workOrder->canceled_at) {
             $updates['canceled_at'] = now();
         }
 
@@ -230,7 +232,7 @@ class Show extends Component
     public function updateStatus(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canUpdateStatus($user)) {
+        if (!$user || !$this->canUpdateStatus($user)) {
             return;
         }
 
@@ -255,7 +257,7 @@ class Show extends Component
         ]);
 
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return;
         }
 
@@ -272,7 +274,7 @@ class Show extends Component
     public function saveReport(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canManageReport($user)) {
+        if (!$user || !$this->canManageReport($user)) {
             return;
         }
 
@@ -328,7 +330,7 @@ class Show extends Component
     public function uploadReportPhotos(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canManageReport($user)) {
+        if (!$user || !$this->canManageReport($user)) {
             return;
         }
 
@@ -339,11 +341,11 @@ class Show extends Component
         ]);
 
         foreach ($this->reportPhotos as $photo) {
-            $path = $photo->storePublicly('work-orders/'.$this->workOrder->id.'/report', 'public');
+            $path = $photo->storePublicly('work-orders/' . $this->workOrder->id . '/report', 'public');
 
             $this->workOrder->attachments()->create([
                 'uploaded_by_user_id' => $user->id,
-                'label' => ucfirst($this->reportPhotoKind).' photo',
+                'label' => ucfirst($this->reportPhotoKind) . ' photo',
                 'file_name' => $photo->getClientOriginalName(),
                 'file_path' => $path,
                 'file_size' => $photo->getSize(),
@@ -366,7 +368,7 @@ class Show extends Component
     public function submitSignoff(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canSignOff($user)) {
+        if (!$user || !$this->canSignOff($user)) {
             return;
         }
 
@@ -401,7 +403,7 @@ class Show extends Component
             ['signature_name' => $this->signatureName]
         );
 
-        if (! $this->signoff['functional'] || ! $this->signoff['professional'] || ! $this->signoff['satisfied']) {
+        if (!$this->signoff['functional'] || !$this->signoff['professional'] || !$this->signoff['satisfied']) {
             $this->createFollowUpTicket($user, $this->signoff['comments'] ?: 'Customer sign-off flagged concerns.');
         }
 
@@ -411,7 +413,7 @@ class Show extends Component
     public function submitFeedback(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canLeaveFeedback($user)) {
+        if (!$user || !$this->canLeaveFeedback($user)) {
             return;
         }
 
@@ -453,7 +455,7 @@ class Show extends Component
             ['rating' => $this->feedback['overall']]
         );
 
-        if ($this->feedback['overall'] <= 2 || ! $this->feedback['would_recommend']) {
+        if ($this->feedback['overall'] <= 2 || !$this->feedback['would_recommend']) {
             $this->createFollowUpTicket($user, $this->feedback['comments'] ?: 'Customer reported dissatisfaction.');
         }
 
@@ -462,7 +464,7 @@ class Show extends Component
 
     private function createFollowUpTicket(User $user, string $description): void
     {
-        if (! $user->can(PermissionCatalog::SUPPORT_CREATE)) {
+        if (!$user->can(PermissionCatalog::SUPPORT_CREATE)) {
             return;
         }
 
@@ -498,11 +500,11 @@ class Show extends Component
             return false;
         }
 
-        if (! in_array($this->workOrder->status, ['completed', 'closed'], true)) {
+        if (!in_array($this->workOrder->status, ['completed', 'closed'], true)) {
             return false;
         }
 
-        if (! $user->canSignOffWorkOrders()) {
+        if (!$user->canSignOffWorkOrders()) {
             return false;
         }
 
@@ -519,11 +521,11 @@ class Show extends Component
             return false;
         }
 
-        if (! in_array($this->workOrder->status, ['completed', 'closed'], true)) {
+        if (!in_array($this->workOrder->status, ['completed', 'closed'], true)) {
             return false;
         }
 
-        if (! $user->canSubmitWorkOrderFeedback()) {
+        if (!$user->canSubmitWorkOrderFeedback()) {
             return false;
         }
 
@@ -600,7 +602,7 @@ class Show extends Component
         }
 
         $currentKey = $this->workOrder->status === 'on_hold' ? 'in_progress' : $this->workOrder->status;
-        if (! array_key_exists($currentKey, $order)) {
+        if (!array_key_exists($currentKey, $order)) {
             $currentKey = 'submitted';
         }
 
@@ -677,7 +679,7 @@ class Show extends Component
 
     private function friendlyStatus(?string $status): string
     {
-        if (! $status) {
+        if (!$status) {
             return 'unknown';
         }
 
@@ -705,7 +707,7 @@ class Show extends Component
         $query = MessageThread::where('work_order_id', $this->workOrder->id)
             ->with(['messages.user']);
 
-        if (! $user->canViewAllWorkOrders()) {
+        if (!$user->canViewAllWorkOrders()) {
             $query->whereHas('participants', function ($builder) use ($user) {
                 $builder->where('user_id', $user->id);
             });
@@ -747,11 +749,11 @@ class Show extends Component
         $message = match ($status) {
             'assigned' => $this->assignmentMessage($this->workOrder->assignedTo),
             'in_progress' => $this->workOrder->arrived_at
-                ? 'Technician has arrived on site and started service.'
-                : 'Service is now in progress.',
+            ? 'Technician has arrived on site and started service.'
+            : 'Service is now in progress.',
             'on_hold' => $this->workOrder->on_hold_reason
-                ? 'Your request is on hold. ' . $this->workOrder->on_hold_reason
-                : 'Your request is on hold. We will follow up with next steps.',
+            ? 'Your request is on hold. ' . $this->workOrder->on_hold_reason
+            : 'Your request is on hold. We will follow up with next steps.',
             'completed' => 'Service has been completed. Please review the report and provide your approval.',
             'closed' => 'Your request has been closed. Thank you for working with us.',
             'canceled' => 'Your request has been canceled. Contact support if this is unexpected.',
@@ -765,7 +767,7 @@ class Show extends Component
 
     private function assignmentMessage(?User $assignedUser): string
     {
-        if (! $assignedUser) {
+        if (!$assignedUser) {
             return 'Your request has been assigned and is being scheduled.';
         }
 
@@ -787,7 +789,7 @@ class Show extends Component
     private function technicianInsights(): array
     {
         $technician = $this->workOrder->assignedTo;
-        if (! $technician) {
+        if (!$technician) {
             return [
                 'rating' => null,
                 'rating_count' => 0,
@@ -818,7 +820,7 @@ class Show extends Component
         $hasCoords = $siteLat !== null && $siteLng !== null && $techLat !== null && $techLng !== null;
 
         $etaMinutes = null;
-        if (! $this->workOrder->arrived_at && in_array($this->workOrder->status, ['assigned', 'in_progress'], true)) {
+        if (!$this->workOrder->arrived_at && in_array($this->workOrder->status, ['assigned', 'in_progress'], true)) {
             $etaMinutes = $this->workOrder->travel_minutes;
         }
 
@@ -841,7 +843,7 @@ class Show extends Component
     public function assignTechnician(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canAssign($user)) {
+        if (!$user || !$this->canAssign($user)) {
             return;
         }
 
@@ -857,7 +859,7 @@ class Show extends Component
             $updates['status'] = 'assigned';
         }
 
-        if ($assignedUserId && ! $this->workOrder->assigned_at) {
+        if ($assignedUserId && !$this->workOrder->assigned_at) {
             $updates['assigned_at'] = now();
         }
 
@@ -901,18 +903,18 @@ class Show extends Component
     public function markArrived(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canMarkArrived($user)) {
+        if (!$user || !$this->canMarkArrived($user)) {
             return;
         }
 
         $previousStatus = $this->workOrder->status;
         $updates = [];
 
-        if (! $this->workOrder->arrived_at) {
+        if (!$this->workOrder->arrived_at) {
             $updates['arrived_at'] = now();
         }
 
-        if (! $this->workOrder->started_at) {
+        if (!$this->workOrder->started_at) {
             $updates['started_at'] = now();
         }
 
@@ -954,7 +956,7 @@ class Show extends Component
     public function addNote(): void
     {
         $user = auth()->user();
-        if (! $user || ! $this->canAddNote($user)) {
+        if (!$user || !$this->canAddNote($user)) {
             return;
         }
 
@@ -971,6 +973,63 @@ class Show extends Component
 
         $this->note = '';
         $this->refreshWorkOrder();
+    }
+
+    public function cloneWorkOrder(): void
+    {
+        $user = auth()->user();
+        if (!$user || !$user->canCreateWorkOrders()) {
+            session()->flash('error', 'You do not have permission to create work orders.');
+            return;
+        }
+
+        $clone = $this->workOrder->replicate([
+            'status',
+            'assigned_to_user_id',
+            'assigned_at',
+            'requested_at',
+            'scheduled_start_at',
+            'scheduled_end_at',
+            'arrived_at',
+            'started_at',
+            'completed_at',
+            'canceled_at',
+            'customer_signature_name',
+            'customer_signature_at',
+            'customer_signoff_functional',
+            'customer_signoff_professional',
+            'customer_signoff_satisfied',
+            'customer_signoff_comments',
+        ]);
+
+        $clone->status = 'submitted';
+        $clone->requested_by_user_id = $user->id;
+        $clone->requested_at = now();
+        $clone->subject = '[Clone] ' . $clone->subject;
+        $clone->save();
+
+        WorkOrderEvent::create([
+            'work_order_id' => $clone->id,
+            'user_id' => $user->id,
+            'type' => 'created',
+            'to_status' => 'submitted',
+            'note' => 'Cloned from work order #' . $this->workOrder->id,
+        ]);
+
+        app(AuditLogger::class)->log(
+            'work_order.cloned',
+            $clone,
+            'Work order cloned from #' . $this->workOrder->id,
+            ['original_id' => $this->workOrder->id]
+        );
+
+        session()->flash('status', 'Work order cloned successfully!');
+        $this->redirect(route('work-orders.show', $clone), navigate: true);
+    }
+
+    public function getCanCreateProperty(): bool
+    {
+        return auth()->user()?->canCreateWorkOrders() ?? false;
     }
 
     public function render()
@@ -1011,6 +1070,7 @@ class Show extends Component
             'canManageReport' => $canManageReport,
             'canSignOff' => $canSignOff,
             'canLeaveFeedback' => $canLeaveFeedback,
+            'canCreate' => $this->canCreate,
             'timeline' => $timeline,
             'statusSummary' => $statusSummary,
             'statusSteps' => $statusSteps,

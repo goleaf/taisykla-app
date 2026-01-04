@@ -38,6 +38,9 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('work-orders', WorkOrdersIndex::class)
         ->middleware('can:' . PermissionCatalog::WORK_ORDERS_VIEW)
         ->name('work-orders.index');
+    Route::get('work-orders/create', \App\Livewire\WorkOrders\CreateWizard::class)
+        ->middleware('can:' . PermissionCatalog::WORK_ORDERS_CREATE)
+        ->name('work-orders.create');
     Route::get('work-orders/{workOrder}', WorkOrdersShow::class)
         ->middleware('can:' . PermissionCatalog::WORK_ORDERS_VIEW)
         ->name('work-orders.show');
