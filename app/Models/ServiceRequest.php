@@ -269,6 +269,27 @@ class ServiceRequest extends Model
         $this->attributes['priority'] = strtolower($value);
     }
 
+
+    /**
+     * Check if the service request is overdue.
+     *
+     * A service request is considered overdue if:
+     * - It has a scheduled date that is in the past
+     * - AND it is not completed or cancelled
+     */
+    public function isOverdue(): bool
+    {
+        if (!$this->scheduled_at) {
+            return false;
+        }
+
+        if (in_array($this->status, [self::STATUS_COMPLETED, self::STATUS_CANCELLED])) {
+            return false;
+        }
+
+        return $this->scheduled_at->isPast();
+    }
+
     /**
      * The "booted" method of the model.
      */
