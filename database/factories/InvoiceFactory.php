@@ -20,7 +20,6 @@ class InvoiceFactory extends Factory
         $tax = round($subtotal * 0.1, 2);
 
         return [
-            'overview' => 'Invoice definition',
             'organization_id' => \App\Models\Organization::factory(),
             'work_order_id' => \App\Models\WorkOrder::factory(),
             'invoice_number' => fake()->unique()->bothify('INV-#####'),

@@ -23,7 +23,7 @@ class KnowledgeArticleFactory extends Factory
             'title' => fake()->sentence(),
             'slug' => fake()->unique()->slug(),
             'summary' => fake()->paragraph(),
-            'content' => fake()->markdown(),
+            'content' => fake()->paragraphs(3, true),
             'status' => $status,
             'is_published' => $status === 'published',
             'published_at' => $publishedAt,
