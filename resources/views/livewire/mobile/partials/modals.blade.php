@@ -111,7 +111,7 @@
                 <img x-show="currentIndex === {{ $index }}" src="{{ $attachment->url }}"
                     class="max-w-full max-h-full object-contain select-none"
                     :style="{ transform: 'scale(' + scale + ') translate(' + translateX + 'px, ' + translateY + 'px)' }"
-                    @dblclick="scale = scale === 1 ? 2.5 : 1; translateX = 0; translateY = 0" alt="Photo {{ $index + 1 }}">
+                    @dblclick="scale = scale === 1 ? 2.5 : 1; translateX = 0; translateY = 0" alt="Photo {{ $index + 1 }}" loading="lazy">
             @endforeach
         </div>
 
@@ -138,7 +138,7 @@
                     <button @click="currentIndex = {{ $index }}"
                         class="w-12 h-12 rounded-lg overflow-hidden border-2 transition touch-target"
                         :class="currentIndex === {{ $index }} ? 'border-white' : 'border-transparent opacity-60'">
-                        <img src="{{ $attachment->url }}" class="w-full h-full object-cover" alt="">
+                        <img src="{{ $attachment->url }}" class="w-full h-full object-cover" alt="" loading="lazy">
                     </button>
                 @endforeach
             </div>

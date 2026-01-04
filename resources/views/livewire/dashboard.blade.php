@@ -146,8 +146,7 @@
                                                     rel="noreferrer">
                                                     <img class="h-20 w-full rounded-md object-cover border border-gray-200"
                                                         src="{{ asset('storage/' . $attachment->file_path) }}"
-                                                        alt="{{ $attachment->label ?? 'Attachment' }}" />
-                                                </a>
+                                                        alt="{{ $attachment->label ?? 'Attachment' }}" loading="lazy" />                                                </a>
                                             @endforeach
                                         </div>
                                     @else

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Quote extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, \App\Traits\Auditable;
 
     protected $fillable = [
         'quote_number',
@@ -85,5 +85,10 @@ class Quote extends Model
     public function revisions()
     {
         return $this->hasMany(Quote::class, 'revision_of_quote_id');
+    }
+
+    public function auditLogs()
+    {
+        return $this->morphMany(AuditLog::class, 'subject');
     }
 }

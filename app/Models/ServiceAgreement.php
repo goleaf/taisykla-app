@@ -33,4 +33,15 @@ class ServiceAgreement extends Model
     {
         return $this->hasMany(Organization::class);
     }
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            app(\App\Services\ReferenceDataService::class)->clearServiceAgreementsCache();
+        });
+
+        static::deleted(function () {
+            app(\App\Services\ReferenceDataService::class)->clearServiceAgreementsCache();
+        });
+    }
 }

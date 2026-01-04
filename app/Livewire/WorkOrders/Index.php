@@ -694,7 +694,7 @@ class Index extends Component
         $slaSummaries = $this->buildSlaSummaries($workOrders->items(), $slaTargets);
 
         $organizations = $isClient ? collect() : Organization::orderBy('name')->get();
-        $categories = WorkOrderCategory::orderBy('name')->get();
+        $categories = app(\App\Services\ReferenceDataService::class)->getAllWorkOrderCategories();
         $technicians = $this->canAssign
             ? User::role('technician')->orderBy('name')->get()
             : collect();

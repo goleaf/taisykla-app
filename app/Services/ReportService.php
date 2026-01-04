@@ -67,6 +67,7 @@ class ReportService
             'customer_satisfaction' => $this->customerSatisfaction($filters, $viewer),
             'customer_activity' => $this->customerActivity($filters, $viewer),
             'revenue' => $this->revenueReport($filters, $viewer),
+            'revenue_by_service_type' => $this->revenueByServiceType($filters, $viewer),
             'cost_analysis' => $this->costAnalysis($filters, $viewer),
             'profitability' => $this->profitabilityReport($filters, $viewer),
             'accounts_receivable_aging' => $this->accountsReceivableAging($filters, $viewer),
@@ -585,6 +586,44 @@ class ReportService
                 'period_end' => $end->toDateString(),
                 'total_revenue' => number_format((float) $totalRevenue, 2, '.', ''),
                 'average_monthly_revenue' => number_format((float) $averageRevenue, 2, '.', ''),
+            ],
+        ];
+    }
+
+    private function revenueByServiceType(array $filters, ?User $viewer = null): array
+    {
+        [$start, $end] = $this->resolveDateRange($filters, now()->subMonths(6)->startOfMonth(), now()->endOfMonth());
+
+        $query = Invoice::query()
+            ->join('work_orders', 'invoices.work_order_id', '=', 'work_orders.id')
+            ->leftJoin('work_order_categories', 'work_orders.category_id', '=', 'work_order_categories.id')
+            ->whereNotNull('invoices.paid_at')
+            ->whereBetween('invoices.paid_at', [$start, $end])
+            ->selectRaw('work_order_categories.name as category')
+            ->selectRaw('SUM(invoices.total) as revenue')
+            ->selectRaw('COUNT(DISTINCT invoices.id) as invoice_count')
+            ->groupBy('work_order_categories.name')
+            ->orderByDesc('revenue');
+
+        $this->applyAccessScope($query, 'invoices', $viewer);
+
+        $rows = $query->get();
+
+        $columns = ['Service Category', 'Revenue', 'Invoices', 'Avg Revenue'];
+        $totalRevenue = $rows->sum('revenue');
+
+        return [
+            'columns' => $columns,
+            'rows' => $rows->map(fn ($row) => [
+                'Service Category' => $row->category ?? 'Uncategorized',
+                'Revenue' => number_format((float) $row->revenue, 2, '.', ''),
+                'Invoices' => (int) $row->invoice_count,
+                'Avg Revenue' => $row->invoice_count > 0 ? number_format($row->revenue / $row->invoice_count, 2, '.', '') : '0.00',
+            ])->toArray(),
+            'meta' => [
+                'period_start' => $start->toDateString(),
+                'period_end' => $end->toDateString(),
+                'total_revenue' => number_format((float) $totalRevenue, 2, '.', ''),
             ],
         ];
     }

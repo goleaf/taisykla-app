@@ -522,7 +522,7 @@ class CreateWizard extends Component
             : null;
 
         // Get categories for step 3
-        $categories = WorkOrderCategory::where('is_active', true)->orderBy('name')->get();
+        $categories = app(\App\Services\ReferenceDataService::class)->getActiveWorkOrderCategories();
 
         // Get availability for step 4
         $availabilityDays = $this->getAvailabilityDays();

@@ -251,7 +251,7 @@
     <div x-show="photos && photos.length > 0" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         <template x-for="(photo, index) in photos" :key="photo.id">
             <div class="relative group aspect-square rounded-lg overflow-hidden bg-gray-100 shadow-sm">
-                <img :src="photo.data" class="w-full h-full object-cover">
+                <img :src="photo.data" class="w-full h-full object-cover" loading="lazy">
                 <button type="button" @click="removePhoto(index)"
                     class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

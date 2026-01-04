@@ -148,7 +148,7 @@
                         <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100 text-center">
                             <h2 class="text-lg font-semibold text-gray-900 mb-4">QR Code</h2>
                             @if($qrCode['qr_code'] ?? null)
-                                <img src="{{ $qrCode['qr_url'] }}" alt="QR Code" class="mx-auto mb-3 w-32 h-32">
+                                <img src="{{ $qrCode['qr_url'] }}" alt="QR Code" class="mx-auto mb-3 w-32 h-32" loading="lazy">
                                 <p class="text-xs text-gray-500 font-mono">{{ $qrCode['qr_code'] }}</p>
                                 <button onclick="window.print()" class="mt-3 text-xs text-indigo-600 hover:text-indigo-800">
                                     Print Label
@@ -169,7 +169,7 @@
                                 <div class="grid grid-cols-2 gap-2">
                                     @foreach ($equipment->attachments->where('kind', 'photo') as $attachment)
                                         <a href="{{ asset('storage/'.$attachment->file_path) }}" target="_blank">
-                                            <img class="h-24 w-full rounded-md object-cover border border-gray-200" src="{{ asset('storage/'.$attachment->file_path) }}" alt="{{ $attachment->label ?? 'Photo' }}">
+                                            <img class="h-24 w-full rounded-md object-cover border border-gray-200" src="{{ asset('storage/'.$attachment->file_path) }}" alt="{{ $attachment->label ?? 'Photo' }}" loading="lazy">
                                         </a>
                                     @endforeach
                                 </div>

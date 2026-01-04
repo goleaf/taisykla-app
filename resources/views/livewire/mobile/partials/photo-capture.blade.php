@@ -206,7 +206,7 @@
             <div class="grid grid-cols-2 gap-3">
                 <template x-for="(photo, index) in photos" :key="photo.id">
                     <div class="relative group aspect-square rounded-xl overflow-hidden bg-slate-100 shadow-sm">
-                        <img :src="photo.data" class="w-full h-full object-cover">
+                        <img :src="photo.data" class="w-full h-full object-cover" loading="lazy">
                         <button @click="removePhoto(index)"
                             class="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition touch-target">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

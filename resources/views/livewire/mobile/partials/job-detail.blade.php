@@ -88,7 +88,7 @@
                         <div class="flex gap-2 overflow-x-auto">
                             @foreach ($currentJob->attachments->take(4) as $attachment)
                                 <div class="flex-shrink-0 w-16 h-16 rounded-lg bg-slate-100 overflow-hidden">
-                                    <img src="{{ $attachment->url }}" class="w-full h-full object-cover" alt="">
+                                    <img src="{{ $attachment->url }}" class="w-full h-full object-cover" alt="" loading="lazy">
                                 </div>
                             @endforeach
                         </div>

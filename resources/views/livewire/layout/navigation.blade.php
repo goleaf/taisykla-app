@@ -121,18 +121,8 @@ new class extends Component
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6 gap-3">
-                <form wire:submit.prevent="trackRequest" class="flex items-center gap-2">
-                    <input
-                        type="text"
-                        wire:model.defer="trackTicket"
-                        class="rounded-md border border-gray-300 text-sm px-2 py-1 w-36"
-                        placeholder="Track request #"
-                    />
-                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm">Track</button>
-                    @if ($trackError)
-                        <span class="text-xs text-red-600 max-w-32 truncate" title="{{ $trackError }}">{{ $trackError }}</span>
-                    @endif
-                </form>
+                <livewire:global-search />
+                
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -177,18 +167,7 @@ new class extends Component
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             <div class="px-4 pb-3">
-                <form wire:submit.prevent="trackRequest" class="flex items-center gap-2">
-                    <input
-                        type="text"
-                        wire:model.defer="trackTicket"
-                        class="flex-1 rounded-md border border-gray-300 text-sm px-2 py-1"
-                        placeholder="Track request #"
-                    />
-                    <button class="px-3 py-1 border border-gray-300 rounded-md text-sm">Track</button>
-                </form>
-                @if ($trackError)
-                    <p class="mt-1 text-xs text-red-600">{{ $trackError }}</p>
-                @endif
+                <livewire:global-search />
             </div>
             @foreach ($links as $link)
                 @if ($link['show'])

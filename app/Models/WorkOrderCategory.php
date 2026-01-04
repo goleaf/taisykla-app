@@ -24,4 +24,15 @@ class WorkOrderCategory extends Model
     {
         return $this->hasMany(WorkOrder::class, 'category_id');
     }
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            app(\App\Services\ReferenceDataService::class)->clearWorkOrderCategoriesCache();
+        });
+
+        static::deleted(function () {
+            app(\App\Services\ReferenceDataService::class)->clearWorkOrderCategoriesCache();
+        });
+    }
 }

@@ -9,7 +9,14 @@ class InboundEmailController
 {
     public function __invoke(Request $request, InboundMessageService $service)
     {
-        $message = $service->handleEmail($request->all());
+        $validated = $request->validate([
+            'from' => 'required|string',
+            'subject' => 'nullable|string',
+            'text' => 'nullable|string',
+            'body' => 'nullable|string',
+        ]);
+
+        $message = $service->handleEmail($validated);
 
         return response()->json([
             'received' => (bool) $message,

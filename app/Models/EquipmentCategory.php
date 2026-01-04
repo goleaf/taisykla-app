@@ -23,4 +23,15 @@ class EquipmentCategory extends Model
     {
         return $this->hasMany(Equipment::class);
     }
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            app(\App\Services\ReferenceDataService::class)->clearEquipmentCategoriesCache();
+        });
+
+        static::deleted(function () {
+            app(\App\Services\ReferenceDataService::class)->clearEquipmentCategoriesCache();
+        });
+    }
 }

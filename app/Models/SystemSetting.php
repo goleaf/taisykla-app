@@ -18,4 +18,15 @@ class SystemSetting extends Model
     protected $casts = [
         'value' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function (SystemSetting $setting) {
+            app(\App\Services\SettingsService::class)->clearGroupCache($setting->group);
+        });
+
+        static::deleted(function (SystemSetting $setting) {
+            app(\App\Services\SettingsService::class)->clearGroupCache($setting->group);
+        });
+    }
 }

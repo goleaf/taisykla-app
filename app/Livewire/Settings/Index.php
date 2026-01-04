@@ -139,8 +139,8 @@ class Index extends Component
 
     public function loadComplianceSettings(): void
     {
-        $settings = SystemSetting::where('group', 'compliance')->get()->pluck('value', 'key');
-        $this->complianceSettings = array_merge($this->complianceSettings, $settings->toArray());
+        $settings = app(\App\Services\SettingsService::class)->getGroup('compliance');
+        $this->complianceSettings = array_merge($this->complianceSettings, $settings);
     }
 
     public function updateComplianceSettings(): void
@@ -159,8 +159,8 @@ class Index extends Component
 
     public function loadNotificationSettings(): void
     {
-        $settings = SystemSetting::where('group', 'notification')->get()->pluck('value', 'key');
-        $this->notificationSettings = array_merge($this->notificationSettings, $settings->toArray());
+        $settings = app(\App\Services\SettingsService::class)->getGroup('notification');
+        $this->notificationSettings = array_merge($this->notificationSettings, $settings);
     }
 
     public function updateNotificationSettings(): void
@@ -946,8 +946,8 @@ class Index extends Component
 
     public function render()
     {
-        $users = User::with('organization')->latest()->paginate(10, pageName: 'users');
-        $roles = Role::orderBy('name')->get();
+        $users = User::with(['organization', 'roles'])->latest()->paginate(10, pageName: 'users');
+        $roles = Role::withCount('permissions')->orderBy('name')->get();
         $organizations = Organization::orderBy('name')->get();
         $agreements = ServiceAgreement::orderBy('name')->paginate(10, pageName: 'agreements');
         $categories = WorkOrderCategory::orderBy('name')->paginate(10, pageName: 'categories');
@@ -955,7 +955,7 @@ class Index extends Component
         $locations = InventoryLocation::orderBy('name')->paginate(10, pageName: 'locations');
         $priorityLevels = \App\Models\PriorityLevel::orderBy('sort_order')->get();
         $systemSettings = SystemSetting::orderBy('group')->orderBy('key')->get();
-        $equipmentCategories = EquipmentCategory::orderBy('name')->get();
+        $equipmentCategories = app(\App\Services\ReferenceDataService::class)->getAllEquipmentCategories();
         $automationRules = AutomationRule::orderBy('name')->get();
         $integrationSettings = IntegrationSetting::orderBy('provider')->orderBy('name')->get();
         $auditLogs = AuditLog::with('user')->latest()->limit(50)->get();

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, \App\Traits\Auditable;
 
     protected $fillable = [
         'invoice_number',
@@ -93,5 +93,10 @@ class Invoice extends Model
     public function paymentApplications()
     {
         return $this->hasMany(PaymentApplication::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->morphMany(AuditLog::class, 'subject');
     }
 }

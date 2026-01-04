@@ -364,7 +364,7 @@ class Index extends Component
         $this->applySort($query);
         $equipment = $query->paginate(10);
         $organizations = $isClient ? collect() : Organization::orderBy('name')->get();
-        $categories = EquipmentCategory::orderBy('name')->get();
+        $categories = app(\App\Services\ReferenceDataService::class)->getAllEquipmentCategories();
         $types = $this->availableTypes($user);
         $locations = $this->availableLocations($user);
 

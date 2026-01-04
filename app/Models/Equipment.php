@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class Equipment extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, \App\Traits\Auditable;
 
     public const STATUS_OPERATIONAL = 'operational';
     public const STATUS_NEEDS_ATTENTION = 'needs_attention';

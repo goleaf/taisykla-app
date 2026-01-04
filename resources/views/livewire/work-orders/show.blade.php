@@ -308,7 +308,7 @@
                                             <div class="grid grid-cols-2 gap-2">
                                                 @foreach ($photos as $photo)
                                                     <a href="{{ asset('storage/'.$photo->file_path) }}" target="_blank" rel="noreferrer">
-                                                        <img class="h-20 w-full rounded-md object-cover border border-gray-200" src="{{ asset('storage/'.$photo->file_path) }}" alt="{{ $photo->label ?? $label.' photo' }}" />
+                                                        <img class="h-20 w-full rounded-md object-cover border border-gray-200" src="{{ asset('storage/'.$photo->file_path) }}" alt="{{ $photo->label ?? $label.' photo' }}" loading="lazy" />
                                                     </a>
                                                 @endforeach
                                             </div>
