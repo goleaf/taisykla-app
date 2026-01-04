@@ -6,8 +6,10 @@ use App\Livewire\Dashboard;
 use App\Livewire\Equipment\Index as EquipmentIndex;
 use App\Livewire\Equipment\Show as EquipmentShow;
 use App\Livewire\Inventory\Index as InventoryIndex;
-use App\Livewire\KnowledgeBase\Index as KnowledgeBaseIndex;
+use App\Livewire\KnowledgeBase\Home as KnowledgeBaseHome;
+use App\Livewire\KnowledgeBase\ArticleList as KnowledgeBaseSearch;
 use App\Livewire\KnowledgeBase\Show as KnowledgeBaseShow;
+use App\Livewire\KnowledgeBase\Index as KnowledgeBaseManage; // Keep old index as admin/legacy for now, or just don't map it. Let's map it to /manage
 use App\Livewire\Messages\Index as MessagesIndex;
 use App\Livewire\Reports\Index as ReportsIndex;
 use App\Livewire\Schedule\Index as ScheduleIndex;
@@ -95,9 +97,15 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('billing/{invoice}/success', function (\App\Models\Invoice $invoice) {
         return view('billing.success', compact('invoice'));
     })->middleware('can:' . PermissionCatalog::BILLING_VIEW)->name('billing.payment-success');
-    Route::get('knowledge-base', KnowledgeBaseIndex::class)
+    Route::get('knowledge-base', KnowledgeBaseHome::class) // New Home Page
         ->middleware('can:' . PermissionCatalog::KNOWLEDGE_BASE_VIEW)
         ->name('knowledge-base.index');
+    Route::get('knowledge-base/search', KnowledgeBaseSearch::class) // New Search/List Page
+        ->middleware('can:' . PermissionCatalog::KNOWLEDGE_BASE_VIEW)
+        ->name('knowledge-base.search');
+    Route::get('knowledge-base/manage', KnowledgeBaseManage::class) // Old Index moved to Manage
+        ->middleware('can:' . PermissionCatalog::KNOWLEDGE_BASE_MANAGE)
+        ->name('knowledge-base.manage');
     Route::get('knowledge-base/{article:slug}', KnowledgeBaseShow::class)
         ->middleware('can:' . PermissionCatalog::KNOWLEDGE_BASE_VIEW)
         ->name('knowledge-base.show');
