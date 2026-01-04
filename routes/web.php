@@ -100,6 +100,11 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
         ->middleware('can:' . PermissionCatalog::WORK_ORDERS_VIEW)
         ->name('customer.track');
 
+    // Mobile Field Technician Interface
+    Route::get('mobile/field-tech', \App\Livewire\Mobile\FieldTechnician::class)
+        ->middleware('can:' . PermissionCatalog::WORK_ORDERS_VIEW)
+        ->name('mobile.field-tech');
+
     Route::view('profile', 'profile')->name('profile');
 });
 
