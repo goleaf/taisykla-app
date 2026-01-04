@@ -151,7 +151,7 @@ class Index extends Component
 
     public function startCreate(): void
     {
-        if (! $this->canManage) {
+        if (!$this->canManage) {
             return;
         }
 
@@ -162,7 +162,7 @@ class Index extends Component
 
     public function editEquipment(int $equipmentId): void
     {
-        if (! $this->canManage) {
+        if (!$this->canManage) {
             return;
         }
 
@@ -252,12 +252,12 @@ class Index extends Component
 
     public function saveEquipment(): void
     {
-        if (! $this->canManage) {
+        if (!$this->canManage) {
             return;
         }
 
         $user = auth()->user();
-        if (! $user) {
+        if (!$user) {
             return;
         }
 
@@ -328,12 +328,14 @@ class Index extends Component
 
         $query = $this->equipmentQueryFor($user)
             ->with(['organization', 'category'])
-            ->withMax(['workOrders as last_service_at' => function (Builder $builder) {
-                $builder->whereNotNull('completed_at')
-                    ->whereIn('status', ['completed', 'closed']);
-            }], 'completed_at');
+            ->withMax([
+                'workOrders as last_service_at' => function (Builder $builder) {
+                    $builder->whereNotNull('completed_at')
+                        ->whereIn('status', ['completed', 'closed']);
+                }
+            ], 'completed_at');
 
-        if (! $isClient && $this->organizationFilter !== '') {
+        if (!$isClient && $this->organizationFilter !== '') {
             $query->where('organization_id', $this->organizationFilter);
         }
 
@@ -383,7 +385,7 @@ class Index extends Component
     {
         $user = auth()->user();
 
-        if (! $user) {
+        if (!$user) {
             return false;
         }
 
@@ -392,7 +394,7 @@ class Index extends Component
 
     private function statusValues(): array
     {
-        return array_values(array_filter(array_keys($this->statusOptions), fn ($status) => $status !== 'all'));
+        return array_values(array_filter(array_keys($this->statusOptions), fn($status) => $status !== 'all'));
     }
 
     private function applySearch(Builder $query, string $search): void
@@ -482,7 +484,7 @@ class Index extends Component
             }
         });
 
-        if (! $hasScope) {
+        if (!$hasScope) {
             $query->whereRaw('1 = 0');
         }
 
@@ -511,11 +513,352 @@ class Index extends Component
 
     private function normalizeText(mixed $value): ?string
     {
-        if (! is_string($value)) {
+        if (!is_string($value)) {
             return null;
         }
 
         $value = trim($value);
         return $value === '' ? null : $value;
+    }
+
+    private function encodeJson(?array $data): string
+    {
+        return $data ? json_encode($data, JSON_PRETTY_PRINT) : '';
+    }
+
+    // ─── View Mode Methods ────────────────────────────────────────────
+
+    public function setViewMode(string $mode): void
+    {
+        if (in_array($mode, ['list', 'grid', 'location'])) {
+            $this->inventoryView = $mode;
+        }
+    }
+
+    // ─── Advanced Filter Methods ──────────────────────────────────────
+
+    public function updatedAgeFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedWarrantyFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedManufacturerFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedOwnerFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    private function applyAdvancedFilters(Builder $query): void
+    {
+        // Age filter (in years)
+        if ($this->ageFilter !== '') {
+            $years = (int) $this->ageFilter;
+            $cutoffDate = Carbon::today()->subYears($years);
+
+            match ($this->ageFilter) {
+                '1' => $query->where('purchase_date', '>=', Carbon::today()->subYear()),
+                '3' => $query->whereBetween('purchase_date', [Carbon::today()->subYears(3), Carbon::today()->subYear()]),
+                '5' => $query->whereBetween('purchase_date', [Carbon::today()->subYears(5), Carbon::today()->subYears(3)]),
+                '5+' => $query->where('purchase_date', '<', Carbon::today()->subYears(5)),
+                default => null,
+            };
+        }
+
+        // Warranty filter
+        if ($this->warrantyFilter !== '') {
+            match ($this->warrantyFilter) {
+                'active' => $query->whereHas('warranties', fn($q) => $q->where('ends_at', '>=', now())),
+                'expiring' => $query->whereHas('warranties', fn($q) => $q->whereBetween('ends_at', [now(), now()->addDays(30)])),
+                'expired' => $query->whereDoesntHave('warranties', fn($q) => $q->where('ends_at', '>=', now())),
+                'none' => $query->whereDoesntHave('warranties'),
+                default => null,
+            };
+        }
+
+        // Manufacturer filter
+        if ($this->manufacturerFilter !== '') {
+            $query->where(function ($q) {
+                $q->where('manufacturer', $this->manufacturerFilter)
+                    ->orWhereHas('manufacturer', fn($mq) => $mq->where('name', $this->manufacturerFilter));
+            });
+        }
+
+        // Owner filter
+        if ($this->ownerFilter !== '') {
+            $query->where('assigned_user_id', $this->ownerFilter);
+        }
+    }
+
+    private function getAvailableManufacturers(): array
+    {
+        return Equipment::query()
+            ->whereNotNull('manufacturer')
+            ->whereNot('manufacturer', '')
+            ->select('manufacturer')
+            ->distinct()
+            ->orderBy('manufacturer')
+            ->pluck('manufacturer')
+            ->toArray();
+    }
+
+    // ─── Bulk Actions ─────────────────────────────────────────────────
+
+    public function selectAll(): void
+    {
+        $user = auth()->user();
+        $this->selected = $this->equipmentQueryFor($user)
+            ->pluck('id')
+            ->map(fn($id) => (string) $id)
+            ->toArray();
+    }
+
+    public function deselectAll(): void
+    {
+        $this->selected = [];
+    }
+
+    public function toggleSelection(int $id): void
+    {
+        $key = (string) $id;
+        if (in_array($key, $this->selected)) {
+            $this->selected = array_values(array_diff($this->selected, [$key]));
+        } else {
+            $this->selected[] = $key;
+        }
+    }
+
+    public function executeBulkAction(): void
+    {
+        if (!$this->canManage || empty($this->selected)) {
+            return;
+        }
+
+        $user = auth()->user();
+        $ids = array_map('intval', $this->selected);
+
+        $equipment = $this->equipmentQueryFor($user)
+            ->whereIn('id', $ids)
+            ->get();
+
+        $updated = 0;
+
+        foreach ($equipment as $item) {
+            $changes = [];
+
+            if ($this->bulkAction === 'change_status' && $this->bulkStatus) {
+                $changes['status'] = $this->bulkStatus;
+            }
+
+            if ($this->bulkAction === 'change_location' && $this->bulkLocation !== '') {
+                $changes['location_name'] = $this->bulkLocation;
+            }
+
+            if ($this->bulkAction === 'change_owner' && $this->bulkOwner) {
+                $changes['assigned_user_id'] = $this->bulkOwner;
+            }
+
+            if (!empty($changes)) {
+                $item->update($changes);
+                $updated++;
+            }
+        }
+
+        $this->selected = [];
+        $this->bulkAction = '';
+        $this->bulkStatus = null;
+        $this->bulkLocation = '';
+        $this->bulkOwner = null;
+
+        session()->flash('status', "Updated {$updated} equipment items.");
+    }
+
+    // ─── Export ───────────────────────────────────────────────────────
+
+    public function exportCsv()
+    {
+        $user = auth()->user();
+        $query = $this->equipmentQueryFor($user)->with(['organization', 'category', 'manufacturer']);
+
+        // Apply current filters
+        if ($this->statusFilter !== 'all') {
+            $query->where('status', $this->statusFilter);
+        }
+        if ($this->categoryFilter !== '') {
+            $query->where('equipment_category_id', $this->categoryFilter);
+        }
+        if ($this->search !== '') {
+            $this->applySearch($query, $this->search);
+        }
+
+        // Use selected items if any
+        if (!empty($this->selected)) {
+            $ids = array_map('intval', $this->selected);
+            $query->whereIn('id', $ids);
+        }
+
+        $service = app(\App\Services\EquipmentImportExportService::class);
+        $csv = $service->exportToCsv($query->get());
+
+        $filename = 'equipment_export_' . now()->format('Y-m-d_His') . '.csv';
+
+        return response()->streamDownload(function () use ($csv) {
+            echo $csv;
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    // ─── Import ───────────────────────────────────────────────────────
+
+    public $importFile = null;
+    public array $importFieldMapping = [];
+    public array $importPreview = [];
+    public array $importResult = [];
+
+    public function openImport(): void
+    {
+        if (!$this->canManage) {
+            return;
+        }
+
+        $this->showImport = true;
+        $this->importFile = null;
+        $this->importFieldMapping = [];
+        $this->importPreview = [];
+        $this->importResult = [];
+    }
+
+    public function closeImport(): void
+    {
+        $this->showImport = false;
+        $this->importFile = null;
+        $this->importFieldMapping = [];
+        $this->importPreview = [];
+        $this->importResult = [];
+    }
+
+    public function updatedImportFile(): void
+    {
+        if (!$this->importFile) {
+            return;
+        }
+
+        // Read first few rows for preview
+        $handle = fopen($this->importFile->getRealPath(), 'r');
+        $headers = fgetcsv($handle);
+        $previewRows = [];
+
+        for ($i = 0; $i < 3 && ($row = fgetcsv($handle)) !== false; $i++) {
+            $previewRows[] = array_combine($headers, $row);
+        }
+
+        fclose($handle);
+
+        $this->importPreview = [
+            'headers' => $headers,
+            'rows' => $previewRows,
+        ];
+
+        // Auto-suggest field mapping
+        $service = app(\App\Services\EquipmentImportExportService::class);
+        $availableFields = $service->getAvailableImportFields();
+
+        foreach ($headers as $header) {
+            $normalizedHeader = strtolower(str_replace([' ', '-'], '_', $header));
+            foreach ($availableFields as $field => $config) {
+                if ($normalizedHeader === $field || str_contains($normalizedHeader, $field)) {
+                    $this->importFieldMapping[$header] = $field;
+                    break;
+                }
+            }
+        }
+    }
+
+    public function executeImport(): void
+    {
+        if (!$this->canManage || !$this->importFile) {
+            return;
+        }
+
+        $service = app(\App\Services\EquipmentImportExportService::class);
+
+        try {
+            $this->importResult = $service->importFromCsv(
+                $this->importFile,
+                $this->importFieldMapping,
+                auth()->id()
+            );
+
+            if ($this->importResult['imported'] > 0) {
+                session()->flash('status', sprintf(
+                    'Successfully imported %d equipment items.',
+                    $this->importResult['imported']
+                ));
+            }
+        } catch (\Exception $e) {
+            $this->importResult = [
+                'error' => $e->getMessage(),
+                'imported' => 0,
+                'skipped' => 0,
+            ];
+        }
+    }
+
+    public function downloadSampleCsv()
+    {
+        $service = app(\App\Services\EquipmentImportExportService::class);
+        $csv = $service->generateSampleCsv();
+
+        return response()->streamDownload(function () use ($csv) {
+            echo $csv;
+        }, 'equipment_import_template.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    // ─── Location Hierarchy ───────────────────────────────────────────
+
+    public function getLocationHierarchy(): array
+    {
+        $user = auth()->user();
+        $equipment = $this->equipmentQueryFor($user)
+            ->whereNotNull('location_building')
+            ->select('location_building', 'location_floor', 'location_room')
+            ->selectRaw('COUNT(*) as equipment_count')
+            ->groupBy('location_building', 'location_floor', 'location_room')
+            ->get();
+
+        $hierarchy = [];
+
+        foreach ($equipment as $item) {
+            $building = $item->location_building ?? 'Unknown';
+            $floor = $item->location_floor ?? 'Unknown';
+            $room = $item->location_room ?? 'Unknown';
+
+            if (!isset($hierarchy[$building])) {
+                $hierarchy[$building] = ['floors' => [], 'count' => 0];
+            }
+            if (!isset($hierarchy[$building]['floors'][$floor])) {
+                $hierarchy[$building]['floors'][$floor] = ['rooms' => [], 'count' => 0];
+            }
+            if (!isset($hierarchy[$building]['floors'][$floor]['rooms'][$room])) {
+                $hierarchy[$building]['floors'][$floor]['rooms'][$room] = 0;
+            }
+
+            $hierarchy[$building]['floors'][$floor]['rooms'][$room] += $item->equipment_count;
+            $hierarchy[$building]['floors'][$floor]['count'] += $item->equipment_count;
+            $hierarchy[$building]['count'] += $item->equipment_count;
+        }
+
+        return $hierarchy;
     }
 }
