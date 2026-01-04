@@ -1326,10 +1326,12 @@
                                             <span>{{ $tech['user']->name }}</span>
                                             <span class="text-xs text-slate-500">Nearest to zone {{ $loop->iteration }}</span>
                                         </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
+                                                @endforeach
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
                     </div>
                 </div>
 
@@ -1517,7 +1519,6 @@
                 </div>
                 @endif
             </div>
-        @endif
 
         @if ($roleKey === 'admin' && $adminData)
             @php
@@ -2319,7 +2320,7 @@
                         @endforeach
                     </div>
                 </div>
-            @endif
+            </div>
         @endif
 
         @if($dashboardPreferences['visible_sections']['main_content'] ?? true)

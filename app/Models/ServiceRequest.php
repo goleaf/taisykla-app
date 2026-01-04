@@ -21,12 +21,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $status
  * @property string|null $description
  * @property \Illuminate\Support\Carbon|null $scheduled_at
+ * @property \Illuminate\Support\Carbon|null $started_at
  * @property \Illuminate\Support\Carbon|null $completed_at
+ * @property float|null $estimated_hours
+ * @property float|null $actual_hours
  * @property float $estimated_cost
  * @property float $actual_cost
  * @property string $approval_status
  * @property int|null $approved_by
  * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property string|null $rejection_reason
+ * @property string|null $customer_notes
+ * @property string|null $technician_notes
+ * @property string|null $internal_notes
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -62,6 +69,13 @@ class ServiceRequest extends Model
     public const PRIORITY_URGENT = 'urgent';
 
     /**
+     * Approval Status Constants
+     */
+    public const APPROVAL_PENDING = 'pending';
+    public const APPROVAL_APPROVED = 'approved';
+    public const APPROVAL_REJECTED = 'rejected';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -74,12 +88,19 @@ class ServiceRequest extends Model
         'status',
         'description',
         'scheduled_at',
+        'started_at', // NEW
         'completed_at',
+        'estimated_hours', // NEW
+        'actual_hours', // NEW
         'estimated_cost',
         'actual_cost',
         'approval_status',
         'approved_by',
         'approved_at',
+        'rejection_reason', // NEW
+        'customer_notes', // NEW
+        'technician_notes', // NEW
+        'internal_notes', // NEW
     ];
 
     /**
@@ -89,10 +110,13 @@ class ServiceRequest extends Model
      */
     protected $casts = [
         'scheduled_at' => 'datetime',
+        'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'approved_at' => 'datetime',
         'estimated_cost' => 'decimal:2',
         'actual_cost' => 'decimal:2',
+        'estimated_hours' => 'decimal:2',
+        'actual_hours' => 'decimal:2',
     ];
 
     /**

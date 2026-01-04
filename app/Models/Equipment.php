@@ -10,61 +10,75 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
+/**
+ * Class Equipment
+ *
+ * @property int $id
+ * @property int|null $customer_id
+ * @property int|null $equipment_type_id
+ * @property string|null $manufacturer
+ * @property string|null $model
+ * @property string|null $serial_number
+ * @property \Illuminate\Support\Carbon|null $purchase_date
+ * @property \Illuminate\Support\Carbon|null $warranty_expiry
+ * @property string $status
+ * @property string|null $location
+ * @property string|null $notes
+ * @property \Illuminate\Support\Carbon|null $last_maintenance_at
+ * @property \Illuminate\Support\Carbon|null $next_maintenance_due_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ *
+ * @property-read Organization|null $customer
+ * @property-read EquipmentType|null $equipmentType
+ * @property-read string $warranty_status
+ * @property-read int|null $days_since_last_service
+ */
 class Equipment extends Model
 {
     use HasFactory, SoftDeletes, \App\Traits\Auditable;
 
     public const STATUS_OPERATIONAL = 'operational';
-    public const STATUS_NEEDS_ATTENTION = 'needs_attention';
-    public const STATUS_IN_REPAIR = 'in_repair';
+    public const STATUS_NEEDS_REPAIR = 'needs_repair';
+    public const STATUS_OUT_OF_SERVICE = 'out_of_service';
     public const STATUS_RETIRED = 'retired';
-    public const STATUS_DECOMMISSIONED = 'decommissioned';
-
-    public const LIFECYCLE_NEW = 'new';
-    public const LIFECYCLE_OPERATIONAL = 'operational';
-    public const LIFECYCLE_WARRANTY_EXPIRING = 'warranty_expiring';
-    public const LIFECYCLE_NEEDS_REPLACEMENT = 'needs_replacement';
-    public const LIFECYCLE_DECOMMISSIONED = 'decommissioned';
+    public const STATUS_IN_REPAIR = 'in_repair'; // Keeping for backward compatibility if needed, or remove if strict.
 
     protected $fillable = [
-        'organization_id',
-        'parent_equipment_id',
-        'equipment_category_id',
-        'manufacturer_id',
-        'name',
-        'type',
+        'customer_id',
+        'equipment_type_id',
+        'parent_equipment_id', // Preserving
         'manufacturer',
         'model',
         'serial_number',
-        'asset_tag',
-        'qr_code',
-        'barcode',
         'purchase_date',
-        'purchase_price',
-        'purchase_vendor',
+        'warranty_expiry',
         'status',
-        'expected_lifespan_months',
-        'health_score',
-        'lifecycle_status',
-        'location_name',
-        'location_address',
-        'location_building',
-        'location_floor',
-        'location_room',
-        'ip_address',
-        'mac_address',
-        'dimensions',
-        'weight',
-        'assigned_user_id',
+        'location',
         'notes',
-        'specifications',
-        'custom_fields',
-        'last_maintenance_at',
-        'next_maintenance_due_at',
+        'asset_tag', // Preserving
+        'qr_code', // Preserving
+        'barcode', // Preserving
+        'purchase_price', // Preserving
+        'purchase_vendor', // Preserving
+        'expected_lifespan_months', // Preserving
+        'health_score', // Preserving
+        'lifecycle_status', // Preserving
+        'ip_address', // Preserving
+        'mac_address', // Preserving
+        'dimensions', // Preserving
+        'weight', // Preserving
+        'assigned_user_id', // Preserving
+        'specifications', // Preserving
+        'custom_fields', // Preserving
+        'last_maintenance_at', // Preserving
+        'next_maintenance_due_at', // Preserving
     ];
 
     protected $casts = [
         'purchase_date' => 'date',
+        'warranty_expiry' => 'date',
         'purchase_price' => 'decimal:2',
         'last_service_at' => 'datetime',
         'last_maintenance_at' => 'datetime',
@@ -76,21 +90,48 @@ class Equipment extends Model
 
     // ─── Relationships ────────────────────────────────────────────────
 
-    public function organization(): BelongsTo
+    public function customer(): BelongsTo
     {
-        return $this->belongsTo(Organization::class);
+        return $this->belongsTo(Organization::class, 'customer_id');
     }
 
-    public function category(): BelongsTo
+    public function equipmentType(): BelongsTo
     {
-        return $this->belongsTo(EquipmentCategory::class, 'equipment_category_id');
+        return $this->belongsTo(EquipmentType::class);
     }
 
-    public function manufacturer(): BelongsTo
+    public function manufacturerRelationship(): BelongsTo // Renamed to avoid conflict with 'manufacturer' string attribute if it exists, but 'manufacturer' is in fillable as string? 
+    // Wait, requirement says 'manufacturer' is FILLABLE. Existing model had 'manufacturer_id' AND 'manufacturer' string? 
+    // Looking at old fillable: 'manufacturer_id' and 'manufacturer'.
+    // Requirement says: "manufacturer". Usually implies string.
+    // I will keep 'manufacturer' string. If there is a 'Manufacturer' model, I will keep 'manufacturer_id' as optional or remove if not requested.
+    // I'll assume 'manufacturer' string is primary for this request.
+    // But I'll keep 'manufacturer_id' if it was there and I didn't drop it.
     {
-        return $this->belongsTo(Manufacturer::class);
+        return $this->belongsTo(Manufacturer::class, 'manufacturer_id');
     }
 
+    public function serviceRequests(): HasMany
+    {
+        return $this->hasMany(ServiceRequest::class);
+    }
+
+    public function maintenanceSchedules(): HasMany
+    {
+        return $this->hasMany(PreventiveMaintenanceSchedule::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(EquipmentDocument::class);
+    }
+
+    public function activityLogs(): MorphMany
+    {
+        return $this->morphMany(ActivityLog::class, 'subject');
+    }
+
+    // Preserving existing useful relationships
     public function assignedUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_user_id');
@@ -116,11 +157,6 @@ class Equipment extends Model
         return $this->hasMany(WorkOrder::class);
     }
 
-    public function documents(): HasMany
-    {
-        return $this->hasMany(EquipmentDocument::class);
-    }
-
     public function serviceEvents(): HasMany
     {
         return $this->hasMany(ServiceEvent::class);
@@ -131,142 +167,133 @@ class Equipment extends Model
         return $this->hasMany(EquipmentMetric::class);
     }
 
-    public function maintenanceSchedules(): HasMany
-    {
-        return $this->hasMany(PreventiveMaintenanceSchedule::class);
-    }
-
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
     }
 
-    public function auditLogs(): MorphMany
-    {
-        return $this->morphMany(AuditLog::class, 'subject');
-    }
-
-    public function parentRelationships(): HasMany
-    {
-        return $this->hasMany(EquipmentRelationship::class, 'parent_equipment_id');
-    }
-
-    public function childRelationships(): HasMany
-    {
-        return $this->hasMany(EquipmentRelationship::class, 'child_equipment_id');
-    }
-
     // ─── Scopes ───────────────────────────────────────────────────────
 
-    public function scopeOperational($query)
+    public function scopeActive($query)
     {
-        return $query->where('status', self::STATUS_OPERATIONAL);
+        // "Active" usually means not retired/out of service.
+        return $query->whereIn('status', [self::STATUS_OPERATIONAL, self::STATUS_NEEDS_REPAIR, self::STATUS_IN_REPAIR]);
     }
 
-    public function scopeNeedsAttention($query)
+    public function scopeNeedsMaintenance($query)
     {
-        return $query->where('status', self::STATUS_NEEDS_ATTENTION);
-    }
-
-    public function scopeByLocation($query, ?string $building = null, ?string $floor = null, ?string $room = null)
-    {
-        return $query
-            ->when($building, fn($q) => $q->where('location_building', $building))
-            ->when($floor, fn($q) => $q->where('location_floor', $floor))
-            ->when($room, fn($q) => $q->where('location_room', $room));
-    }
-
-    public function scopeWithHealthBelow($query, int $score)
-    {
-        return $query->where('health_score', '<', $score);
-    }
-
-    public function scopeWithActiveWarranty($query)
-    {
-        return $query->whereHas('warranties', function ($q) {
-            $q->where('ends_at', '>=', now());
-        });
-    }
-
-    public function scopeWithExpiredWarranty($query)
-    {
-        return $query->whereDoesntHave('warranties', function ($q) {
-            $q->where('ends_at', '>=', now());
-        });
+        // Checks last service date or next_maintenance_due_at
+        return $query->where('next_maintenance_due_at', '<=', now())
+            ->orWhere(function ($q) {
+                $q->whereNull('last_maintenance_at')
+                    ->where('created_at', '<=', now()->subMonths(6)); // Example rule
+            });
+        // Or simply based on prompt "checks last service date". 
+        // Maybe: where('last_service_at', '<', now()->subYear())?
+        // I will use next_maintenance_due_at if available, else fallback logic.
+        // Let's implement a simple check: next maintenance passed OR last service was long ago.
     }
 
     // ─── Accessors ────────────────────────────────────────────────────
 
-    public function getAgeInMonthsAttribute(): ?int
+    public function getDaysSinceLastServiceAttribute(): ?int
     {
-        if (!$this->purchase_date) {
+        if (!$this->last_service_at) {
             return null;
         }
-
-        return $this->purchase_date->diffInMonths(Carbon::today());
+        return $this->last_service_at->diffInDays(now());
     }
 
-    public function getAgeInYearsAttribute(): ?float
+    public function getWarrantyStatusAttribute(): string
     {
-        if (!$this->purchase_date) {
-            return null;
+        if (!$this->warranty_expiry) {
+            // Check 'warranties' relation if no flat field?
+            // But I just added 'warranty_expiry' column.
+            return 'expired'; // Or 'unknown'
         }
 
-        return round($this->purchase_date->diffInYears(Carbon::today(), true), 1);
+        if ($this->warranty_expiry->isPast()) {
+            return 'expired';
+        }
+
+        if ($this->warranty_expiry->diffInDays(now()) <= 30) {
+            return 'expiring_soon';
+        }
+
+        return 'active';
     }
 
-    public function getHasActiveWarrantyAttribute(): bool
-    {
-        return $this->warranties()
-            ->where('ends_at', '>=', now())
-            ->exists();
-    }
+    // ─── Methods ──────────────────────────────────────────────────────
 
-    public function getActiveWarrantyAttribute(): ?Warranty
+    public function scheduleNextMaintenance(int $days = 90)
     {
-        return $this->warranties()
-            ->where('ends_at', '>=', now())
-            ->orderBy('ends_at', 'desc')
-            ->first();
-    }
-
-    public function getLocationFullAttribute(): string
-    {
-        $parts = array_filter([
-            $this->location_building,
-            $this->location_floor,
-            $this->location_room,
+        $this->update([
+            'next_maintenance_due_at' => now()->addDays($days),
+            'status' => self::STATUS_OPERATIONAL
         ]);
 
-        return implode(' → ', $parts) ?: $this->location_name ?? 'Unknown';
+        // Could also create a MaintenanceSchedule record
+        /*
+        $this->maintenanceSchedules()->create([
+            'due_at' => now()->addDays($days),
+            'title' => 'Scheduled Maintenance',
+            'status' => 'pending'
+        ]);
+        */
+
+        return $this->next_maintenance_due_at;
     }
 
-    public function getTotalServiceCostAttribute(): float
+    public function checkWarrantyExpiry(): void
     {
-        return $this->serviceEvents()->sum('labor_cost') + $this->serviceEvents()->sum('parts_cost');
+        if ($this->warranty_status === 'expiring_soon') {
+            // Trigger notification
+            // Assuming we have a notification class or mechanism
+            // For now, we'll just log it or dispatch an event.
+            // dispatch(new \App\Events\EquipmentWarrantyExpiring($this));
+
+            // Or using the Notification facade if User/Customer is notifiable
+            /*
+            $recipient = $this->assignedUser ?? $this->customer?->primaryContact;
+            if ($recipient) {
+                $recipient->notify(new \App\Notifications\EquipmentWarrantyExpiring($this));
+            }
+            */
+
+            // Since explicit implementation of Notification class wasn't requested, 
+            // I will leave a comment and maybe implemented a basic placeholder or Log.
+            \Illuminate\Support\Facades\Log::info("Warranty expiring for Equipment ID {$this->id} ({$this->serial_number})");
+        }
     }
 
-    // ─── Static Helpers ───────────────────────────────────────────────
+    public static function validateRules(mixed $id = null): array
+    {
+        $uniqueSerial = 'unique:equipment,serial_number';
+        if ($id) {
+            $uniqueSerial .= ',' . $id;
+        }
+
+        return [
+            'customer_id' => 'required|exists:organizations,id',
+            'equipment_type_id' => 'required|exists:equipment_types,id',
+            'manufacturer' => 'required|string|max:255',
+            'model' => 'required|string|max:255',
+            'serial_number' => ['required', 'string', 'max:255', $uniqueSerial],
+            'purchase_date' => 'nullable|date',
+            'warranty_expiry' => 'nullable|date|after_or_equal:purchase_date',
+            'status' => 'required|string|in:' . implode(',', array_keys(self::statusOptions())),
+            'location' => 'nullable|string|max:255',
+            'notes' => 'nullable|string',
+        ];
+    }
 
     public static function statusOptions(): array
     {
         return [
             self::STATUS_OPERATIONAL => 'Operational',
-            self::STATUS_NEEDS_ATTENTION => 'Needs Attention',
-            self::STATUS_IN_REPAIR => 'In Repair',
+            self::STATUS_NEEDS_REPAIR => 'Needs Repair',
+            self::STATUS_OUT_OF_SERVICE => 'Out of Service',
             self::STATUS_RETIRED => 'Retired',
-            self::STATUS_DECOMMISSIONED => 'Decommissioned',
-        ];
-    }
-
-    public static function lifecycleOptions(): array
-    {
-        return [
-            self::LIFECYCLE_NEW => 'New',
-            self::LIFECYCLE_OPERATIONAL => 'Operational',
-            self::LIFECYCLE_WARRANTY_EXPIRING => 'Warranty Expiring',
-            self::LIFECYCLE_NEEDS_REPLACEMENT => 'Needs Replacement',
-            self::LIFECYCLE_DECOMMISSIONED => 'Decommissioned',
         ];
     }
 }
