@@ -20,7 +20,7 @@ class EquipmentFactory extends Factory
         $types = ['Printer', 'Laptop', 'Desktop', 'Server', 'Router', 'Switch'];
 
         return [
-            'organization_id' => \App\Models\Organization::factory(),
+            'customer_id' => \App\Models\Organization::factory(),
             'name' => fake()->words(3, true),
             'type' => fake()->randomElement($types),
             'manufacturer' => fake()->randomElement($manufacturers),
