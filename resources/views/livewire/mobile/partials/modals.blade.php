@@ -30,8 +30,9 @@
                     Cancel
                 </button>
                 <button wire:click="sendEmergencyAlert"
-                    class="flex-1 touch-target py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition">
-                    Send Alert
+                    class="flex-1 touch-target py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition disabled:opacity-50" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="sendEmergencyAlert">Send Alert</span>
+                    <span wire:loading wire:target="sendEmergencyAlert">Sending...</span>
                 </button>
             </div>
         </div>
@@ -79,8 +80,9 @@
                     Cancel
                 </button>
                 <button wire:click="submitPartsRequest"
-                    class="flex-1 touch-target py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition">
-                    Submit Request
+                    class="flex-1 touch-target py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition disabled:opacity-50" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="submitPartsRequest">Submit Request</span>
+                    <span wire:loading wire:target="submitPartsRequest">Submitting...</span>
                 </button>
             </div>
         </div>

@@ -277,7 +277,7 @@ class Index extends Component
         }
 
         $this->validate([
-            'newRole.name' => ['required', 'string', 'max:255', 'unique:roles,name'],
+            'newRole.name' => ['required', 'string', 'min:2', 'max:100', 'alpha_dash:ascii', 'unique:roles,name'],
         ]);
 
         Role::create(['name' => $this->newRole['name'], 'guard_name' => 'web']);
@@ -294,11 +294,11 @@ class Index extends Component
         }
 
         $this->validate([
-            'newPriority.name' => ['required', 'string', 'max:255'],
-            'newPriority.color' => ['required', 'string', 'max:50'],
-            'newPriority.response_time_minutes' => ['nullable', 'integer', 'min:0'],
-            'newPriority.resolution_time_minutes' => ['nullable', 'integer', 'min:0'],
-            'newPriority.description' => ['nullable', 'string'],
+            'newPriority.name' => ['required', 'string', 'min:2', 'max:100'],
+            'newPriority.color' => ['required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
+            'newPriority.response_time_minutes' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'newPriority.resolution_time_minutes' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'newPriority.description' => ['nullable', 'string', 'max:1000'],
         ]);
 
         \App\Models\PriorityLevel::create($this->newPriority);
@@ -515,14 +515,14 @@ class Index extends Component
         }
 
         $this->validate([
-            'companyProfile.name' => ['nullable', 'string', 'max:255'],
+            'companyProfile.name' => ['nullable', 'string', 'min:2', 'max:255'],
             'companyProfile.address' => ['nullable', 'string', 'max:500'],
             'companyProfile.support_email' => ['nullable', 'email', 'max:255'],
             'companyProfile.support_phone' => ['nullable', 'string', 'max:50'],
-            'companyProfile.website' => ['nullable', 'string', 'max:255'],
+            'companyProfile.website' => ['nullable', 'url', 'max:255'],
             'companyProfile.hours' => ['nullable', 'string', 'max:255'],
-            'companyProfile.logo_url' => ['nullable', 'string', 'max:255'],
-            'companyProfile.primary_color' => ['nullable', 'string', 'max:50'],
+            'companyProfile.logo_url' => ['nullable', 'url', 'max:500'],
+            'companyProfile.primary_color' => ['nullable', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
         ]);
 
         foreach ($this->companyProfile as $key => $value) {
@@ -581,42 +581,46 @@ class Index extends Component
         }
 
         $this->validate([
-            'newUser.name' => ['required', 'string', 'max:255'],
+            'newUser.name' => ['required', 'string', 'min:2', 'max:255'],
             'newUser.email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'newUser.roles' => ['required', 'array', 'min:1'],
             'newUser.roles.*' => ['required', 'string', 'exists:roles,name'],
-            'newUser.organization_id' => ['nullable', 'exists:organizations,id'],
+            'newUser.organization_id' => ['nullable', 'integer', 'exists:organizations,id'],
             'newUser.phone' => ['nullable', 'string', 'max:50'],
             'newUser.job_title' => ['nullable', 'string', 'max:255'],
             'newUser.department' => ['nullable', 'string', 'max:255'],
             'newUser.employee_id' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $password = Str::random(32);
-        $user = User::create([
-            'name' => $this->newUser['name'],
-            'email' => $this->newUser['email'],
-            'password' => Hash::make($password),
-            'organization_id' => $this->newUser['organization_id'],
-            'phone' => $this->newUser['phone'] ?: null,
-            'job_title' => $this->newUser['job_title'] ?: null,
-            'department' => $this->newUser['department'] ?: null,
-            'employee_id' => $this->newUser['employee_id'] ?: null,
-            'is_active' => true,
-            'must_change_password' => true,
-        ]);
+        try {
+            $password = Str::random(32);
+            $user = User::create([
+                'name' => $this->newUser['name'],
+                'email' => $this->newUser['email'],
+                'password' => Hash::make($password),
+                'organization_id' => $this->newUser['organization_id'],
+                'phone' => $this->newUser['phone'] ?: null,
+                'job_title' => $this->newUser['job_title'] ?: null,
+                'department' => $this->newUser['department'] ?: null,
+                'employee_id' => $this->newUser['employee_id'] ?: null,
+                'is_active' => true,
+                'must_change_password' => true,
+            ]);
 
-        $user->syncRoles($this->newUser['roles']);
+            $user->syncRoles($this->newUser['roles']);
 
-        $user->passwordHistories()->create(['password_hash' => $user->password]);
+            $user->passwordHistories()->create(['password_hash' => $user->password]);
 
-        $token = Password::createToken($user);
-        $resetUrl = route('password.reset', ['token' => $token, 'email' => $user->email]);
-        $user->notify(new FirstLoginNotification($resetUrl));
+            $token = Password::createToken($user);
+            $resetUrl = route('password.reset', ['token' => $token, 'email' => $user->email]);
+            $user->notify(new FirstLoginNotification($resetUrl));
 
-        session()->flash('status', 'User created. Password setup email sent.');
-        $this->resetNewUser();
-        $this->showUserCreate = false;
+            session()->flash('status', 'User created. Password setup email sent.');
+            $this->resetNewUser();
+            $this->showUserCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create user: ' . $e->getMessage());
+        }
     }
 
     public function createAgreement(): void
@@ -626,17 +630,21 @@ class Index extends Component
         }
 
         $this->validate([
-            'newAgreement.name' => ['required', 'string', 'max:255'],
+            'newAgreement.name' => ['required', 'string', 'min:2', 'max:255'],
             'newAgreement.agreement_type' => ['required', 'string', 'max:50'],
-            'newAgreement.monthly_fee' => ['required', 'numeric', 'min:0'],
-            'newAgreement.response_time_minutes' => ['nullable', 'integer', 'min:0'],
-            'newAgreement.resolution_time_minutes' => ['nullable', 'integer', 'min:0'],
+            'newAgreement.monthly_fee' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'newAgreement.response_time_minutes' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'newAgreement.resolution_time_minutes' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ]);
 
-        ServiceAgreement::create($this->newAgreement);
-        session()->flash('status', 'Service agreement created.');
-        $this->resetNewAgreement();
-        $this->showAgreementCreate = false;
+        try {
+            ServiceAgreement::create($this->newAgreement);
+            session()->flash('status', 'Service agreement created.');
+            $this->resetNewAgreement();
+            $this->showAgreementCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create agreement: ' . $e->getMessage());
+        }
     }
 
     public function createCategory(): void
@@ -646,14 +654,18 @@ class Index extends Component
         }
 
         $this->validate([
-            'newCategory.name' => ['required', 'string', 'max:255'],
-            'newCategory.default_estimated_minutes' => ['nullable', 'integer', 'min:0'],
+            'newCategory.name' => ['required', 'string', 'min:2', 'max:255'],
+            'newCategory.default_estimated_minutes' => ['nullable', 'integer', 'min:0', 'max:10000'],
         ]);
 
-        WorkOrderCategory::create($this->newCategory);
-        session()->flash('status', 'Work category created.');
-        $this->resetNewCategory();
-        $this->showCategoryCreate = false;
+        try {
+            WorkOrderCategory::create($this->newCategory);
+            session()->flash('status', 'Work category created.');
+            $this->resetNewCategory();
+            $this->showCategoryCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create category: ' . $e->getMessage());
+        }
     }
 
     public function createTemplate(): void
@@ -663,24 +675,28 @@ class Index extends Component
         }
 
         $this->validate([
-            'newTemplate.name' => ['required', 'string', 'max:255'],
-            'newTemplate.channel' => ['required', 'string', 'max:50'],
+            'newTemplate.name' => ['required', 'string', 'min:2', 'max:255'],
+            'newTemplate.channel' => ['required', 'string', Rule::in(['email', 'sms', 'push'])],
             'newTemplate.subject' => ['nullable', 'string', 'max:255'],
-            'newTemplate.body' => ['required', 'string'],
+            'newTemplate.body' => ['required', 'string', 'min:1', 'max:10000'],
         ]);
 
-        CommunicationTemplate::create([
-            'name' => $this->newTemplate['name'],
-            'channel' => $this->newTemplate['channel'],
-            'subject' => $this->newTemplate['subject'],
-            'body' => $this->newTemplate['body'],
-            'is_active' => $this->newTemplate['is_active'],
-            'created_by_user_id' => auth()->id(),
-        ]);
+        try {
+            CommunicationTemplate::create([
+                'name' => $this->newTemplate['name'],
+                'channel' => $this->newTemplate['channel'],
+                'subject' => $this->newTemplate['subject'],
+                'body' => $this->newTemplate['body'],
+                'is_active' => $this->newTemplate['is_active'],
+                'created_by_user_id' => auth()->id(),
+            ]);
 
-        session()->flash('status', 'Template created.');
-        $this->resetNewTemplate();
-        $this->showTemplateCreate = false;
+            session()->flash('status', 'Template created.');
+            $this->resetNewTemplate();
+            $this->showTemplateCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create template: ' . $e->getMessage());
+        }
     }
 
     public function createLocation(): void
@@ -690,15 +706,19 @@ class Index extends Component
         }
 
         $this->validate([
-            'newLocation.name' => ['required', 'string', 'max:255'],
+            'newLocation.name' => ['required', 'string', 'min:2', 'max:255'],
             'newLocation.address' => ['nullable', 'string', 'max:1000'],
-            'newLocation.notes' => ['nullable', 'string'],
+            'newLocation.notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        InventoryLocation::create($this->newLocation);
-        session()->flash('status', 'Inventory location created.');
-        $this->resetNewLocation();
-        $this->showLocationCreate = false;
+        try {
+            InventoryLocation::create($this->newLocation);
+            session()->flash('status', 'Inventory location created.');
+            $this->resetNewLocation();
+            $this->showLocationCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create location: ' . $e->getMessage());
+        }
     }
 
     public function createSetting(): void
@@ -708,34 +728,38 @@ class Index extends Component
         }
 
         $this->validate([
-            'newSetting.group' => ['required', 'string', 'max:50'],
-            'newSetting.key' => ['required', 'string', 'max:100'],
+            'newSetting.group' => ['required', 'string', 'max:50', 'alpha_dash:ascii'],
+            'newSetting.key' => ['required', 'string', 'max:100', 'alpha_dash:ascii'],
         ]);
 
-        $value = $this->parseSettingValue($this->newSetting['value']);
+        try {
+            $value = $this->parseSettingValue($this->newSetting['value']);
 
-        SystemSetting::updateOrCreate(
-            ['group' => $this->newSetting['group'], 'key' => $this->newSetting['key']],
-            ['value' => $value]
-        );
-
-        $setting = SystemSetting::where('group', $this->newSetting['group'])
-            ->where('key', $this->newSetting['key'])
-            ->first();
-
-        if ($setting) {
-            app(AuditLogger::class)->log(
-                'setting.updated',
-                $setting,
-                'System setting saved.',
-                ['group' => $setting->group, 'key' => $setting->key]
+            SystemSetting::updateOrCreate(
+                ['group' => $this->newSetting['group'], 'key' => $this->newSetting['key']],
+                ['value' => $value]
             );
-        }
 
-        session()->flash('status', 'System setting saved.');
-        $this->resetNewSetting();
-        $this->loadSettingValues();
-        $this->showSettingCreate = false;
+            $setting = SystemSetting::where('group', $this->newSetting['group'])
+                ->where('key', $this->newSetting['key'])
+                ->first();
+
+            if ($setting) {
+                app(AuditLogger::class)->log(
+                    'setting.updated',
+                    $setting,
+                    'System setting saved.',
+                    ['group' => $setting->group, 'key' => $setting->key]
+                );
+            }
+
+            session()->flash('status', 'System setting saved.');
+            $this->resetNewSetting();
+            $this->loadSettingValues();
+            $this->showSettingCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to save setting: ' . $e->getMessage());
+        }
     }
 
     public function updateSetting(int $settingId): void
@@ -744,19 +768,23 @@ class Index extends Component
             return;
         }
 
-        $setting = SystemSetting::findOrFail($settingId);
-        $value = $this->parseSettingValue($this->settingValues[$settingId] ?? '');
-        $setting->update(['value' => $value]);
+        try {
+            $setting = SystemSetting::findOrFail($settingId);
+            $value = $this->parseSettingValue($this->settingValues[$settingId] ?? '');
+            $setting->update(['value' => $value]);
 
-        app(AuditLogger::class)->log(
-            'setting.updated',
-            $setting,
-            'System setting updated.',
-            ['group' => $setting->group, 'key' => $setting->key]
-        );
+            app(AuditLogger::class)->log(
+                'setting.updated',
+                $setting,
+                'System setting updated.',
+                ['group' => $setting->group, 'key' => $setting->key]
+            );
 
-        session()->flash('status', 'Setting updated.');
-        $this->loadSettingValues();
+            session()->flash('status', 'Setting updated.');
+            $this->loadSettingValues();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to update setting: ' . $e->getMessage());
+        }
     }
 
     public function createEquipmentCategory(): void
@@ -766,25 +794,29 @@ class Index extends Component
         }
 
         $this->validate([
-            'newEquipmentCategory.name' => ['required', 'string', 'max:255'],
-            'newEquipmentCategory.description' => ['nullable', 'string'],
+            'newEquipmentCategory.name' => ['required', 'string', 'min:2', 'max:255'],
+            'newEquipmentCategory.description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        EquipmentCategory::create($this->newEquipmentCategory);
+        try {
+            EquipmentCategory::create($this->newEquipmentCategory);
 
-        $category = EquipmentCategory::where('name', $this->newEquipmentCategory['name'])->latest('id')->first();
-        if ($category) {
-            app(AuditLogger::class)->log(
-                'equipment_category.created',
-                $category,
-                'Equipment category created.',
-                ['name' => $category->name]
-            );
+            $category = EquipmentCategory::where('name', $this->newEquipmentCategory['name'])->latest('id')->first();
+            if ($category) {
+                app(AuditLogger::class)->log(
+                    'equipment_category.created',
+                    $category,
+                    'Equipment category created.',
+                    ['name' => $category->name]
+                );
+            }
+
+            session()->flash('status', 'Equipment category created.');
+            $this->resetNewEquipmentCategory();
+            $this->showEquipmentCategoryCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create equipment category: ' . $e->getMessage());
         }
-
-        session()->flash('status', 'Equipment category created.');
-        $this->resetNewEquipmentCategory();
-        $this->showEquipmentCategoryCreate = false;
     }
 
     public function createAutomationRule(): void
@@ -794,31 +826,35 @@ class Index extends Component
         }
 
         $this->validate([
-            'newAutomation.name' => ['required', 'string', 'max:255'],
-            'newAutomation.trigger' => ['required', 'string', 'max:100'],
+            'newAutomation.name' => ['required', 'string', 'min:2', 'max:255'],
+            'newAutomation.trigger' => ['required', 'string', 'max:100', 'alpha_dash:ascii'],
         ]);
 
-        AutomationRule::create([
-            'name' => $this->newAutomation['name'],
-            'trigger' => $this->newAutomation['trigger'],
-            'conditions' => $this->decodeJsonField($this->newAutomation['conditions']),
-            'actions' => $this->decodeJsonField($this->newAutomation['actions']),
-            'is_active' => (bool) $this->newAutomation['is_active'],
-        ]);
+        try {
+            AutomationRule::create([
+                'name' => $this->newAutomation['name'],
+                'trigger' => $this->newAutomation['trigger'],
+                'conditions' => $this->decodeJsonField($this->newAutomation['conditions']),
+                'actions' => $this->decodeJsonField($this->newAutomation['actions']),
+                'is_active' => (bool) $this->newAutomation['is_active'],
+            ]);
 
-        $rule = AutomationRule::where('name', $this->newAutomation['name'])->latest('id')->first();
-        if ($rule) {
-            app(AuditLogger::class)->log(
-                'automation_rule.created',
-                $rule,
-                'Automation rule created.',
-                ['trigger' => $rule->trigger]
-            );
+            $rule = AutomationRule::where('name', $this->newAutomation['name'])->latest('id')->first();
+            if ($rule) {
+                app(AuditLogger::class)->log(
+                    'automation_rule.created',
+                    $rule,
+                    'Automation rule created.',
+                    ['trigger' => $rule->trigger]
+                );
+            }
+
+            session()->flash('status', 'Automation rule created.');
+            $this->resetNewAutomation();
+            $this->showAutomationCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create automation rule: ' . $e->getMessage());
         }
-
-        session()->flash('status', 'Automation rule created.');
-        $this->resetNewAutomation();
-        $this->showAutomationCreate = false;
     }
 
     public function createIntegrationSetting(): void
@@ -828,34 +864,38 @@ class Index extends Component
         }
 
         $this->validate([
-            'newIntegration.provider' => ['required', 'string', 'max:100'],
+            'newIntegration.provider' => ['required', 'string', 'max:100', 'alpha_dash:ascii'],
             'newIntegration.name' => ['nullable', 'string', 'max:255'],
         ]);
 
-        IntegrationSetting::create([
-            'provider' => $this->newIntegration['provider'],
-            'name' => $this->newIntegration['name'],
-            'config' => $this->decodeJsonField($this->newIntegration['config']),
-            'is_active' => (bool) $this->newIntegration['is_active'],
-        ]);
+        try {
+            IntegrationSetting::create([
+                'provider' => $this->newIntegration['provider'],
+                'name' => $this->newIntegration['name'],
+                'config' => $this->decodeJsonField($this->newIntegration['config']),
+                'is_active' => (bool) $this->newIntegration['is_active'],
+            ]);
 
-        $integration = IntegrationSetting::where('provider', $this->newIntegration['provider'])
-            ->where('name', $this->newIntegration['name'])
-            ->latest('id')
-            ->first();
+            $integration = IntegrationSetting::where('provider', $this->newIntegration['provider'])
+                ->where('name', $this->newIntegration['name'])
+                ->latest('id')
+                ->first();
 
-        if ($integration) {
-            app(AuditLogger::class)->log(
-                'integration_setting.created',
-                $integration,
-                'Integration setting saved.',
-                ['provider' => $integration->provider]
-            );
+            if ($integration) {
+                app(AuditLogger::class)->log(
+                    'integration_setting.created',
+                    $integration,
+                    'Integration setting saved.',
+                    ['provider' => $integration->provider]
+                );
+            }
+
+            session()->flash('status', 'Integration setting saved.');
+            $this->resetNewIntegration();
+            $this->showIntegrationCreate = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to save integration: ' . $e->getMessage());
         }
-
-        session()->flash('status', 'Integration setting saved.');
-        $this->resetNewIntegration();
-        $this->showIntegrationCreate = false;
     }
 
     private function decodeJsonField(?string $value): ?array
@@ -894,16 +934,20 @@ class Index extends Component
             return;
 
         $this->validate([
-            'customFieldForm.entity_type' => ['required', 'string'],
-            'customFieldForm.label' => ['required', 'string', 'max:255'],
-            'customFieldForm.key' => ['required', 'string', 'max:100', 'unique:custom_fields,key'],
-            'customFieldForm.type' => ['required', 'string'],
+            'customFieldForm.entity_type' => ['required', 'string', Rule::in(['work_order', 'equipment', 'organization', 'user'])],
+            'customFieldForm.label' => ['required', 'string', 'min:2', 'max:255'],
+            'customFieldForm.key' => ['required', 'string', 'max:100', 'alpha_dash:ascii', 'unique:custom_fields,key'],
+            'customFieldForm.type' => ['required', 'string', Rule::in(['text', 'textarea', 'number', 'date', 'select', 'checkbox', 'boolean'])],
         ]);
 
-        CustomField::create($this->customFieldForm);
-        session()->flash('status', 'Custom field created.');
-        $this->resetCustomFieldForm();
-        $this->showCustomFieldForm = false;
+        try {
+            CustomField::create($this->customFieldForm);
+            session()->flash('status', 'Custom field created.');
+            $this->resetCustomFieldForm();
+            $this->showCustomFieldForm = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create custom field: ' . $e->getMessage());
+        }
     }
 
     public function createCustomStatus(): void
@@ -912,17 +956,21 @@ class Index extends Component
             return;
 
         $this->validate([
-            'customStatusForm.context' => ['required', 'string'],
-            'customStatusForm.label' => ['required', 'string', 'max:255'],
-            'customStatusForm.key' => ['required', 'string', 'max:100'],
-            'customStatusForm.state' => ['required', 'string'],
-            'customStatusForm.color' => ['required', 'string'],
+            'customStatusForm.context' => ['required', 'string', Rule::in(['work_order', 'equipment', 'support_ticket'])],
+            'customStatusForm.label' => ['required', 'string', 'min:2', 'max:255'],
+            'customStatusForm.key' => ['required', 'string', 'max:100', 'alpha_dash:ascii'],
+            'customStatusForm.state' => ['required', 'string', 'max:50'],
+            'customStatusForm.color' => ['required', 'string', 'regex:/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/'],
         ]);
 
-        CustomStatus::create($this->customStatusForm);
-        session()->flash('status', 'Custom status created.');
-        $this->resetStatusForm();
-        $this->showCustomStatusForm = false;
+        try {
+            CustomStatus::create($this->customStatusForm);
+            session()->flash('status', 'Custom status created.');
+            $this->resetStatusForm();
+            $this->showCustomStatusForm = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create custom status: ' . $e->getMessage());
+        }
     }
 
     public function createLabelOverride(): void
@@ -931,15 +979,19 @@ class Index extends Component
             return;
 
         $this->validate([
-            'labelForm.group' => ['required', 'string'],
-            'labelForm.key' => ['required', 'string'],
-            'labelForm.value' => ['required', 'string'],
+            'labelForm.group' => ['required', 'string', 'max:50', 'alpha_dash:ascii'],
+            'labelForm.key' => ['required', 'string', 'max:100', 'alpha_dash:ascii'],
+            'labelForm.value' => ['required', 'string', 'min:1', 'max:1000'],
         ]);
 
-        LabelOverride::create($this->labelForm);
-        session()->flash('status', 'Label override saved.');
-        $this->resetLabelForm();
-        $this->showLabelForm = false;
+        try {
+            LabelOverride::create($this->labelForm);
+            session()->flash('status', 'Label override saved.');
+            $this->resetLabelForm();
+            $this->showLabelForm = false;
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to save label override: ' . $e->getMessage());
+        }
     }
 
     public function render()

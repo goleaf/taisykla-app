@@ -16,8 +16,71 @@
         </div>
 
         @if (session('status'))
-            <div class="rounded-md bg-green-50 p-3 text-sm text-green-700">
+            <div class="rounded-md bg-green-50 p-3 text-sm text-green-700 border border-green-200 shadow-sm animate-pulse-once">
                 {{ session('status') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="rounded-md bg-red-50 p-3 text-sm text-red-700 border border-red-200 shadow-sm">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        {{-- Bulk Actions Bar --}}
+        @if (count($selected) > 0)
+            <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4">
+                <div class="bg-gray-900 text-white rounded-2xl shadow-2xl p-4 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="bg-indigo-600 text-white px-2 py-1 rounded-md text-xs font-bold">{{ count($selected) }}</span>
+                        <span class="text-sm font-medium">selected</span>
+                        <button wire:click="clearSelection" class="text-xs text-gray-400 hover:text-white underline">Clear</button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <select wire:model.live="bulkAction" class="bg-gray-800 border-gray-700 text-white text-xs rounded-lg focus:ring-indigo-500 focus:border-indigo-500 py-1.5 px-3">
+                            <option value="">Bulk Actions</option>
+                            <option value="assign">Assign Technician</option>
+                            <option value="priority">Update Priority</option>
+                            <option value="status">Update Status</option>
+                            <option value="invoice">Generate Invoices</option>
+                            <option value="export">Export Selected</option>
+                        </select>
+
+                        @if ($bulkAction === 'assign')
+                            <select wire:model.live="bulkTechnicianId" class="bg-gray-800 border-gray-700 text-white text-xs rounded-lg py-1.5 px-3">
+                                <option value="">Select Tech</option>
+                                @foreach ($technicians as $tech)
+                                    <option value="{{ $tech->id }}">{{ $tech->name }}</option>
+                                @endforeach
+                            </select>
+                        @elseif ($bulkAction === 'priority')
+                            <select wire:model.live="bulkPriority" class="bg-gray-800 border-gray-700 text-white text-xs rounded-lg py-1.5 px-3">
+                                <option value="">Select Priority</option>
+                                @foreach ($priorityOptions as $p)
+                                    <option value="{{ $p }}">{{ ucfirst($p) }}</option>
+                                @endforeach
+                            </select>
+                        @elseif ($bulkAction === 'status')
+                            <select wire:model.live="bulkStatus" class="bg-gray-800 border-gray-700 text-white text-xs rounded-lg py-1.5 px-3">
+                                <option value="">Select Status</option>
+                                @foreach ($statusOptions as $s)
+                                    <option value="{{ $s }}">{{ ucfirst(str_replace('_', ' ', $s)) }}</option>
+                                @endforeach
+                            </select>
+                        @endif
+
+                        <button 
+                            wire:click="bulkApply" 
+                            wire:loading.attr="disabled"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 px-4 rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <span wire:loading.remove wire:target="bulkApply">Apply</span>
+                            <span wire:loading wire:target="bulkApply">Processing...</span>
+                        </button>
+                    </div>
+                </div>
+                @error('bulk') <p class="text-center text-xs text-red-400 mt-2 bg-gray-900/80 py-1 rounded-lg">{{ $message }}</p> @enderror
             </div>
         @endif
 
@@ -43,7 +106,13 @@
             </div>
         </div>
 
-        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
+        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 relative overflow-hidden">
+            <div wire:loading wire:target="search, statusFilter, priorityFilter, categoryFilter, organizationFilter, technicianFilter" class="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div class="lg:col-span-2">
                     <label class="text-xs text-gray-500">Search</label>
@@ -134,8 +203,19 @@
             </div>
         </div>
 
-        {{-- Kanban Board View --}}
-        @if ($view === 'board' && $boardColumns)
+        <div class="relative min-h-[400px]">
+            <div wire:loading wire:target="view, search, statusFilter, priorityFilter, categoryFilter, organizationFilter, technicianFilter, gotoPage, nextPage, previousPage" class="absolute inset-0 bg-white/40 z-30 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
+                <div class="flex flex-col items-center">
+                    <svg class="w-12 h-12 text-indigo-600 animate-spin mb-3" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-indigo-600">Updating view...</span>
+                </div>
+            </div>
+
+            {{-- Kanban Board View --}}
+            @if ($view === 'board' && $boardColumns)
             <div class="overflow-x-auto pb-4">
                 <div class="flex gap-4 min-w-max">
                     @foreach ($boardColumns as $status => $column)
@@ -325,8 +405,11 @@
                                     };
                                 }
                             @endphp
-                            <div class="p-5" wire:key="work-order-{{ $workOrder->id }}">
-                                <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div class="p-5 flex items-start gap-4" wire:key="work-order-{{ $workOrder->id }}">
+                                <div class="pt-1">
+                                    <input type="checkbox" wire:model.live="selected" value="{{ $workOrder->id }}" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                </div>
+                                <div class="flex-1 flex flex-wrap items-start justify-between gap-4">
                                     <div class="space-y-2">
                                         <div class="flex flex-wrap items-center gap-2">
                                             <h3 class="text-base font-semibold text-gray-900">#{{ $workOrder->id }} {{ $workOrder->subject }}</h3>
@@ -353,9 +436,20 @@
                                     </div>
                                     <div class="min-w-[210px] space-y-3 text-sm">
                                         <div>
-                                            <p class="text-xs text-gray-500">Status</p>
+                                            <p class="text-xs text-gray-500 flex items-center gap-2">
+                                                Status
+                                                <span wire:loading wire:target="updateStatus({{ $workOrder->id }}, $event.target.value)">
+                                                    <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                </span>
+                                            </p>
                                             @if ($canUpdateStatus)
-                                                <select class="mt-1 w-full rounded-md border-gray-300 text-sm" wire:change="updateStatus({{ $workOrder->id }}, $event.target.value)">
+                                                <select class="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50" 
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="updateStatus({{ $workOrder->id }}, $event.target.value)"
+                                                        wire:change="updateStatus({{ $workOrder->id }}, $event.target.value)">
                                                     @foreach ($statusOptions as $status)
                                                         <option value="{{ $status }}" @selected($workOrder->status === $status)>
                                                             {{ ucfirst(str_replace('_', ' ', $status)) }}
@@ -367,9 +461,20 @@
                                             @endif
                                         </div>
                                         <div>
-                                            <p class="text-xs text-gray-500">Assigned</p>
+                                            <p class="text-xs text-gray-500 flex items-center gap-2">
+                                                Assigned
+                                                <span wire:loading wire:target="assignTo({{ $workOrder->id }}, $event.target.value)">
+                                                    <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                </span>
+                                            </p>
                                             @if ($canAssign)
-                                                <select class="mt-1 w-full rounded-md border-gray-300 text-sm" wire:change="assignTo({{ $workOrder->id }}, $event.target.value)">
+                                                <select class="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50" 
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="assignTo({{ $workOrder->id }}, $event.target.value)"
+                                                        wire:change="assignTo({{ $workOrder->id }}, $event.target.value)">
                                                     <option value="">Unassigned</option>
                                                     @foreach ($technicians as $technician)
                                                         <option value="{{ $technician->id }}" @selected($workOrder->assigned_to_user_id === $technician->id)>
@@ -501,7 +606,15 @@
                                     </div>
                                 @endif
                                 <div class="flex items-center gap-3">
-                                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Create</button>
+                                    <button class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                        <span wire:loading wire:target="saveWorkOrder" class="mr-2">
+                                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </span>
+                                        Create
+                                    </button>
                                     <button type="button" class="px-4 py-2 border border-gray-300 rounded-md" wire:click="cancelForm">Cancel</button>
                                 </div>
                             </form>

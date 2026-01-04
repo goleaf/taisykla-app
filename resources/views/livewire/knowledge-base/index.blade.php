@@ -174,7 +174,18 @@
                                         @endforeach
                                     </select>
                                 @endif
-                                <button class="px-3 py-1 bg-indigo-600 text-white rounded-md text-xs" wire:click="applyBulkAction">Apply</button>
+                                <button class="inline-flex items-center px-3 py-1 bg-indigo-600 text-white rounded-md text-xs disabled:opacity-50" 
+                                        wire:click="applyBulkAction"
+                                        wire:loading.attr="disabled"
+                                        wire:target="applyBulkAction">
+                                    <span wire:loading wire:target="applyBulkAction" class="mr-1">
+                                        <svg class="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </span>
+                                    Apply
+                                </button>
                             </div>
                         @endif
                     </div>
@@ -223,13 +234,13 @@
                                     <div class="flex items-center gap-2">
                                         <a class="px-3 py-1 text-xs border border-gray-300 rounded-md" href="{{ route('knowledge-base.show', $article) }}{{ $lastLoggedSearchId ? '?search_log_id=' . $lastLoggedSearchId : '' }}">View</a>
                                         @if ($canManage)
-                                            <button class="px-3 py-1 text-xs border border-gray-300 rounded-md" wire:click="editArticle({{ $article->id }})">Edit</button>
+                                            <button class="px-3 py-1 text-xs border border-gray-300 rounded-md disabled:opacity-50" wire:click="editArticle({{ $article->id }})" wire:loading.attr="disabled" wire:target="editArticle({{ $article->id }})">Edit</button>
                                             @if ($article->status === 'review')
-                                                <button class="px-3 py-1 text-xs border border-gray-300 rounded-md" wire:click="approveArticle({{ $article->id }})">Approve</button>
-                                                <button class="px-3 py-1 text-xs border border-gray-300 rounded-md" wire:click="rejectArticle({{ $article->id }})">Request changes</button>
+                                                <button class="px-3 py-1 text-xs border border-gray-300 rounded-md disabled:opacity-50" wire:click="approveArticle({{ $article->id }})" wire:loading.attr="disabled" wire:target="approveArticle({{ $article->id }})">Approve</button>
+                                                <button class="px-3 py-1 text-xs border border-gray-300 rounded-md disabled:opacity-50" wire:click="rejectArticle({{ $article->id }})" wire:loading.attr="disabled" wire:target="rejectArticle({{ $article->id }})">Request changes</button>
                                             @endif
-                                            <button class="px-3 py-1 text-xs border border-gray-300 rounded-md" wire:click="archiveArticle({{ $article->id }})">Archive</button>
-                                            <button class="px-3 py-1 text-xs border border-gray-300 rounded-md" wire:click="featureArticle({{ $article->id }})">Feature</button>
+                                            <button class="px-3 py-1 text-xs border border-gray-300 rounded-md disabled:opacity-50" wire:click="archiveArticle({{ $article->id }})" wire:loading.attr="disabled" wire:target="archiveArticle({{ $article->id }})">Archive</button>
+                                            <button class="px-3 py-1 text-xs border border-gray-300 rounded-md disabled:opacity-50" wire:click="featureArticle({{ $article->id }})" wire:loading.attr="disabled" wire:target="featureArticle({{ $article->id }})">Feature</button>
                                         @endif
                                     </div>
                                 </div>
@@ -425,7 +436,15 @@
                         <textarea wire:model="submission.content" class="mt-1 w-full rounded-md border-gray-300" rows="4"></textarea>
                     </div>
                     <div class="md:col-span-2">
-                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Submit for review</button>
+                        <button class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled" wire:target="submitCommunityArticle">
+                            <span wire:loading wire:target="submitCommunityArticle" class="mr-2">
+                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                            Submit for review
+                        </button>
                     </div>
                 </form>
             </div>
@@ -680,7 +699,13 @@
                                 </div>
 
                                 <div class="flex items-center gap-3">
-                                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">
+                                    <button class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled" wire:target="saveArticle">
+                                        <span wire:loading wire:target="saveArticle" class="mr-2">
+                                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </span>
                                         {{ $editingId ? 'Update Article' : 'Save Article' }}
                                     </button>
                                     @if ($editingId)
@@ -732,7 +757,15 @@
                                     </label>
                                 </div>
                                 <div class="md:col-span-2 flex items-center gap-2">
-                                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                                    <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled" wire:target="saveCategory">
+                                        <span wire:loading wire:target="saveCategory" class="mr-2">
+                                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </span>
+                                        Save
+                                    </button>
                                     @if ($editingCategoryId)
                                         <button type="button" class="px-3 py-2 border border-gray-300 rounded-md" wire:click="resetCategoryForm">Cancel</button>
                                     @endif

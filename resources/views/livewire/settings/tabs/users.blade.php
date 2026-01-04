@@ -24,8 +24,10 @@
                 <label class="text-sm text-gray-700">Enforce MFA for All Users</label>
             </div>
             <div class="col-span-1 md:col-span-2 flex justify-end">
-                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save Security
-                    Settings</button>
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="updateSecuritySettings">Save Security Settings</span>
+                    <span wire:loading wire:target="updateSecuritySettings">Saving...</span>
+                </button>
             </div>
         </form>
     </div>
@@ -53,8 +55,10 @@
                     <div class="col-span-2 flex justify-end gap-2">
                         <button type="button" wire:click="$set('showRoleCreate', false)"
                             class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Create
-                            Role</button>
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="createRole">Create Role</span>
+                            <span wire:loading wire:target="createRole">Creating...</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -142,8 +146,10 @@
                     <div class="md:col-span-4 flex items-center justify-end gap-3 mt-2">
                         <button type="button" class="px-4 py-2 text-gray-600 hover:text-gray-900"
                             wire:click="resetNewUser">Reset</button>
-                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Create
-                            User</button>
+                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="createUser">Create User</span>
+                            <span wire:loading wire:target="createUser">Creating...</span>
+                        </button>
                     </div>
                 </form>
             </div>

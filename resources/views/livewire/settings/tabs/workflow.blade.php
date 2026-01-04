@@ -37,7 +37,10 @@
                     <div class="flex justify-end gap-2">
                         <button type="button" wire:click="$set('showAutomationCreate', false)"
                             class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save Rule</button>
+                        <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="createAutomationRule">
+                            <span wire:loading.remove wire:target="createAutomationRule">Save Rule</span>
+                            <span wire:loading wire:target="createAutomationRule">Saving...</span>
+                        </button>
                     </div>
                 </form>
             </div>

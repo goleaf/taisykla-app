@@ -43,7 +43,10 @@
                     <div class="col-span-2 flex justify-end gap-2">
                         <button type="button" wire:click="$set('showCustomFieldForm', false)"
                             class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                        <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="createCustomField">
+                            <span wire:loading.remove wire:target="createCustomField">Save</span>
+                            <span wire:loading wire:target="createCustomField">Saving...</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -144,7 +147,10 @@
                     <div class="col-span-2 flex justify-end gap-2">
                         <button type="button" wire:click="$set('showCustomStatusForm', false)"
                             class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                        <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="createCustomStatus">
+                            <span wire:loading.remove wire:target="createCustomStatus">Save</span>
+                            <span wire:loading wire:target="createCustomStatus">Saving...</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -205,7 +211,10 @@
                     <div class="col-span-2 flex justify-end gap-2">
                         <button type="button" wire:click="$set('showLabelForm', false)"
                             class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                        <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="createLabelOverride">
+                            <span wire:loading.remove wire:target="createLabelOverride">Save</span>
+                            <span wire:loading wire:target="createLabelOverride">Saving...</span>
+                        </button>
                     </div>
                 </form>
             </div>

@@ -57,6 +57,7 @@ class User extends Authenticatable
         'mfa_email',
         'mfa_secret',
         'mfa_confirmed_at',
+        'dashboard_preferences',
     ];
 
     /**
@@ -91,6 +92,7 @@ class User extends Authenticatable
             'mfa_confirmed_at' => 'datetime',
             'mfa_secret' => 'encrypted',
             'notification_preferences' => 'array',
+            'dashboard_preferences' => 'array',
             'skill_level' => 'integer',
             'skills' => 'array',
             'certifications' => 'array',

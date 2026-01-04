@@ -2,12 +2,63 @@
     use App\Support\RoleCatalog;
 @endphp
 
-<div class="py-8">
+<div class="py-8 relative">
+    <div wire:loading.delay class="absolute top-0 left-0 right-0 h-1 bg-indigo-600 z-50"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-semibold text-gray-900">Welcome back, {{ $user->name }}</h1>
                 <p class="text-sm text-gray-500">Role: {{ $roleLabel }} • {{ $todayLabel }}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <x-action-message class="mr-3" on="dashboard-preferences-saved" />
+                
+                <div x-data="{ open: false }">
+                    <button @click="open = true" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Customize
+                    </button>
+
+                    <x-modal name="customize-dashboard" x-show="open" @close="open = false">
+                        <div class="p-6">
+                            <h2 class="text-lg font-medium text-gray-900">Customize Dashboard</h2>
+                            <p class="mt-1 text-sm text-gray-600">Choose which sections you want to see on your dashboard.</p>
+                            
+                            <div class="mt-6 space-y-4">
+                                <div class="flex items-center">
+                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.summary" id="pref-summary" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <label for="pref-summary" class="ml-2 text-sm text-gray-700">Summary Cards</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.availability" id="pref-availability" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <label for="pref-availability" class="ml-2 text-sm text-gray-700">Availability Status</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.main_content" id="pref-main" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <label for="pref-main" class="ml-2 text-sm text-gray-700">Main Content (Jobs/Tickets)</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.charts" id="pref-charts" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <label for="pref-charts" class="ml-2 text-sm text-gray-700">Interactive Charts</label>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end">
+                                <x-secondary-button @click="open = false">Cancel</x-secondary-button>
+                                <x-primary-button class="ml-3 disabled:opacity-50" wire:click="savePreferences" wire:loading.attr="disabled" wire:target="savePreferences">
+                                    <span wire:loading wire:target="savePreferences" class="mr-2">
+                                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </span>
+                                    <span wire:loading.remove wire:target="savePreferences">Save Changes</span>
+                                    <span wire:loading wire:target="savePreferences">Saving...</span>
+                                </x-primary-button>
+                            </div>
+                        </div>
+                    </x-modal>
+                </div>
             </div>
         </div>
 
@@ -31,7 +82,7 @@
             </div>
         </div>
 
-        @if ($availability['show'] ?? false)
+        @if (($availability['show'] ?? false) && ($dashboardPreferences['visible_sections']['availability'] ?? true))
             <div
                 class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -42,8 +93,16 @@
                 </div>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($availabilityOptions as $value => $label)
-                        <button class="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                            wire:click="updateAvailability('{{ $value }}')">
+                        <button class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-50"
+                            wire:click="updateAvailability('{{ $value }}')"
+                            wire:loading.attr="disabled"
+                            wire:target="updateAvailability('{{ $value }}')">
+                            <span wire:loading wire:target="updateAvailability('{{ $value }}')" class="mr-1">
+                                <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
                             {{ $label }}
                         </button>
                     @endforeach
@@ -51,6 +110,7 @@
             </div>
         @endif
 
+        @if($dashboardPreferences['visible_sections']['summary'] ?? true)
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             @foreach ($summaryCards as $card)
                 <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
@@ -62,8 +122,10 @@
                 </div>
             @endforeach
         </div>
+        @endif
 
         @if ($roleKey === 'technician' && $technicianData)
+            @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
             <div class="space-y-6">
                 <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
@@ -287,7 +349,10 @@
                                         <div class="mt-2 flex items-center justify-between">
                                             <a class="text-xs text-indigo-600" href="{{ route('messages.index') }}"
                                                 wire:navigate>Open thread</a>
-                                            <button class="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md">Send</button>
+                                            <button class="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled" wire:target="sendQuickReply({{ $thread->id }})">
+                                                <span wire:loading.remove wire:target="sendQuickReply({{ $thread->id }})">Send</span>
+                                                <span wire:loading wire:target="sendQuickReply({{ $thread->id }})">...</span>
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
@@ -315,9 +380,17 @@
                                                     <span class="text-xs text-gray-500">• Available {{ $part['available'] }}</span>
                                                 </span>
                                                 @if ($part['part_id'])
-                                                    <button type="button" class="px-2 py-1 text-xs border border-gray-300 rounded-md"
+                                                    <button type="button" class="inline-flex items-center px-2 py-1 text-xs border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
                                                         wire:click="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
+                                                        wire:loading.attr="disabled"
+                                                        wire:target="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
                                                         @disabled($part['available'] < 1)>
+                                                        <span wire:loading wire:target="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})" class="mr-1">
+                                                            <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                        </span>
                                                         Reserve
                                                     </button>
                                                 @endif
@@ -356,6 +429,7 @@
                     </div>
                 </div>
             </div>
+            @endif
         @endif
 
         @if ($roleKey === 'dispatch' && $dispatchData)
@@ -796,6 +870,7 @@
                 $proximityBands = ['1.2 mi', '2.7 mi', '3.4 mi', '4.6 mi'];
             @endphp
             <div class="dispatch-scope space-y-6" wire:poll.20s>
+                @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
                 <div class="dispatch-shell p-6">
                     <div class="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
                         <div>
@@ -1054,6 +1129,28 @@
                         </div>
                     </div>
                 </div>
+
+                @if($dashboardPreferences['visible_sections']['charts'] ?? true)
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="dispatch-card p-6">
+                        <h2 class="text-xl font-semibold text-slate-900 mb-4">Daily Work Order Volume (30 Days)</h2>
+                        <x-apex-chart 
+                            type="bar" 
+                            :series="$charts['dispatch']['volume']['series']" 
+                            :options="[
+                                'xaxis' => ['categories' => $charts['dispatch']['volume']['categories']],
+                                'colors' => ['#0ea5e9'],
+                                'plotOptions' => [
+                                    'bar' => [
+                                        'borderRadius' => 4,
+                                        'columnWidth' => '60%'
+                                    ]
+                                ]
+                            ]"
+                        />
+                    </div>
+                </div>
+                @endif
 
                 <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
                     <div class="xl:col-span-7 dispatch-card p-6">
@@ -1418,6 +1515,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
         @endif
 
@@ -1505,6 +1603,7 @@
                 ];
             @endphp
             <div class="space-y-6">
+                @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
                 <div
                     class="rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
                     <div class="flex flex-wrap items-start justify-between gap-4">
@@ -1840,6 +1939,32 @@
                         </div>
                     </div>
                 </div>
+                @endif
+
+                @if($dashboardPreferences['visible_sections']['charts'] ?? true)
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-900 mb-4">Revenue Performance (30 Days)</h2>
+                        <x-apex-chart 
+                            type="area" 
+                            :series="$charts['admin']['revenue']['series']" 
+                            :options="[
+                                'xaxis' => ['categories' => $charts['admin']['revenue']['categories']],
+                                'colors' => ['#0f766e'],
+                                'stroke' => ['curve' => 'smooth'],
+                                'fill' => [
+                                    'type' => 'gradient',
+                                    'gradient' => [
+                                        'shadeIntensity' => 1,
+                                        'opacityFrom' => 0.7,
+                                        'opacityTo' => 0.3,
+                                    ]
+                                ]
+                            ]"
+                        />
+                    </div>
+                </div>
+                @endif
 
                 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
@@ -2111,13 +2236,13 @@
                                             class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $itemMeta['pill'] }}">
                                             {{ $itemMeta['label'] }}
                                         </span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            @endif
+                                        </div>
                                     </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                                                        <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <h2 class="text-lg font-semibold text-slate-900">System Configuration Quick Access</h2>
@@ -2198,7 +2323,8 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach ($sections as $section)
                 <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
                     <div class="flex items-center justify-between mb-4">

@@ -42,9 +42,10 @@
 
             <div class="mt-6 pt-6 border-t border-gray-100">
                 <button
-                    class="w-full justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                    wire:click="markBackupComplete">
-                    Run Manual Backup
+                    class="inline-flex items-center w-full justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    wire:click="markBackupComplete" wire:loading.attr="disabled" wire:target="markBackupComplete">
+                    <span wire:loading.remove wire:target="markBackupComplete">Run Manual Backup</span>
+                    <span wire:loading wire:target="markBackupComplete">Running...</span>
                 </button>
             </div>
         </div>
@@ -58,16 +59,20 @@
                 <h3 class="font-medium text-gray-900 text-sm">Database Export</h3>
                 <p class="text-xs text-gray-500 mt-1 mb-3">Download a full SQL dump of the current database.</p>
                 <button wire:click="exportData"
-                    class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50">
-                    Export Database
+                    class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                    wire:loading.attr="disabled" wire:target="exportData">
+                    <span wire:loading.remove wire:target="exportData">Export Database</span>
+                    <span wire:loading wire:target="exportData">Exporting...</span>
                 </button>
             </div>
             <div class="p-4 bg-gray-50 rounded border border-gray-200">
                 <h3 class="font-medium text-gray-900 text-sm">Data Import</h3>
                 <p class="text-xs text-gray-500 mt-1 mb-3">Restore data from a previous backup file.</p>
                 <button wire:click="importData"
-                    class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50">
-                    Import Data
+                    class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                    wire:loading.attr="disabled" wire:target="importData">
+                    <span wire:loading.remove wire:target="importData">Import Data</span>
+                    <span wire:loading wire:target="importData">Importing...</span>
                 </button>
             </div>
         </div>
@@ -92,7 +97,11 @@
                     </div>
                     <input wire:model="newSetting.value" class="rounded-md border-gray-300 text-sm"
                         placeholder="Value (raw)" />
-                    <button class="px-3 py-1 bg-gray-800 text-white rounded text-sm hover:bg-black">Set</button>
+                    <button class="inline-flex items-center justify-center px-3 py-1 bg-gray-800 text-white rounded text-sm hover:bg-black disabled:opacity-50"
+                        wire:loading.attr="disabled" wire:target="createSetting">
+                        <span wire:loading.remove wire:target="createSetting">Set</span>
+                        <span wire:loading wire:target="createSetting">Setting...</span>
+                    </button>
                 </form>
             </div>
         @endif

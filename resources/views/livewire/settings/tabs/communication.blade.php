@@ -31,8 +31,10 @@
             </div>
         </div>
         <div class="flex justify-end mt-2">
-            <button class="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700">Save
-                Triggers</button>
+            <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md text-sm hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="updateNotificationSettings">
+                <span wire:loading.remove wire:target="updateNotificationSettings">Save Triggers</span>
+                <span wire:loading wire:target="updateNotificationSettings">Saving...</span>
+            </button>
         </div>
     </form>
 </div>
@@ -61,8 +63,10 @@
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" wire:click="$set('showTemplateCreate', false)"
                         class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save
-                        Template</button>
+                    <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="createTemplate">
+                        <span wire:loading.remove wire:target="createTemplate">Save Template</span>
+                        <span wire:loading wire:target="createTemplate">Saving...</span>
+                    </button>
                 </div>
             </form>
         </div>

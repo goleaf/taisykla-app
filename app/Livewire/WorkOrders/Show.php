@@ -237,7 +237,7 @@ class Show extends Component
         }
 
         $this->validate([
-            'status' => ['required', Rule::in($this->statusOptions)],
+            'status' => ['required', 'string', Rule::in($this->statusOptions)],
         ]);
 
         $previousStatus = $this->workOrder->status;
@@ -253,7 +253,7 @@ class Show extends Component
     public function sendMessage(): void
     {
         $this->validate([
-            'messageBody' => ['required', 'string', 'max:2000'],
+            'messageBody' => ['required', 'string', 'min:1', 'max:2000'],
         ]);
 
         $user = auth()->user();
@@ -279,13 +279,13 @@ class Show extends Component
         }
 
         $this->validate([
-            'reportForm.diagnosis_summary' => ['required', 'string', 'max:2000'],
-            'reportForm.work_performed' => ['required', 'string', 'max:4000'],
+            'reportForm.diagnosis_summary' => ['required', 'string', 'min:5', 'max:2000'],
+            'reportForm.work_performed' => ['required', 'string', 'min:5', 'max:4000'],
             'reportForm.test_results' => ['nullable', 'string', 'max:2000'],
             'reportForm.recommendations' => ['nullable', 'string', 'max:2000'],
-            'reportForm.diagnostic_minutes' => ['nullable', 'integer', 'min:0'],
-            'reportForm.repair_minutes' => ['nullable', 'integer', 'min:0'],
-            'reportForm.testing_minutes' => ['nullable', 'integer', 'min:0'],
+            'reportForm.diagnostic_minutes' => ['nullable', 'integer', 'min:0', 'max:10000'],
+            'reportForm.repair_minutes' => ['nullable', 'integer', 'min:0', 'max:10000'],
+            'reportForm.testing_minutes' => ['nullable', 'integer', 'min:0', 'max:10000'],
         ]);
 
         $payload = [
@@ -335,9 +335,9 @@ class Show extends Component
         }
 
         $this->validate([
-            'reportPhotoKind' => ['required', Rule::in(['before', 'during', 'after', 'report'])],
-            'reportPhotos' => ['required', 'array', 'min:1'],
-            'reportPhotos.*' => ['image', 'max:5120'],
+            'reportPhotoKind' => ['required', 'string', Rule::in(['before', 'during', 'after', 'report'])],
+            'reportPhotos' => ['required', 'array', 'min:1', 'max:10'],
+            'reportPhotos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
         foreach ($this->reportPhotos as $photo) {
@@ -373,7 +373,7 @@ class Show extends Component
         }
 
         $this->validate([
-            'signatureName' => ['required', 'string', 'max:255'],
+            'signatureName' => ['required', 'string', 'min:2', 'max:255'],
             'signoff.functional' => ['required', 'boolean'],
             'signoff.professional' => ['required', 'boolean'],
             'signoff.satisfied' => ['required', 'boolean'],
@@ -418,12 +418,12 @@ class Show extends Component
         }
 
         $this->validate([
-            'feedback.overall' => ['required', 'integer', 'min:1', 'max:5'],
-            'feedback.professionalism' => ['required', 'integer', 'min:1', 'max:5'],
-            'feedback.knowledge' => ['required', 'integer', 'min:1', 'max:5'],
-            'feedback.communication' => ['required', 'integer', 'min:1', 'max:5'],
-            'feedback.timeliness' => ['required', 'integer', 'min:1', 'max:5'],
-            'feedback.quality' => ['required', 'integer', 'min:1', 'max:5'],
+            'feedback.overall' => ['required', 'integer', 'between:1,5'],
+            'feedback.professionalism' => ['required', 'integer', 'between:1,5'],
+            'feedback.knowledge' => ['required', 'integer', 'between:1,5'],
+            'feedback.communication' => ['required', 'integer', 'between:1,5'],
+            'feedback.timeliness' => ['required', 'integer', 'between:1,5'],
+            'feedback.quality' => ['required', 'integer', 'between:1,5'],
             'feedback.would_recommend' => ['required', 'boolean'],
             'feedback.comments' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -961,7 +961,7 @@ class Show extends Component
         }
 
         $this->validate([
-            'note' => ['required', 'string', 'max:1000'],
+            'note' => ['required', 'string', 'min:1', 'max:1000'],
         ]);
 
         WorkOrderEvent::create([

@@ -53,7 +53,10 @@
                         <textarea wire:model="newPart.description" class="mt-1 w-full rounded-md border-gray-300" rows="2"></textarea>
                     </div>
                     <div class="md:col-span-2 flex items-center gap-3">
-                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Save</button>
+                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="createPart">Save</span>
+                            <span wire:loading wire:target="createPart">Saving...</span>
+                        </button>
                         <button type="button" class="px-4 py-2 border border-gray-300 rounded-md" wire:click="resetNewPart">Reset</button>
                     </div>
                 </form>
@@ -90,7 +93,10 @@
                         @error('newStock.quantity') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
                     <div class="md:col-span-3 flex items-center gap-3">
-                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Update Stock</button>
+                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="addStock">Update Stock</span>
+                            <span wire:loading wire:target="addStock">Updating...</span>
+                        </button>
                         <button type="button" class="px-4 py-2 border border-gray-300 rounded-md" wire:click="resetNewStock">Reset</button>
                     </div>
                 </form>

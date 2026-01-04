@@ -58,13 +58,13 @@ class Index extends Component
         }
 
         $this->validate([
-            'newPart.name' => ['required', 'string', 'max:255'],
-            'newPart.sku' => ['nullable', 'string', 'max:255'],
-            'newPart.description' => ['nullable', 'string'],
-            'newPart.unit_cost' => ['required', 'numeric', 'min:0'],
-            'newPart.unit_price' => ['required', 'numeric', 'min:0'],
+            'newPart.name' => ['required', 'string', 'min:2', 'max:255'],
+            'newPart.sku' => ['required', 'string', 'max:100', 'alpha_dash:ascii', Rule::unique('parts', 'sku')],
+            'newPart.description' => ['nullable', 'string', 'max:1000'],
+            'newPart.unit_cost' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            'newPart.unit_price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'newPart.vendor' => ['nullable', 'string', 'max:255'],
-            'newPart.reorder_level' => ['required', 'integer', 'min:0'],
+            'newPart.reorder_level' => ['required', 'integer', 'min:0', 'max:1000000'],
         ]);
 
         Part::create($this->newPart);
@@ -80,9 +80,9 @@ class Index extends Component
         }
 
         $this->validate([
-            'newStock.part_id' => ['required', 'exists:parts,id'],
-            'newStock.location_id' => ['required', 'exists:inventory_locations,id'],
-            'newStock.quantity' => ['required', 'integer'],
+            'newStock.part_id' => ['required', 'integer', 'exists:parts,id'],
+            'newStock.location_id' => ['required', 'integer', 'exists:inventory_locations,id'],
+            'newStock.quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
         ]);
 
         $item = InventoryItem::firstOrCreate([

@@ -37,8 +37,10 @@
             </div>
 
             <div class="flex justify-end pt-4 border-t border-gray-100">
-                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save Compliance
-                    Settings</button>
+                <button class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="updateComplianceSettings">
+                    <span wire:loading.remove wire:target="updateComplianceSettings">Save Compliance Settings</span>
+                    <span wire:loading wire:target="updateComplianceSettings">Saving...</span>
+                </button>
             </div>
         </form>
     </div>
@@ -51,8 +53,10 @@
             <p class="text-xs text-gray-500 mt-1 mb-3">Export all personal data associated with your account in a
                 machine-readable format.</p>
             <button wire:click="exportPersonalData"
-                class="px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50">
-                Export My Data
+                class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
+                wire:loading.attr="disabled" wire:target="exportPersonalData">
+                <span wire:loading.remove wire:target="exportPersonalData">Export My Data</span>
+                <span wire:loading wire:target="exportPersonalData">Exporting...</span>
             </button>
         </div>
     </div>

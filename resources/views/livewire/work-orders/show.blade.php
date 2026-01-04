@@ -45,9 +45,14 @@
                     </button>
                     <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-50 py-2" x-cloak>
                         @if($canCreate)
-                            <button wire:click="cloneWorkOrder" @click="open = false" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                                Clone Work Order
+                            <button wire:click="cloneWorkOrder" @click="open = false" wire:loading.attr="disabled" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 disabled:opacity-50">
+                                <svg wire:loading.remove wire:target="cloneWorkOrder" class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                <svg wire:loading wire:target="cloneWorkOrder" class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span wire:loading.remove wire:target="cloneWorkOrder">Clone Work Order</span>
+                                <span wire:loading wire:target="cloneWorkOrder">Cloning...</span>
                             </button>
                         @endif
                         <button onclick="window.print()" class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
@@ -362,7 +367,10 @@
                                         @error('reportForm.testing_minutes') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
-                                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Save Report</button>
+                                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="saveReport">Save Report</span>
+                                    <span wire:loading wire:target="saveReport">Saving...</span>
+                                </button>
                             </form>
                             <form wire:submit.prevent="uploadReportPhotos" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                                 <div>
@@ -382,7 +390,10 @@
                                     @error('reportPhotos.*') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                                 </div>
                                 <div class="md:col-span-3">
-                                    <button class="px-4 py-2 border border-gray-300 rounded-md">Upload Photos</button>
+                                    <button class="px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                        <span wire:loading.remove wire:target="uploadReportPhotos">Upload Photos</span>
+                                        <span wire:loading wire:target="uploadReportPhotos">Uploading...</span>
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -406,7 +417,10 @@
                         <form wire:submit.prevent="addNote" class="mt-4">
                             <textarea wire:model="note" class="w-full rounded-md border-gray-300" rows="3" placeholder="Add a note"></textarea>
                             @error('note') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
-                            <button class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md">Add Note</button>
+                            <button class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                <span wire:loading.remove wire:target="addNote">Add Note</span>
+                                <span wire:loading wire:target="addNote">Adding...</span>
+                            </button>
                         </form>
                     @endif
                 </div>
@@ -436,7 +450,10 @@
                     <form wire:submit.prevent="sendMessage" class="mt-4">
                         <textarea wire:model="messageBody" class="w-full rounded-md border-gray-300" rows="2" placeholder="Type a message"></textarea>
                         @error('messageBody') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
-                        <button class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md">Send Message</button>
+                        <button class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="sendMessage">Send Message</span>
+                            <span wire:loading wire:target="sendMessage">Sending...</span>
+                        </button>
                     </form>
                 </div>
             </div>
@@ -452,10 +469,23 @@
                                         <option value="{{ $statusOption }}">{{ ucfirst(str_replace('_', ' ', $statusOption)) }}</option>
                                     @endforeach
                                 </select>
-                                <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="updateStatus">Update Status</button>
+                                <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:click="updateStatus" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="updateStatus">Update Status</span>
+                                    <span wire:loading wire:target="updateStatus">Updating...</span>
+                                </button>
                             @endif
                             @if ($canMarkArrived)
-                                <button class="w-full px-4 py-2 border border-gray-300 rounded-md" wire:click="markArrived" @disabled($workOrder->arrived_at)>
+                                <button class="w-full px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50 inline-flex items-center justify-center" 
+                                        wire:click="markArrived" 
+                                        wire:loading.attr="disabled"
+                                        wire:target="markArrived"
+                                        @disabled($workOrder->arrived_at)>
+                                    <span wire:loading wire:target="markArrived" class="mr-2">
+                                        <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                    </span>
                                     {{ $workOrder->arrived_at ? 'Arrived Recorded' : 'Mark Arrived' }}
                                 </button>
                                 <p class="text-xs text-gray-500">
@@ -475,7 +505,18 @@
                                 <option value="{{ $technician->id }}">{{ $technician->name }}</option>
                             @endforeach
                         </select>
-                        <button class="mt-3 w-full px-4 py-2 border border-gray-300 rounded-md" wire:click="assignTechnician">Save Assignment</button>
+                        <button class="mt-3 w-full px-4 py-2 border border-gray-300 rounded-md disabled:opacity-50 inline-flex items-center justify-center" 
+                                wire:click="assignTechnician"
+                                wire:loading.attr="disabled"
+                                wire:target="assignTechnician">
+                            <span wire:loading wire:target="assignTechnician" class="mr-2">
+                                <svg class="animate-spin h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </span>
+                            Save Assignment
+                        </button>
                     </div>
                 @endif
 
@@ -607,7 +648,10 @@
                                     <textarea wire:model="signoff.comments" class="mt-1 w-full rounded-md border-gray-300" rows="2" placeholder="Optional comments"></textarea>
                                     @error('signoff.comments') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                                 </div>
-                                <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md">Approve Work</button>
+                                <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="submitSignoff">Approve Work</span>
+                                    <span wire:loading wire:target="submitSignoff">Processing...</span>
+                                </button>
                             </form>
                         @endif
                     </div>
@@ -709,7 +753,10 @@
                                 <textarea wire:model="feedback.comments" class="mt-1 w-full rounded-md border-gray-300" rows="3" placeholder="Share your experience"></textarea>
                                 @error('feedback.comments') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                             </div>
-                            <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md">Submit Feedback</button>
+                            <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                <span wire:loading.remove wire:target="submitFeedback">Submit Feedback</span>
+                                <span wire:loading wire:target="submitFeedback">Submitting...</span>
+                            </button>
                         </form>
                     </div>
                 @endif

@@ -234,8 +234,9 @@
         {{-- Save/Cancel --}}
         <div class="flex gap-2">
             <button type="button" @click="savePhoto()"
-                class="flex-1 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
-                Save Photo
+                class="flex-1 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50" wire:loading.attr="disabled">
+                <span wire:loading.remove wire:target="savePhoto">Save Photo</span>
+                <span wire:loading wire:target="savePhoto">Saving...</span>
             </button>
             <button type="button" @click="cancelCapture()"
                 class="px-4 py-2.5 bg-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-300 transition">

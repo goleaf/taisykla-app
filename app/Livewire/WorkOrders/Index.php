@@ -57,6 +57,7 @@ class Index extends Component
     public string $bulkAction = '';
     public ?int $bulkTechnicianId = null;
     public string $bulkPriority = '';
+    public string $bulkStatus = '';
     public string $calendarView = 'week';
 
     protected $queryString = [
@@ -235,24 +236,25 @@ class Index extends Component
     protected function rules(): array
     {
         return [
-            'form.organization_id' => ['nullable', 'exists:organizations,id'],
-            'form.equipment_id' => ['nullable', 'exists:equipment,id'],
-            'form.category_id' => ['nullable', 'exists:work_order_categories,id'],
-            'form.assigned_to_user_id' => ['nullable', 'exists:users,id'],
-            'form.priority' => ['required', Rule::in($this->priorityOptions)],
-            'form.subject' => ['required', 'string', 'max:255'],
-            'form.description' => ['nullable', 'string'],
+            'form.organization_id' => ['nullable', 'integer', 'exists:organizations,id'],
+            'form.equipment_id' => ['nullable', 'integer', 'exists:equipment,id'],
+            'form.category_id' => ['nullable', 'integer', 'exists:work_order_categories,id'],
+            'form.assigned_to_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'form.priority' => ['required', 'string', Rule::in($this->priorityOptions)],
+            'form.subject' => ['required', 'string', 'min:5', 'max:255'],
+            'form.description' => ['nullable', 'string', 'max:2000'],
             'form.scheduled_start_at' => ['nullable', 'date'],
             'form.scheduled_end_at' => ['nullable', 'date', 'after_or_equal:form.scheduled_start_at'],
             'form.time_window' => ['nullable', 'string', 'max:255'],
             'scheduledDate' => ['nullable', 'date'],
             'scheduledTime' => ['nullable', 'date_format:H:i'],
             'scheduledEndTime' => ['nullable', 'date_format:H:i', 'after:scheduledTime'],
-            'timeWindowPreset' => ['nullable', Rule::in(['morning', 'afternoon', 'specific'])],
+            'timeWindowPreset' => ['nullable', 'string', Rule::in(['morning', 'afternoon', 'specific'])],
             'specialInstructions' => ['nullable', 'string', 'max:1000'],
             'selectedAccessRequirements' => ['array'],
-            'issueMedia' => ['array'],
-            'issueMedia.*' => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
+            'selectedAccessRequirements.*' => ['string'],
+            'issueMedia' => ['array', 'max:10'],
+            'issueMedia.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
             'termsAccepted' => ['accepted'],
         ];
     }
@@ -318,6 +320,7 @@ class Index extends Component
     {
         $this->bulkTechnicianId = null;
         $this->bulkPriority = '';
+        $this->bulkStatus = '';
     }
 
     public function sortBy(string $field): void
@@ -414,6 +417,50 @@ class Index extends Component
                 }
             }
             session()->flash('status', 'Updated priority for ' . $workOrders->count() . ' work orders.');
+        } elseif ($this->bulkAction === 'status') {
+            if (! in_array($this->bulkStatus, $this->statusOptions, true)) {
+                $this->addError('bulk', 'Choose a valid status.');
+                return;
+            }
+            foreach ($workOrders as $order) {
+                $previousStatus = $order->status;
+                if ($previousStatus !== $this->bulkStatus) {
+                    $updates = $this->statusUpdates($order, $this->bulkStatus);
+                    $order->update($updates);
+
+                    WorkOrderEvent::create([
+                        'work_order_id' => $order->id,
+                        'user_id' => $user->id,
+                        'type' => 'status_change',
+                        'from_status' => $previousStatus,
+                        'to_status' => $this->bulkStatus,
+                    ]);
+
+                    app(AuditLogger::class)->log(
+                        'work_order.status_changed',
+                        $order,
+                        'Work order status updated via bulk action.',
+                        ['from' => $previousStatus, 'to' => $this->bulkStatus]
+                    );
+                }
+            }
+            session()->flash('status', 'Updated status for ' . $workOrders->count() . ' work orders.');
+        } elseif ($this->bulkAction === 'invoice') {
+            $count = 0;
+            $errors = 0;
+            foreach ($workOrders as $order) {
+                try {
+                    app(\App\Services\Billing\InvoiceService::class)->createFromWorkOrder($order);
+                    $count++;
+                } catch (\Exception $e) {
+                    $errors++;
+                }
+            }
+            if ($errors > 0) {
+                session()->flash('error', "Generated {$count} invoices. {$errors} failed (check if customer is set).");
+            } else {
+                session()->flash('status', "Successfully generated invoices for {$count} work orders.");
+            }
         } elseif ($this->bulkAction === 'export') {
             session()->flash('status', 'Export queued for ' . $workOrders->count() . ' work orders.');
         }
@@ -1175,6 +1222,7 @@ class Index extends Component
             1 => [
                 'form.organization_id' => [
                     Rule::requiredIf(! $this->isClientUser()),
+                    'integer',
                     'exists:organizations,id',
                 ],
             ],
@@ -1182,20 +1230,21 @@ class Index extends Component
                 'form.equipment_id' => [
                     Rule::requiredIf($this->equipmentRequiresSelection()),
                     'nullable',
+                    'integer',
                     'exists:equipment,id',
                 ],
             ],
             3 => [
-                'form.subject' => ['required', 'string', 'max:255'],
-                'form.description' => ['required', 'string', 'max:2000'],
-                'form.category_id' => ['required', 'exists:work_order_categories,id'],
-                'issueMedia' => ['array'],
-                'issueMedia.*' => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
+                'form.subject' => ['required', 'string', 'min:5', 'max:255'],
+                'form.description' => ['required', 'string', 'min:10', 'max:2000'],
+                'form.category_id' => ['required', 'integer', 'exists:work_order_categories,id'],
+                'issueMedia' => ['array', 'max:10'],
+                'issueMedia.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
             ],
             4 => [
-                'form.priority' => ['required', Rule::in($this->priorityOptions)],
-                'scheduledDate' => ['required', 'date'],
-                'timeWindowPreset' => ['required', Rule::in(['morning', 'afternoon', 'specific'])],
+                'form.priority' => ['required', 'string', Rule::in($this->priorityOptions)],
+                'scheduledDate' => ['required', 'date', 'after_or_equal:today'],
+                'timeWindowPreset' => ['required', 'string', Rule::in(['morning', 'afternoon', 'specific'])],
                 'scheduledTime' => [
                     Rule::requiredIf($this->timeWindowPreset === 'specific'),
                     'nullable',
@@ -1204,9 +1253,18 @@ class Index extends Component
                 'scheduledEndTime' => ['nullable', 'date_format:H:i', 'after:scheduledTime'],
                 'specialInstructions' => ['nullable', 'string', 'max:1000'],
                 'selectedAccessRequirements' => ['array'],
+                'selectedAccessRequirements.*' => ['string', Rule::in(array_keys($this->accessRequirementOptions()))],
             ],
             5 => [
-                'form.assigned_to_user_id' => ['nullable', 'exists:users,id'],
+                'form.assigned_to_user_id' => [
+                    'nullable',
+                    'integer',
+                    Rule::exists('users', 'id')->where(function ($query) {
+                        $query->whereHas('roles', function ($q) {
+                            $q->where('name', 'technician');
+                        });
+                    }),
+                ],
             ],
             6 => [
                 'termsAccepted' => ['accepted'],

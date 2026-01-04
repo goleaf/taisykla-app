@@ -39,7 +39,13 @@
             </div>
         </div>
 
-        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
+        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 relative overflow-hidden">
+            <div wire:loading wire:target="search, statusFilter, categoryFilter, typeFilter, locationFilter, organizationFilter, sortField, sortDirection" class="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div class="lg:col-span-2">
                     <label class="text-xs text-gray-500">Search</label>
@@ -117,7 +123,16 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="{{ $canManage ? 'lg:col-span-2' : 'lg:col-span-3' }} space-y-6">
-                <div class="bg-white shadow-sm rounded-lg border border-gray-100">
+                <div class="bg-white shadow-sm rounded-lg border border-gray-100 relative overflow-hidden">
+                    <div wire:loading wire:target="search, statusFilter, categoryFilter, typeFilter, locationFilter, organizationFilter, sortField, sortDirection, gotoPage, nextPage, previousPage" class="absolute inset-0 bg-white/40 z-10 backdrop-blur-[1px] flex items-center justify-center">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-10 h-10 text-indigo-600 animate-spin mb-2" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span class="text-sm font-medium text-indigo-600">Updating list...</span>
+                        </div>
+                    </div>
                     <div class="divide-y divide-gray-200">
                         @forelse ($equipment as $item)
                             <div class="p-5" wire:key="equipment-{{ $item->id }}">
@@ -291,8 +306,13 @@
                                     @error('form.notes') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">
-                                        {{ $editingId ? 'Update Equipment' : 'Save Equipment' }}
+                                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                        <span wire:loading.remove wire:target="saveEquipment">
+                                            {{ $editingId ? 'Update Equipment' : 'Save Equipment' }}
+                                        </span>
+                                        <span wire:loading wire:target="saveEquipment">
+                                            Processing...
+                                        </span>
                                     </button>
                                     <button type="button" class="px-4 py-2 border border-gray-300 rounded-md" wire:click="cancelForm">Cancel</button>
                                 </div>

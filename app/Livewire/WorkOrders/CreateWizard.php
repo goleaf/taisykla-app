@@ -361,6 +361,9 @@ class CreateWizard extends Component
 
             $this->redirect(route('work-orders.show', $workOrder), navigate: true);
 
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to create work order: ' . $e->getMessage());
+            app(AuditLogger::class)->log('work_order.create_failed', null, 'Failed to create work order.', ['error' => $e->getMessage()]);
         } finally {
             $this->isSubmitting = false;
         }
@@ -393,37 +396,52 @@ class CreateWizard extends Component
                 'selectedOrganizationId' => [
                     Rule::requiredIf(!$isClient),
                     'nullable',
+                    'integer',
                     'exists:organizations,id',
                 ],
             ],
             2 => [
                 'selectedEquipmentId' => [
                     'nullable',
+                    'integer',
                     'exists:equipment,id',
                 ],
             ],
             3 => [
-                'subject' => ['required', 'string', 'max:255'],
-                'description' => ['required', 'string', 'max:2000'],
-                'categoryId' => ['required', 'exists:work_order_categories,id'],
+                'subject' => ['required', 'string', 'min:5', 'max:255'],
+                'description' => ['required', 'string', 'min:10', 'max:2000'],
+                'categoryId' => ['required', 'integer', 'exists:work_order_categories,id'],
                 'issueMedia' => ['array', 'max:10'],
-                'issueMedia.*' => ['file', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
+                'issueMedia.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp,mp4,mov', 'max:10240'],
             ],
             4 => [
-                'priority' => ['required', Rule::in(array_keys($this->priorityOptions))],
+                'priority' => ['required', 'string', Rule::in(array_keys($this->priorityOptions))],
                 'scheduledDate' => ['required', 'date', 'after_or_equal:today'],
-                'timeWindowPreset' => ['required', Rule::in(['morning', 'afternoon', 'specific'])],
+                'timeWindowPreset' => ['required', 'string', Rule::in(['morning', 'afternoon', 'specific'])],
                 'scheduledTime' => [
                     Rule::requiredIf($this->timeWindowPreset === 'specific'),
                     'nullable',
                     'date_format:H:i',
                 ],
-                'scheduledEndTime' => ['nullable', 'date_format:H:i', 'after:scheduledTime'],
+                'scheduledEndTime' => [
+                    'nullable',
+                    'date_format:H:i',
+                    'after:scheduledTime',
+                ],
                 'specialInstructions' => ['nullable', 'string', 'max:1000'],
                 'selectedAccessRequirements' => ['array'],
+                'selectedAccessRequirements.*' => ['string', Rule::in(array_keys($this->accessRequirementOptions))],
             ],
             5 => [
-                'assignedTechnicianId' => ['nullable', 'exists:users,id'],
+                'assignedTechnicianId' => [
+                    'nullable',
+                    'integer',
+                    Rule::exists('users', 'id')->where(function ($query) {
+                        $query->whereHas('roles', function ($q) {
+                            $q->where('name', 'technician');
+                        });
+                    }),
+                ],
             ],
             6 => [
                 'termsAccepted' => ['accepted'],

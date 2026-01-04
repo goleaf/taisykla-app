@@ -30,6 +30,13 @@
     <div class="min-h-screen bg-gray-100">
         <livewire:layout.navigation />
 
+        {{-- Global Loading Bar --}}
+        <div wire:loading.delay.shortest class="fixed top-0 left-0 right-0 z-[100]">
+            <div class="h-1 w-full bg-indigo-100 overflow-hidden">
+                <div class="h-full bg-indigo-600 animate-progress origin-left-right"></div>
+            </div>
+        </div>
+
         <!-- Page Heading -->
         @if (isset($header))
             <header class="bg-white shadow">
@@ -41,6 +48,7 @@
 
         <!-- Page Content -->
         <main>
+            <livewire:toast />
             {{ $slot }}
         </main>
     </div>

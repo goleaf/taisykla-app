@@ -62,8 +62,9 @@
 
             <div class="pt-4 border-t border-gray-100 flex justify-end">
                 <button type="submit"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-                    Save Changes
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="updateCompanyProfile">Save Changes</span>
+                    <span wire:loading wire:target="updateCompanyProfile">Saving...</span>
                 </button>
             </div>
         </form>

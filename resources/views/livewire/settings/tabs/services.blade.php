@@ -44,7 +44,10 @@
                     <div class="col-span-2 flex justify-end gap-2">
                         <button type="button" wire:click="$set('showPriorityCreate', false)"
                             class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                        <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="createPriorityLevel">Save</span>
+                            <span wire:loading wire:target="createPriorityLevel">Saving...</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -96,7 +99,10 @@
                     </div>
                     <input type="number" step="0.01" wire:model="newAgreement.monthly_fee"
                         class="rounded-md border-gray-300" placeholder="Monthly Fee" />
-                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="createAgreement">Save</span>
+                        <span wire:loading wire:target="createAgreement">Saving...</span>
+                    </button>
                 </form>
             @endif
             <div class="space-y-2 text-sm">
@@ -123,7 +129,10 @@
                     <input wire:model="newCategory.name" class="rounded-md border-gray-300" placeholder="Name" />
                     <input type="number" wire:model="newCategory.default_estimated_minutes"
                         class="rounded-md border-gray-300" placeholder="Est. minutes" />
-                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                    <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="createCategory">Save</span>
+                        <span wire:loading wire:target="createCategory">Saving...</span>
+                    </button>
                 </form>
             @endif
             <div class="space-y-2 text-sm">
@@ -151,7 +160,10 @@
                 <input wire:model="newEquipmentCategory.name" class="rounded-md border-gray-300" placeholder="Name" />
                 <textarea wire:model="newEquipmentCategory.description" class="rounded-md border-gray-300" rows="2"
                     placeholder="Description"></textarea>
-                <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="createEquipmentCategory">Save</span>
+                    <span wire:loading wire:target="createEquipmentCategory">Saving...</span>
+                </button>
             </form>
         @endif
         <div class="space-y-2 text-sm">

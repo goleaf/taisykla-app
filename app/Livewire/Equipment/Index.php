@@ -213,9 +213,9 @@ class Index extends Component
     protected function rules(): array
     {
         return [
-            'form.organization_id' => ['nullable', 'exists:organizations,id'],
-            'form.equipment_category_id' => ['required', 'exists:equipment_categories,id'],
-            'form.name' => ['required', 'string', 'max:255'],
+            'form.organization_id' => ['nullable', 'integer', 'exists:organizations,id'],
+            'form.equipment_category_id' => ['required', 'integer', 'exists:equipment_categories,id'],
+            'form.name' => ['required', 'string', 'min:2', 'max:255'],
             'form.type' => ['required', 'string', 'max:255'],
             'form.manufacturer' => ['nullable', 'string', 'max:255'],
             'form.model' => ['nullable', 'string', 'max:255'],
@@ -223,30 +223,30 @@ class Index extends Component
                 'required',
                 'string',
                 'max:255',
-                'regex:/^[A-Za-z0-9\\-_.\\/]+$/',
+                'alpha_dash:ascii',
                 Rule::unique('equipment', 'serial_number')->ignore($this->editingId),
             ],
-            'form.asset_tag' => ['nullable', 'string', 'max:255'],
-            'form.purchase_date' => ['nullable', 'date'],
-            'form.purchase_price' => ['nullable', 'numeric', 'min:0'],
+            'form.asset_tag' => ['nullable', 'string', 'max:255', Rule::unique('equipment', 'asset_tag')->ignore($this->editingId)],
+            'form.purchase_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'form.purchase_price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'form.purchase_vendor' => ['nullable', 'string', 'max:255'],
-            'form.status' => ['required', Rule::in($this->statusValues())],
+            'form.status' => ['required', 'string', Rule::in($this->statusValues())],
             'form.location_name' => ['nullable', 'string', 'max:255'],
             'form.location_address' => ['nullable', 'string', 'max:1000'],
             'form.location_building' => ['nullable', 'string', 'max:255'],
             'form.location_floor' => ['nullable', 'string', 'max:255'],
             'form.location_room' => ['nullable', 'string', 'max:255'],
-            'form.assigned_user_id' => ['nullable', 'exists:users,id'],
-            'form.notes' => ['nullable', 'string'],
-            'form.specifications' => ['nullable', 'string', 'json'],
-            'form.custom_fields' => ['nullable', 'string', 'json'],
+            'form.assigned_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'form.notes' => ['nullable', 'string', 'max:5000'],
+            'form.specifications' => ['nullable', 'string', 'json', 'max:10000'],
+            'form.custom_fields' => ['nullable', 'string', 'json', 'max:10000'],
             'form.warranty_provider' => ['nullable', 'string', 'max:255'],
             'form.warranty_type' => ['nullable', 'string', 'max:255'],
             'form.warranty_starts_at' => ['nullable', 'date'],
             'form.warranty_ends_at' => ['nullable', 'date', 'after_or_equal:form.warranty_starts_at'],
-            'form.warranty_terms' => ['nullable', 'string'],
-            'photos' => ['nullable', 'array'],
-            'photos.*' => ['image', 'max:5120'],
+            'form.warranty_terms' => ['nullable', 'string', 'max:2000'],
+            'photos' => ['nullable', 'array', 'max:5'],
+            'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ];
     }
 
@@ -267,56 +267,60 @@ class Index extends Component
 
         $this->validate();
 
-        $payload = [
-            'organization_id' => $this->normalizeId($this->form['organization_id']),
-            'equipment_category_id' => $this->normalizeId($this->form['equipment_category_id']),
-            'name' => trim($this->form['name']),
-            'type' => trim($this->form['type']),
-            'manufacturer' => $this->normalizeText($this->form['manufacturer']),
-            'model' => $this->normalizeText($this->form['model']),
-            'serial_number' => $this->normalizeText($this->form['serial_number']),
-            'asset_tag' => $this->normalizeText($this->form['asset_tag']),
-            'purchase_date' => $this->form['purchase_date'] ?: null,
-            'status' => $this->form['status'],
-            'location_name' => $this->normalizeText($this->form['location_name']),
-            'location_address' => $this->normalizeText($this->form['location_address']),
-            'notes' => $this->normalizeText($this->form['notes']),
-        ];
-        if ($user->isConsumer()) {
-            $payload['assigned_user_id'] = $user->id;
-        }
-
-        if ($this->editingId) {
-            $equipmentQuery = Equipment::query();
-            if ($user->isBusinessCustomer()) {
-                $equipmentQuery->where('organization_id', $user->organization_id);
-            } elseif ($user->isConsumer()) {
-                $equipmentQuery->where('assigned_user_id', $user->id);
+        try {
+            $payload = [
+                'organization_id' => $this->normalizeId($this->form['organization_id']),
+                'equipment_category_id' => $this->normalizeId($this->form['equipment_category_id']),
+                'name' => trim($this->form['name']),
+                'type' => trim($this->form['type']),
+                'manufacturer' => $this->normalizeText($this->form['manufacturer']),
+                'model' => $this->normalizeText($this->form['model']),
+                'serial_number' => $this->normalizeText($this->form['serial_number']),
+                'asset_tag' => $this->normalizeText($this->form['asset_tag']),
+                'purchase_date' => $this->form['purchase_date'] ?: null,
+                'status' => $this->form['status'],
+                'location_name' => $this->normalizeText($this->form['location_name']),
+                'location_address' => $this->normalizeText($this->form['location_address']),
+                'notes' => $this->normalizeText($this->form['notes']),
+            ];
+            if ($user->isConsumer()) {
+                $payload['assigned_user_id'] = $user->id;
             }
-            $equipment = $equipmentQuery->findOrFail($this->editingId);
-            $equipment->update($payload);
-            app(AuditLogger::class)->log(
-                'equipment.updated',
-                $equipment,
-                'Equipment updated.',
-                ['name' => $equipment->name]
-            );
-            session()->flash('status', 'Equipment updated.');
-        } else {
-            $equipment = Equipment::create($payload);
-            app(AuditLogger::class)->log(
-                'equipment.created',
-                $equipment,
-                'Equipment created.',
-                ['name' => $equipment->name]
-            );
-            session()->flash('status', 'Equipment added.');
-        }
 
-        $this->resetForm();
-        $this->editingId = null;
-        $this->showForm = false;
-        $this->resetPage();
+            if ($this->editingId) {
+                $equipmentQuery = Equipment::query();
+                if ($user->isBusinessCustomer()) {
+                    $equipmentQuery->where('organization_id', $user->organization_id);
+                } elseif ($user->isConsumer()) {
+                    $equipmentQuery->where('assigned_user_id', $user->id);
+                }
+                $equipment = $equipmentQuery->findOrFail($this->editingId);
+                $equipment->update($payload);
+                app(AuditLogger::class)->log(
+                    'equipment.updated',
+                    $equipment,
+                    'Equipment updated.',
+                    ['name' => $equipment->name]
+                );
+                session()->flash('status', 'Equipment updated.');
+            } else {
+                $equipment = Equipment::create($payload);
+                app(AuditLogger::class)->log(
+                    'equipment.created',
+                    $equipment,
+                    'Equipment created.',
+                    ['name' => $equipment->name]
+                );
+                session()->flash('status', 'Equipment added.');
+            }
+
+            $this->resetForm();
+            $this->editingId = null;
+            $this->showForm = false;
+            $this->resetPage();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Unable to save equipment: ' . $e->getMessage());
+        }
     }
 
     public function render()

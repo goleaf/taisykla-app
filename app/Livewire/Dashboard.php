@@ -53,6 +53,33 @@ class Dashboard extends Component
 
     public array $quickReplies = [];
     public ?string $emergencyAlertedAt = null;
+    public array $dashboardPreferences = [];
+
+    public function mount()
+    {
+        $user = auth()->user();
+        $this->dashboardPreferences = $user->dashboard_preferences ?? $this->defaultPreferences();
+    }
+
+    public function savePreferences()
+    {
+        $user = auth()->user();
+        $user->update(['dashboard_preferences' => $this->dashboardPreferences]);
+        $this->dispatch('dashboard-preferences-saved');
+    }
+
+    private function defaultPreferences(): array
+    {
+        return [
+            'visible_sections' => [
+                'summary' => true,
+                'availability' => true,
+                'main_content' => true,
+                'charts' => true,
+            ],
+            'layout' => 'standard',
+        ];
+    }
 
     public function updateAvailability(string $status): void
     {
@@ -100,6 +127,11 @@ class Dashboard extends Component
             ? $this->adminDashboard($today)
             : null;
 
+        $charts = [
+            'admin' => $roleKey === 'admin' ? $this->adminCharts($today) : null,
+            'dispatch' => $roleKey === 'dispatch' ? $this->dispatchCharts($today) : null,
+        ];
+
         return view('livewire.dashboard', [
             'user' => $user,
             'roleKey' => $roleKey,
@@ -113,7 +145,63 @@ class Dashboard extends Component
             'technicianData' => $technicianData,
             'dispatchData' => $dispatchData,
             'adminData' => $adminData,
+            'charts' => $charts,
         ]);
+    }
+
+    private function adminCharts(Carbon $today): array
+    {
+        $startDate = $today->copy()->subDays(30);
+        
+        $revenueData = Invoice::whereNotNull('paid_at')
+            ->where('paid_at', '>=', $startDate)
+            ->selectRaw('DATE(paid_at) as date, SUM(total) as total')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $dates = [];
+        $totals = [];
+        
+        for ($i = 0; $i <= 30; $i++) {
+            $date = $startDate->copy()->addDays($i)->format('Y-m-d');
+            $dates[] = $startDate->copy()->addDays($i)->format('M d');
+            $totals[] = (float) ($revenueData->firstWhere('date', $date)?->total ?? 0);
+        }
+
+        return [
+            'revenue' => [
+                'series' => [['name' => 'Revenue', 'data' => $totals]],
+                'categories' => $dates,
+            ]
+        ];
+    }
+
+    private function dispatchCharts(Carbon $today): array
+    {
+        $startDate = $today->copy()->subDays(30);
+        
+        $jobData = WorkOrder::where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $dates = [];
+        $counts = [];
+        
+        for ($i = 0; $i <= 30; $i++) {
+            $date = $startDate->copy()->addDays($i)->format('Y-m-d');
+            $dates[] = $startDate->copy()->addDays($i)->format('M d');
+            $counts[] = (int) ($jobData->firstWhere('date', $date)?->count ?? 0);
+        }
+
+        return [
+            'volume' => [
+                'series' => [['name' => 'Work Orders', 'data' => $counts]],
+                'categories' => $dates,
+            ]
+        ];
     }
 
     private function roleKey(?User $user): string

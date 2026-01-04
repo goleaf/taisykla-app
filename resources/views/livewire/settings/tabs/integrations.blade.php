@@ -29,7 +29,10 @@
                         <div class="flex gap-2">
                             <button type="button" wire:click="$set('showIntegrationCreate', false)"
                                 class="px-3 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
-                            <button class="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Save</button>
+                            <button class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50" wire:loading.attr="disabled" wire:target="createIntegrationSetting">
+                                <span wire:loading.remove wire:target="createIntegrationSetting">Save</span>
+                                <span wire:loading wire:target="createIntegrationSetting">Saving...</span>
+                            </button>
                         </div>
                     </div>
                 </form>

@@ -173,22 +173,24 @@
                 <div class="space-y-2">
                     @if ($jobStatus === 'assigned')
                         <button wire:click="arriveAtSite"
-                            class="w-full touch-target flex items-center justify-center gap-3 px-6 py-4 bg-white/20 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm rounded-xl font-bold text-lg transition">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="w-full touch-target flex items-center justify-center gap-3 px-6 py-4 bg-white/20 hover:bg-white/30 active:bg-white/40 backdrop-blur-sm rounded-xl font-bold text-lg transition disabled:opacity-50" wire:loading.attr="disabled">
+                            <svg wire:loading.remove wire:target="arriveAtSite" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             </svg>
-                            Arrive at Site
+                            <span wire:loading.remove wire:target="arriveAtSite">Arrive at Site</span>
+                            <span wire:loading wire:target="arriveAtSite">Processing...</span>
                         </button>
                     @endif
                     @if ($jobStatus === 'in_progress' && !$workStartTime)
                         <button wire:click="startWork"
-                            class="w-full touch-target flex items-center justify-center gap-3 px-6 py-4 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 rounded-xl font-bold text-lg transition shadow-lg">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            class="w-full touch-target flex items-center justify-center gap-3 px-6 py-4 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 rounded-xl font-bold text-lg transition shadow-lg disabled:opacity-50" wire:loading.attr="disabled">
+                            <svg wire:loading.remove wire:target="startWork" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                             </svg>
-                            Start Work
+                            <span wire:loading.remove wire:target="startWork">Start Work</span>
+                            <span wire:loading wire:target="startWork">Starting...</span>
                         </button>
                     @endif
                 </div>
@@ -204,30 +206,33 @@
 
                 <div class="flex gap-2">
                     <button wire:click="pauseTimer"
-                        class="flex-1 touch-target flex items-center justify-center gap-2 px-4 py-3 bg-white/20 hover:bg-white/30 rounded-xl font-semibold transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex-1 touch-target flex items-center justify-center gap-2 px-4 py-3 bg-white/20 hover:bg-white/30 rounded-xl font-semibold transition disabled:opacity-50" wire:loading.attr="disabled">
+                        <svg wire:loading.remove wire:target="pauseTimer" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Pause
+                        <span wire:loading.remove wire:target="pauseTimer">Pause</span>
+                        <span wire:loading wire:target="pauseTimer">...</span>
                     </button>
                     <button wire:click="goToSignoff"
-                        class="flex-1 touch-target flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-semibold transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="flex-1 touch-target flex items-center justify-center gap-2 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-semibold transition disabled:opacity-50" wire:loading.attr="disabled">
+                        <svg wire:loading.remove wire:target="goToSignoff" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
-                        Complete
+                        <span wire:loading.remove wire:target="goToSignoff">Complete</span>
+                        <span wire:loading wire:target="goToSignoff">...</span>
                     </button>
                 </div>
             @endif
 
             <button wire:click="requestHelp"
-                class="w-full mt-3 touch-target flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-400/50 rounded-xl font-semibold transition">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="w-full mt-3 touch-target flex items-center justify-center gap-2 px-4 py-3 bg-red-500/20 hover:bg-red-500/30 border border-red-400/50 rounded-xl font-semibold transition disabled:opacity-50" wire:loading.attr="disabled">
+                <svg wire:loading.remove wire:target="requestHelp" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
                 </svg>
-                Request Help
+                <span wire:loading.remove wire:target="requestHelp">Request Help</span>
+                <span wire:loading wire:target="requestHelp">Requesting...</span>
             </button>
         </div>
 

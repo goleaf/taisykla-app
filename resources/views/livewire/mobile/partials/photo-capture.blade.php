@@ -191,8 +191,10 @@
             </div>
             <div class="flex gap-3">
                 <button @click="savePhoto()"
-                    class="flex-1 touch-target py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition">Save
-                    Photo</button>
+                    class="flex-1 touch-target py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition disabled:opacity-50" wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="savePhoto">Save Photo</span>
+                    <span wire:loading wire:target="savePhoto">Saving...</span>
+                </button>
                 <button @click="cancelCapture()"
                     class="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition">Cancel</button>
             </div>

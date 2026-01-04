@@ -219,7 +219,10 @@
                                                 <textarea wire:model="newSchedule.filters" class="mt-1 w-full rounded-md border-gray-300" rows="2" placeholder='[{"field":"status","operator":"=","value":"completed"}]'></textarea>
                                             </div>
                                             <div class="md:col-span-3 flex items-center gap-3">
-                                                <button class="px-3 py-1 bg-indigo-600 text-white rounded-md">Save Schedule</button>
+                                                <button class="px-3 py-1 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                                    <span wire:loading.remove wire:target="createSchedule">Save Schedule</span>
+                                                    <span wire:loading wire:target="createSchedule">Saving...</span>
+                                                </button>
                                                 <button type="button" class="px-3 py-1 border border-gray-300 rounded-md" wire:click="$set('scheduleReportId', null)">Cancel</button>
                                             </div>
                                         </form>
@@ -375,7 +378,10 @@
                                     <input type="checkbox" wire:model="newReport.is_public" class="rounded border-gray-300" />
                                     <span>Visible to all users</span>
                                 </div>
-                                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md">Create Report</button>
+                                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="createReport">Create Report</span>
+                                    <span wire:loading wire:target="createReport">Creating...</span>
+                                </button>
                             </form>
                         @else
                             <p class="text-sm text-gray-500">Enable the builder to create a custom or template-based report.</p>
@@ -702,7 +708,10 @@
                 <div class="lg:col-span-2 bg-white shadow-sm rounded-lg border border-gray-100 p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-semibold text-gray-900">Predictive Analytics</h2>
-                        <button class="text-xs text-indigo-600" wire:click="loadAnalytics">Refresh</button>
+                        <button class="text-xs text-indigo-600 disabled:opacity-50" wire:click="loadAnalytics" wire:loading.attr="disabled">
+                            <span wire:loading.remove wire:target="loadAnalytics">Refresh</span>
+                            <span wire:loading wire:target="loadAnalytics">Refreshing...</span>
+                        </button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
