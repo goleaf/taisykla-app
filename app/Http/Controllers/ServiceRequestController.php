@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Data\ServiceRequest\AssignServiceRequestData;
+use App\Data\ServiceRequest\CreateServiceRequestData;
+use App\Data\ServiceRequest\RejectServiceRequestData;
+use App\Data\ServiceRequest\ServiceRequestData;
+use App\Data\ServiceRequest\UpdateServiceRequestData;
+use App\Data\ServiceRequest\UpdateStatusData;
 use App\Events\ServiceRequestStatusChanged;
-use App\Http\Requests\AssignTechnicianRequest;
-use App\Http\Requests\RejectRequestRequest;
-use App\Http\Requests\StoreServiceRequestRequest;
-use App\Http\Requests\UpdateServiceRequestRequest;
-use App\Http\Requests\UpdateStatusRequest;
 use App\Models\ServiceRequest;
 use App\Repositories\ServiceRequestRepository;
 use Illuminate\Http\Request;
@@ -41,7 +42,7 @@ class ServiceRequestController extends Controller
         $serviceRequests = $this->repository->getAll($filters);
 
         if ($request->wantsJson()) {
-            return response()->json($serviceRequests);
+            return ServiceRequestData::collection($serviceRequests);
         }
 
         return view('service_requests.index', compact('serviceRequests'));
@@ -60,21 +61,21 @@ class ServiceRequestController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreServiceRequestRequest $request)
+    public function store(CreateServiceRequestData $data)
     {
         $this->authorize('create', ServiceRequest::class);
 
         try {
-            $data = $request->validated();
-            $data['status'] = ServiceRequest::STATUS_PENDING; // Default status
-            $data['approval_status'] = ServiceRequest::APPROVAL_PENDING;
+            $attributes = $data->toArray();
+            $attributes['status'] = ServiceRequest::STATUS_PENDING;
+            $attributes['approval_status'] = ServiceRequest::APPROVAL_PENDING;
 
-            $serviceRequest = $this->repository->create($data);
+            $serviceRequest = $this->repository->create($attributes);
 
             Log::info("Service Request created: {$serviceRequest->id}");
 
-            if ($request->wantsJson()) {
-                return response()->json($serviceRequest, 201);
+            if (request()->wantsJson()) {
+                return ServiceRequestData::from($serviceRequest)->additional(['message' => 'Service request created successfully.']);
             }
 
             return redirect()->route('service-requests.show', $serviceRequest)
@@ -82,7 +83,7 @@ class ServiceRequestController extends Controller
         } catch (\Exception $e) {
             Log::error("Error creating service request: " . $e->getMessage());
 
-            if ($request->wantsJson()) {
+            if (request()->wantsJson()) {
                 return response()->json(['error' => 'Failed to create service request.'], 500);
             }
 
@@ -99,7 +100,7 @@ class ServiceRequestController extends Controller
         $this->authorize('view', $serviceRequest);
 
         if (request()->wantsJson()) {
-            return response()->json($serviceRequest);
+            return ServiceRequestData::from($serviceRequest);
         }
 
         return view('service_requests.show', compact('serviceRequest'));
@@ -119,18 +120,18 @@ class ServiceRequestController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateServiceRequestRequest $request, int $id)
+    public function update(UpdateServiceRequestData $data, int $id)
     {
         $serviceRequest = $this->repository->findOrFail($id);
         $this->authorize('update', $serviceRequest);
 
         try {
-            $this->repository->update($serviceRequest, $request->validated());
+            $this->repository->update($serviceRequest, $data->toArray());
 
             Log::info("Service Request updated: {$serviceRequest->id}");
 
-            if ($request->wantsJson()) {
-                return response()->json($serviceRequest);
+            if (request()->wantsJson()) {
+                return ServiceRequestData::from($serviceRequest);
             }
 
             return redirect()->route('service-requests.show', $serviceRequest)
@@ -138,7 +139,7 @@ class ServiceRequestController extends Controller
         } catch (\Exception $e) {
             Log::error("Error updating service request {$id}: " . $e->getMessage());
 
-            if ($request->wantsJson()) {
+            if (request()->wantsJson()) {
                 return response()->json(['error' => 'Failed to update service request.'], 500);
             }
 
@@ -179,7 +180,7 @@ class ServiceRequestController extends Controller
     /**
      * Assign a technician to the service request.
      */
-    public function assign(AssignTechnicianRequest $request, int $id)
+    public function assign(AssignServiceRequestData $data, int $id)
     {
         $serviceRequest = $this->repository->findOrFail($id);
         $this->authorize('assign', $serviceRequest);
@@ -187,24 +188,24 @@ class ServiceRequestController extends Controller
         try {
             $oldStatus = $serviceRequest->status;
 
-            $this->repository->update($serviceRequest, [
-                'technician_id' => $request->technician_id,
-                'status' => ServiceRequest::STATUS_ASSIGNED
-            ]);
+            $updateData = $data->toArray();
+            $updateData['status'] = ServiceRequest::STATUS_ASSIGNED;
+
+            $this->repository->update($serviceRequest, $updateData);
 
             event(new ServiceRequestStatusChanged($serviceRequest, $oldStatus, ServiceRequest::STATUS_ASSIGNED));
 
-            Log::info("Service Request {$id} assigned to technician {$request->technician_id}");
+            Log::info("Service Request {$id} assigned to technician {$data->technician_id}");
 
-            if ($request->wantsJson()) {
-                return response()->json($serviceRequest);
+            if (request()->wantsJson()) {
+                return ServiceRequestData::from($serviceRequest);
             }
 
             return back()->with('success', 'Technician assigned successfully.');
         } catch (\Exception $e) {
             Log::error("Error assigning technician to request {$id}: " . $e->getMessage());
 
-            if ($request->wantsJson()) {
+            if (request()->wantsJson()) {
                 return response()->json(['error' => 'Failed to assign technician.'], 500);
             }
 
@@ -215,27 +216,26 @@ class ServiceRequestController extends Controller
     /**
      * Update the status of the service request.
      */
-    public function updateStatus(UpdateStatusRequest $request, int $id)
+    public function updateStatus(UpdateStatusData $data, int $id)
     {
         $serviceRequest = $this->repository->findOrFail($id);
-        // Authorization check - potentially reuse 'update' or a specific permission
         $this->authorize('update', $serviceRequest);
 
         try {
             $oldStatus = $serviceRequest->status;
-            $newStatus = $request->status;
+            $newStatus = $data->status;
 
-            $data = ['status' => $newStatus];
+            $updateData = ['status' => $newStatus];
 
             if ($newStatus === ServiceRequest::STATUS_IN_PROGRESS && !$serviceRequest->started_at) {
-                $data['started_at'] = now();
+                $updateData['started_at'] = now();
             }
 
             if ($newStatus === ServiceRequest::STATUS_COMPLETED) {
-                $data['completed_at'] = now();
+                $updateData['completed_at'] = now();
             }
 
-            $this->repository->update($serviceRequest, $data);
+            $this->repository->update($serviceRequest, $updateData);
 
             if ($oldStatus !== $newStatus) {
                 event(new ServiceRequestStatusChanged($serviceRequest, $oldStatus, $newStatus));
@@ -243,15 +243,15 @@ class ServiceRequestController extends Controller
 
             Log::info("Service Request {$id} status updated to {$newStatus}");
 
-            if ($request->wantsJson()) {
-                return response()->json($serviceRequest);
+            if (request()->wantsJson()) {
+                return ServiceRequestData::from($serviceRequest);
             }
 
             return back()->with('success', 'Status updated successfully.');
         } catch (\Exception $e) {
             Log::error("Error updating status for request {$id}: " . $e->getMessage());
 
-            if ($request->wantsJson()) {
+            if (request()->wantsJson()) {
                 return response()->json(['error' => 'Failed to update status.'], 500);
             }
 
@@ -277,7 +277,7 @@ class ServiceRequestController extends Controller
             Log::info("Service Request {$id} approved by user " . auth()->id());
 
             if (request()->wantsJson()) {
-                return response()->json($serviceRequest);
+                return ServiceRequestData::from($serviceRequest);
             }
 
             return back()->with('success', 'Service request approved.');
@@ -295,7 +295,7 @@ class ServiceRequestController extends Controller
     /**
      * Reject the service request.
      */
-    public function reject(RejectRequestRequest $request, int $id)
+    public function reject(RejectServiceRequestData $data, int $id)
     {
         $serviceRequest = $this->repository->findOrFail($id);
         $this->authorize('reject', $serviceRequest);
@@ -303,21 +303,21 @@ class ServiceRequestController extends Controller
         try {
             $this->repository->update($serviceRequest, [
                 'approval_status' => ServiceRequest::APPROVAL_REJECTED,
-                'rejection_reason' => $request->rejection_reason,
+                'rejection_reason' => $data->rejection_reason,
                 'status' => ServiceRequest::STATUS_CANCELLED
             ]);
 
             Log::info("Service Request {$id} rejected by user " . auth()->id());
 
-            if ($request->wantsJson()) {
-                return response()->json($serviceRequest);
+            if (request()->wantsJson()) {
+                return ServiceRequestData::from($serviceRequest);
             }
 
             return back()->with('success', 'Service request rejected.');
         } catch (\Exception $e) {
             Log::error("Error rejecting request {$id}: " . $e->getMessage());
 
-            if ($request->wantsJson()) {
+            if (request()->wantsJson()) {
                 return response()->json(['error' => 'Failed to reject request.'], 500);
             }
 
