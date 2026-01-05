@@ -96,14 +96,26 @@ class ServiceRequestController extends Controller
      */
     public function show(int $id)
     {
-        $serviceRequest = $this->repository->findOrFail($id);
+        $serviceRequest = $this->repository->findOrFail($id, [
+            'customer',
+            'equipment',
+            'technician',
+            'approvedBy',
+            'items',
+            'notes',
+            'attachments',
+            'activityLogs' => function ($query) {
+                $query->with('causer')->orderBy('created_at', 'desc');
+            }
+        ]);
+
         $this->authorize('view', $serviceRequest);
 
         if (request()->wantsJson()) {
             return ServiceRequestData::from($serviceRequest);
         }
 
-        return view('service_requests.show', compact('serviceRequest'));
+        return view('service-requests.show', compact('serviceRequest'));
     }
 
     /**
