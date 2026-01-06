@@ -145,6 +145,36 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     });
     Route::resource('service-requests', \App\Http\Controllers\ServiceRequestController::class);
 
+    // Service Request Scheduling
+    Route::controller(\App\Http\Controllers\ServiceRequestSchedulingController::class)->group(function () {
+        Route::get('service-requests/{serviceRequest}/schedule', 'showAvailability')->name('service-requests.schedule.availability');
+        Route::post('service-requests/{serviceRequest}/schedule', 'schedule')->name('service-requests.schedule.store');
+        Route::get('service-requests/{serviceRequest}/reschedule', 'showReschedule')->name('service-requests.reschedule.show');
+        Route::put('service-requests/{serviceRequest}/reschedule', 'reschedule')->name('service-requests.reschedule.store');
+    });
+    Route::prefix('admin/technicians/{technician}/schedule')
+        ->name('admin.technicians.schedule.')
+        ->middleware('can:' . PermissionCatalog::SCHEDULE_MANAGE)
+        ->controller(\App\Http\Controllers\Admin\TechnicianScheduleController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{schedule}/edit', 'edit')->name('edit');
+            Route::put('/{schedule}', 'update')->name('update');
+            Route::delete('/{schedule}', 'destroy')->name('destroy');
+            Route::post('/default-hours', 'setDefaultHours')->name('default-hours');
+            Route::post('/block-time', 'blockTimeOff')->name('block-time');
+        });
+
+    // Technician Calendar
+    Route::get('technicians/{technician}/calendar', [\App\Http\Controllers\TechnicianCalendarController::class, 'show'])
+        ->middleware('can:' . PermissionCatalog::SCHEDULE_VIEW)
+        ->name('technicians.calendar');
+    Route::get('technicians/{technician}/calendar/events', [\App\Http\Controllers\TechnicianCalendarController::class, 'events'])
+        ->middleware('can:' . PermissionCatalog::SCHEDULE_VIEW)
+        ->name('technicians.calendar.events');
+
     Route::view('profile', 'profile')->name('profile');
 });
 

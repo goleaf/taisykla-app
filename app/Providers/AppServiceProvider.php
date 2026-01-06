@@ -48,5 +48,20 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Event::subscribe(AuthEventSubscriber::class);
+
+        // Zap Schedule Event Listeners
+        if (class_exists(\Zap\Events\ScheduleCreated::class)) {
+            Event::listen(
+                \Zap\Events\ScheduleCreated::class,
+                \App\Listeners\SendScheduleConfirmation::class
+            );
+        }
+
+        if (class_exists(\Zap\Events\ScheduleDeleted::class)) {
+            Event::listen(
+                \Zap\Events\ScheduleDeleted::class,
+                \App\Listeners\SendCancellationNotification::class
+            );
+        }
     }
 }

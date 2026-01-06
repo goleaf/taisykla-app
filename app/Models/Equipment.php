@@ -37,7 +37,7 @@ use Illuminate\Support\Carbon;
  */
 class Equipment extends Model
 {
-    use HasFactory, SoftDeletes, \App\Traits\Auditable;
+    use HasFactory, SoftDeletes, \App\Traits\Auditable, \Zap\Models\Concerns\HasSchedules;
 
     public const STATUS_OPERATIONAL = 'operational';
     public const STATUS_NEEDS_REPAIR = 'needs_repair';
