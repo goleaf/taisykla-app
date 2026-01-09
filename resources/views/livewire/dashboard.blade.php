@@ -12,44 +12,71 @@
             </div>
             <div class="flex items-center gap-3">
                 <x-action-message class="mr-3" on="dashboard-preferences-saved" />
-                
+
                 <div x-data="{ open: false }">
-                    <button @click="open = true" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <button @click="open = true"
+                        class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
                         Customize
                     </button>
 
                     <x-modal name="customize-dashboard" x-show="open" @close="open = false">
                         <div class="p-6">
                             <h2 class="text-lg font-medium text-gray-900">Customize Dashboard</h2>
-                            <p class="mt-1 text-sm text-gray-600">Choose which sections you want to see on your dashboard.</p>
-                            
+                            <p class="mt-1 text-sm text-gray-600">Choose which sections you want to see on your
+                                dashboard.</p>
+
                             <div class="mt-6 space-y-4">
                                 <div class="flex items-center">
-                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.summary" id="pref-summary" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <input type="checkbox"
+                                        wire:model.defer="dashboardPreferences.visible_sections.summary"
+                                        id="pref-summary"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                     <label for="pref-summary" class="ml-2 text-sm text-gray-700">Summary Cards</label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.availability" id="pref-availability" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <label for="pref-availability" class="ml-2 text-sm text-gray-700">Availability Status</label>
+                                    <input type="checkbox"
+                                        wire:model.defer="dashboardPreferences.visible_sections.availability"
+                                        id="pref-availability"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <label for="pref-availability" class="ml-2 text-sm text-gray-700">Availability
+                                        Status</label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.main_content" id="pref-main" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <label for="pref-main" class="ml-2 text-sm text-gray-700">Main Content (Jobs/Tickets)</label>
+                                    <input type="checkbox"
+                                        wire:model.defer="dashboardPreferences.visible_sections.main_content"
+                                        id="pref-main"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <label for="pref-main" class="ml-2 text-sm text-gray-700">Main Content
+                                        (Jobs/Tickets)</label>
                                 </div>
                                 <div class="flex items-center">
-                                    <input type="checkbox" wire:model.defer="dashboardPreferences.visible_sections.charts" id="pref-charts" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                                    <label for="pref-charts" class="ml-2 text-sm text-gray-700">Interactive Charts</label>
+                                    <input type="checkbox"
+                                        wire:model.defer="dashboardPreferences.visible_sections.charts" id="pref-charts"
+                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                    <label for="pref-charts" class="ml-2 text-sm text-gray-700">Interactive
+                                        Charts</label>
                                 </div>
                             </div>
 
                             <div class="mt-6 flex justify-end">
                                 <x-secondary-button @click="open = false">Cancel</x-secondary-button>
-                                <x-primary-button class="ml-3 disabled:opacity-50" wire:click="savePreferences" wire:loading.attr="disabled" wire:target="savePreferences">
+                                <x-primary-button class="ml-3 disabled:opacity-50" wire:click="savePreferences"
+                                    wire:loading.attr="disabled" wire:target="savePreferences">
                                     <span wire:loading wire:target="savePreferences" class="mr-2">
-                                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg"
+                                            fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                            </path>
                                         </svg>
                                     </span>
                                     <span wire:loading.remove wire:target="savePreferences">Save Changes</span>
@@ -88,19 +115,24 @@
                 <div>
                     <p class="text-xs uppercase tracking-wide text-gray-500">Availability</p>
                     <p class="text-lg font-semibold {{ $availability['color'] ?? 'text-gray-500' }}">
-                        {{ $availability['label'] ?? 'Offline' }}</p>
+                        {{ $availability['label'] ?? 'Offline' }}
+                    </p>
                     <p class="text-xs text-gray-500">Updated {{ $availability['updated'] ?? 'just now' }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($availabilityOptions as $value => $label)
-                        <button class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-50"
-                            wire:click="updateAvailability('{{ $value }}')"
-                            wire:loading.attr="disabled"
+                        <button
+                            class="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50 disabled:opacity-50"
+                            wire:click="updateAvailability('{{ $value }}')" wire:loading.attr="disabled"
                             wire:target="updateAvailability('{{ $value }}')">
                             <span wire:loading wire:target="updateAvailability('{{ $value }}')" class="mr-1">
-                                <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                                    </circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
                                 </svg>
                             </span>
                             {{ $label }}
@@ -111,324 +143,341 @@
         @endif
 
         @if($dashboardPreferences['visible_sections']['summary'] ?? true)
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            @foreach ($summaryCards as $card)
-                <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                    <p class="text-xs uppercase tracking-wide text-gray-500">{{ $card['label'] }}</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ $card['value'] }}</p>
-                    @if (!empty($card['subtext']))
-                        <p class="text-xs text-gray-500">{{ $card['subtext'] }}</p>
-                    @endif
-                </div>
-            @endforeach
-        </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                @foreach ($summaryCards as $card)
+                    <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">{{ $card['label'] }}</p>
+                        <p class="text-2xl font-semibold text-gray-900">{{ $card['value'] }}</p>
+                        @if (!empty($card['subtext']))
+                            <p class="text-xs text-gray-500">{{ $card['subtext'] }}</p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
         @endif
 
         @if ($roleKey === 'technician' && $technicianData)
             @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
-            <div class="space-y-6">
-                <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-gray-900">Today's Work Queue</h2>
-                        <a class="text-sm text-indigo-600" href="{{ route('schedule.index') }}" wire:navigate>View
-                            schedule</a>
-                    </div>
-                    <div class="space-y-4">
-                        @forelse ($technicianData['appointments'] as $appointment)
-                            @php
-                                $order = $appointment->workOrder;
-                                $priorityClass = match ($order?->priority) {
-                                    'urgent' => 'bg-red-100 text-red-700',
-                                    'high' => 'bg-orange-100 text-orange-700',
-                                    default => 'bg-blue-100 text-blue-700',
-                                };
-                                $estimatedMinutes = $appointment->scheduled_start_at && $appointment->scheduled_end_at
-                                    ? $appointment->scheduled_start_at->diffInMinutes($appointment->scheduled_end_at)
-                                    : ($order?->estimated_minutes ?? $order?->labor_minutes);
-                            @endphp
-                            <details class="border border-gray-100 rounded-lg p-4">
-                                <summary class="cursor-pointer">
-                                    <div class="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <p class="text-sm font-semibold text-gray-900">
-                                                {{ $order?->organization?->name ?? $order?->requestedBy?->name ?? 'Customer' }}
+                <div class="space-y-6">
+                    <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">Today's Work Queue</h2>
+                            <a class="text-sm text-indigo-600" href="{{ route('schedule.index') }}" wire:navigate>View
+                                schedule</a>
+                        </div>
+                        <div class="space-y-4">
+                            @forelse ($technicianData['appointments'] as $appointment)
+                                @php
+                                    $order = $appointment->workOrder;
+                                    $priorityClass = match ($order?->priority) {
+                                        'urgent' => 'bg-red-100 text-red-700',
+                                        'high' => 'bg-orange-100 text-orange-700',
+                                        default => 'bg-blue-100 text-blue-700',
+                                    };
+                                    $estimatedMinutes = $appointment->scheduled_start_at && $appointment->scheduled_end_at
+                                        ? $appointment->scheduled_start_at->diffInMinutes($appointment->scheduled_end_at)
+                                        : ($order?->estimated_minutes ?? $order?->labor_minutes);
+                                @endphp
+                                <details class="border border-gray-100 rounded-lg p-4">
+                                    <summary class="cursor-pointer">
+                                        <div class="flex flex-wrap items-center justify-between gap-3">
+                                            <div>
+                                                <p class="text-sm font-semibold text-gray-900">
+                                                    {{ $order?->organization?->name ?? $order?->requestedBy?->name ?? 'Customer' }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                    {{ $order?->location_address ?? 'No address provided' }}
+                                                </p>
+                                            </div>
+                                            <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                                <span>{{ $appointment->scheduled_start_at?->format('H:i') ?? 'TBD' }}
+                                                    {{ $appointment->time_window ? '• ' . $appointment->time_window : '' }}</span>
+                                                <span>{{ $order?->category?->name ?? 'Service' }}</span>
+                                                <span>{{ $estimatedMinutes ? $estimatedMinutes . ' min' : '—' }}</span>
+                                                <span
+                                                    class="inline-flex items-center rounded-full px-2 py-0.5 {{ $priorityClass }}">{{ ucfirst($order?->priority ?? 'standard') }}</span>
+                                            </div>
+                                        </div>
+                                    </summary>
+                                    <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm text-gray-700">
+                                        <div class="space-y-2">
+                                            <p class="text-xs uppercase text-gray-500">Customer Details</p>
+                                            <p>Contact:
+                                                {{ $order?->organization?->primary_contact_name ?? $order?->requestedBy?->name ?? '—' }}
                                             </p>
-                                            <p class="text-xs text-gray-500">
-                                                {{ $order?->location_address ?? 'No address provided' }}</p>
+                                            <p>Email:
+                                                {{ $order?->organization?->primary_contact_email ?? $order?->requestedBy?->email ?? '—' }}
+                                            </p>
+                                            <p>Phone:
+                                                {{ $order?->organization?->primary_contact_phone ?? $order?->requestedBy?->phone ?? '—' }}
+                                            </p>
+                                            <p>Location notes: {{ $appointment->notes ?? $order?->location_name ?? '—' }}</p>
+                                            <p>Description: {{ $order?->description ?? 'No description.' }}</p>
                                         </div>
-                                        <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                            <span>{{ $appointment->scheduled_start_at?->format('H:i') ?? 'TBD' }}
-                                                {{ $appointment->time_window ? '• ' . $appointment->time_window : '' }}</span>
-                                            <span>{{ $order?->category?->name ?? 'Service' }}</span>
-                                            <span>{{ $estimatedMinutes ? $estimatedMinutes . ' min' : '—' }}</span>
-                                            <span
-                                                class="inline-flex items-center rounded-full px-2 py-0.5 {{ $priorityClass }}">{{ ucfirst($order?->priority ?? 'standard') }}</span>
+                                        <div class="space-y-2">
+                                            <p class="text-xs uppercase text-gray-500">Equipment</p>
+                                            <p>{{ $order?->equipment?->name ?? '—' }}
+                                                {{ $order?->equipment?->model ? '• ' . $order->equipment->model : '' }}
+                                            </p>
+                                            <p>Serial: {{ $order?->equipment?->serial_number ?? '—' }}</p>
+                                            <p>Location: {{ $order?->equipment?->location_name ?? '—' }}</p>
+                                            <p class="text-xs uppercase text-gray-500 mt-3">Parts to Bring</p>
+                                            @if ($order?->parts && $order->parts->isNotEmpty())
+                                                <ul class="text-sm text-gray-700">
+                                                    @foreach ($order->parts as $part)
+                                                        <li>{{ $part->part?->name ?? 'Part' }} • Qty {{ $part->quantity }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            @else
+                                                <p class="text-sm text-gray-500">No parts assigned yet.</p>
+                                            @endif
                                         </div>
                                     </div>
-                                </summary>
-                                <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4 text-sm text-gray-700">
-                                    <div class="space-y-2">
-                                        <p class="text-xs uppercase text-gray-500">Customer Details</p>
-                                        <p>Contact:
-                                            {{ $order?->organization?->primary_contact_name ?? $order?->requestedBy?->name ?? '—' }}
-                                        </p>
-                                        <p>Email:
-                                            {{ $order?->organization?->primary_contact_email ?? $order?->requestedBy?->email ?? '—' }}
-                                        </p>
-                                        <p>Phone:
-                                            {{ $order?->organization?->primary_contact_phone ?? $order?->requestedBy?->phone ?? '—' }}
-                                        </p>
-                                        <p>Location notes: {{ $appointment->notes ?? $order?->location_name ?? '—' }}</p>
-                                        <p>Description: {{ $order?->description ?? 'No description.' }}</p>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <p class="text-xs uppercase text-gray-500">Equipment</p>
-                                        <p>{{ $order?->equipment?->name ?? '—' }}
-                                            {{ $order?->equipment?->model ? '• ' . $order->equipment->model : '' }}</p>
-                                        <p>Serial: {{ $order?->equipment?->serial_number ?? '—' }}</p>
-                                        <p>Location: {{ $order?->equipment?->location_name ?? '—' }}</p>
-                                        <p class="text-xs uppercase text-gray-500 mt-3">Parts to Bring</p>
-                                        @if ($order?->parts && $order->parts->isNotEmpty())
-                                            <ul class="text-sm text-gray-700">
-                                                @foreach ($order->parts as $part)
-                                                    <li>{{ $part->part?->name ?? 'Part' }} • Qty {{ $part->quantity }}</li>
+                                    <div class="mt-4">
+                                        <p class="text-xs uppercase text-gray-500">Customer Photos</p>
+                                        @if ($order?->attachments && $order->attachments->isNotEmpty())
+                                            <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                                                @foreach ($order->attachments->take(4) as $attachment)
+                                                    <a href="{{ asset('storage/' . $attachment->file_path) }}" target="_blank"
+                                                        rel="noreferrer">
+                                                        <img class="h-20 w-full rounded-md object-cover border border-gray-200"
+                                                            src="{{ asset('storage/' . $attachment->file_path) }}"
+                                                            alt="{{ $attachment->label ?? 'Attachment' }}" loading="lazy" /> </a>
                                                 @endforeach
-                                            </ul>
+                                            </div>
                                         @else
-                                            <p class="text-sm text-gray-500">No parts assigned yet.</p>
+                                            <p class="text-sm text-gray-500">No photos uploaded.</p>
                                         @endif
                                     </div>
+                                    <div class="mt-4">
+                                        <a class="text-sm text-indigo-600"
+                                            href="{{ $order ? route('work-orders.show', $order) : '#' }}" wire:navigate>Open work
+                                            order</a>
+                                    </div>
+                                </details>
+                            @empty
+                                <p class="text-sm text-gray-500">No appointments scheduled for today.</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Intelligent Route Planning</h2>
+
+                            {{-- Interactive Route Map --}}
+                            <x-route-map :stops="collect($technicianData['routeStops'])->map(fn($stop) => [
+                        'sequence' => $stop['sequence'],
+                        'label' => $stop['label'],
+                        'address' => $stop['address'] ?? null,
+                        'time' => $stop['time'] ?? null,
+                        'travel_minutes' => $stop['travel_minutes'] ?? null,
+                        'lat' => $stop['lat'] ?? null,
+                        'lng' => $stop['lng'] ?? null,
+                        'priority' => $stop['priority'] ?? 'standard',
+                    ])->toArray()" :current-lat="$user->current_latitude" :current-lng="$user->current_longitude"
+                                height="280px" />
+
+                            {{-- Text-based Route List --}}
+                            <div class="mt-4 space-y-3">
+                                @forelse ($technicianData['routeStops'] as $stop)
+                                    <div class="flex items-start justify-between gap-3 text-sm text-gray-700">
+                                        <div>
+                                            <p class="font-medium text-gray-900">Stop {{ $stop['sequence'] }} • {{ $stop['label'] }}
+                                            </p>
+                                            <p class="text-xs text-gray-500">{{ $stop['address'] ?? 'No address' }}</p>
+                                            <p class="text-xs text-gray-500">
+                                                {{ $stop['time'] ? 'ETA window: ' . $stop['time'] : 'ETA TBD' }}
+                                                {{ $stop['travel_minutes'] ? '• Travel ' . $stop['travel_minutes'] . ' min' : '' }}
+                                            </p>
+                                        </div>
+                                        @if ($stop['map_url'])
+                                            <a class="text-xs text-indigo-600" href="{{ $stop['map_url'] }}" target="_blank"
+                                                rel="noreferrer">Navigate</a>
+                                        @else
+                                            <span class="text-xs text-gray-400">No coords</span>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <p class="text-sm text-gray-500">Route planning will appear once stops are scheduled with
+                                        locations.</p>
+                                @endforelse
+                            </div>
+                            <p class="mt-4 text-xs text-gray-500">Reorder stops from the schedule view if you need to optimize
+                                today's route.</p>
+                        </div>
+
+
+                        <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Time Tracking Summary</h2>
+                            <div class="space-y-3 text-sm text-gray-700">
+                                @if ($technicianData['timeSummary']['current'])
+                                    <div class="rounded-md bg-indigo-50 p-3">
+                                        <p class="text-xs uppercase text-indigo-600">Active Job</p>
+                                        <p class="font-medium text-indigo-900">
+                                            {{ $technicianData['timeSummary']['current']['subject'] }}
+                                        </p>
+                                        <p class="text-xs text-indigo-700">
+                                            Started {{ $technicianData['timeSummary']['current']['started_at']->format('H:i') }}
+                                            • {{ $technicianData['timeSummary']['current']['elapsed_minutes'] }} min elapsed
+                                            {{ $technicianData['timeSummary']['current']['estimated_minutes'] ? '• Est ' . $technicianData['timeSummary']['current']['estimated_minutes'] . ' min' : '' }}
+                                        </p>
+                                    </div>
+                                @else
+                                    <p class="text-sm text-gray-500">No active job right now.</p>
+                                @endif
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Work Time</p>
+                                        <p class="text-base font-semibold text-gray-900">
+                                            {{ $technicianData['timeSummary']['labor_minutes'] }} min
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Travel Time</p>
+                                        <p class="text-base font-semibold text-gray-900">
+                                            {{ $technicianData['timeSummary']['travel_minutes'] }} min
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Break Time</p>
+                                        <p class="text-base font-semibold text-gray-900">
+                                            {{ $technicianData['timeSummary']['break_minutes'] !== null ? $technicianData['timeSummary']['break_minutes'] . ' min' : 'Not tracked' }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-500">Billable</p>
+                                        <p class="text-base font-semibold text-gray-900">
+                                            {{ $technicianData['timeSummary']['billable_minutes'] }} min
+                                        </p>
+                                    </div>
                                 </div>
-                                <div class="mt-4">
-                                    <p class="text-xs uppercase text-gray-500">Customer Photos</p>
-                                    @if ($order?->attachments && $order->attachments->isNotEmpty())
-                                        <div class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                                            @foreach ($order->attachments->take(4) as $attachment)
-                                                <a href="{{ asset('storage/' . $attachment->file_path) }}" target="_blank"
-                                                    rel="noreferrer">
-                                                    <img class="h-20 w-full rounded-md object-cover border border-gray-200"
-                                                        src="{{ asset('storage/' . $attachment->file_path) }}"
-                                                        alt="{{ $attachment->label ?? 'Attachment' }}" loading="lazy" />                                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Communication Center</h2>
+                            <div class="space-y-3">
+                                @forelse ($technicianData['messages'] as $thread)
+                                    @php
+                                        $lastMessage = $thread->messages->first();
+                                    @endphp
+                                    <div class="border border-gray-100 rounded-lg p-3">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <p class="font-medium text-gray-900">{{ $thread->subject ?: 'Conversation' }}</p>
+                                            @if ($thread->is_unread)
+                                                <span class="text-xs text-red-600">Unread</span>
+                                            @endif
+                                        </div>
+                                        <p class="text-xs text-gray-500">
+                                            {{ $thread->workOrder ? 'WO #' . $thread->workOrder->id . ' • ' : '' }}
+                                            {{ $lastMessage?->user?->name ?? 'System' }} •
+                                            {{ $lastMessage?->created_at?->diffForHumans() ?? '—' }}
+                                        </p>
+                                        <p class="text-sm text-gray-700 mt-2">{{ $lastMessage?->body ?? 'No messages yet.' }}</p>
+                                        <form wire:submit.prevent="sendQuickReply({{ $thread->id }})" class="mt-3">
+                                            <textarea wire:model.defer="quickReplies.{{ $thread->id }}"
+                                                class="w-full rounded-md border-gray-300 text-sm" rows="2"
+                                                placeholder="Quick reply"></textarea>
+                                            @error('quickReplies.' . $thread->id) <p class="text-xs text-red-600">{{ $message }}</p>
+                                            @enderror
+                                            <div class="mt-2 flex items-center justify-between">
+                                                <a class="text-xs text-indigo-600" href="{{ route('messages.index') }}"
+                                                    wire:navigate>Open thread</a>
+                                                <button
+                                                    class="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md disabled:opacity-50"
+                                                    wire:loading.attr="disabled" wire:target="sendQuickReply({{ $thread->id }})">
+                                                    <span wire:loading.remove
+                                                        wire:target="sendQuickReply({{ $thread->id }})">Send</span>
+                                                    <span wire:loading wire:target="sendQuickReply({{ $thread->id }})">...</span>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                @empty
+                                    <p class="text-sm text-gray-500">No recent messages.</p>
+                                @endforelse
+                            </div>
+                        </div>
+
+                        <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                            <h2 class="text-lg font-semibold text-gray-900 mb-4">Parts & Inventory Quick Access</h2>
+                            <div class="space-y-4">
+                                @error('reservePart')
+                                    <p class="text-xs text-red-600">{{ $message }}</p>
+                                @enderror
+                                <div>
+                                    <p class="text-xs uppercase text-gray-500">Parts Needed Today</p>
+                                    @if ($technicianData['parts']['needed'])
+                                        <ul class="mt-2 text-sm text-gray-700 space-y-1">
+                                            @foreach ($technicianData['parts']['needed'] as $part)
+                                                <li class="flex items-center justify-between gap-2">
+                                                    <span>
+                                                        {{ $part['name'] }}{{ $part['sku'] ? ' • ' . $part['sku'] : '' }} • Qty
+                                                        {{ $part['quantity'] }}
+                                                        <span class="text-xs text-gray-500">• Available {{ $part['available'] }}</span>
+                                                    </span>
+                                                    @if ($part['part_id'])
+                                                        <button type="button"
+                                                            class="inline-flex items-center px-2 py-1 text-xs border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                                                            wire:click="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
+                                                            @disabled($part['available'] < 1)>
+                                                            <span wire:loading
+                                                                wire:target="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
+                                                                class="mr-1">
+                                                                <svg class="animate-spin h-3 w-3 text-indigo-500"
+                                                                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                                        stroke-width="4"></circle>
+                                                                    <path class="opacity-75" fill="currentColor"
+                                                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                                    </path>
+                                                                </svg>
+                                                            </span>
+                                                            Reserve
+                                                        </button>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        <p class="text-sm text-gray-500 mt-2">No parts assigned for today’s jobs.</p>
+                                    @endif
+                                </div>
+                                <div>
+                                    <p class="text-xs uppercase text-gray-500">Commonly Used Parts</p>
+                                    @if ($technicianData['parts']['common'])
+                                        <div class="mt-2 space-y-2 text-sm text-gray-700">
+                                            @foreach ($technicianData['parts']['common'] as $part)
+                                                <div class="flex items-center justify-between">
+                                                    <div>
+                                                        <p class="font-medium text-gray-900">{{ $part['name'] }}</p>
+                                                        <p class="text-xs text-gray-500">Usage: {{ $part['usage'] }} • SKU:
+                                                            {{ $part['sku'] ?? '—' }}
+                                                        </p>
+                                                    </div>
+                                                    <div class="text-xs text-gray-500 text-right">
+                                                        <p>Available: {{ $part['available'] }}</p>
+                                                        @if ($part['reorder_level'])
+                                                            <p>Reorder @ {{ $part['reorder_level'] }}</p>
+                                                        @endif
+                                                    </div>
+                                                </div>
                                             @endforeach
                                         </div>
                                     @else
-                                        <p class="text-sm text-gray-500">No photos uploaded.</p>
+                                        <p class="text-sm text-gray-500 mt-2">No usage data available yet.</p>
                                     @endif
                                 </div>
-                                <div class="mt-4">
-                                    <a class="text-sm text-indigo-600"
-                                        href="{{ $order ? route('work-orders.show', $order) : '#' }}" wire:navigate>Open work
-                                        order</a>
-                                </div>
-                            </details>
-                        @empty
-                            <p class="text-sm text-gray-500">No appointments scheduled for today.</p>
-                        @endforelse
-                    </div>
-                </div>
-
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Intelligent Route Planning</h2>
-
-                        {{-- Interactive Route Map --}}
-                        <x-route-map :stops="collect($technicianData['routeStops'])->map(fn($stop) => [
-                'sequence' => $stop['sequence'],
-                'label' => $stop['label'],
-                'address' => $stop['address'] ?? null,
-                'time' => $stop['time'] ?? null,
-                'travel_minutes' => $stop['travel_minutes'] ?? null,
-                'lat' => $stop['lat'] ?? null,
-                'lng' => $stop['lng'] ?? null,
-                'priority' => $stop['priority'] ?? 'standard',
-            ])->toArray()" :current-lat="$user->current_latitude" :current-lng="$user->current_longitude"
-                            height="280px" />
-
-                        {{-- Text-based Route List --}}
-                        <div class="mt-4 space-y-3">
-                            @forelse ($technicianData['routeStops'] as $stop)
-                                <div class="flex items-start justify-between gap-3 text-sm text-gray-700">
-                                    <div>
-                                        <p class="font-medium text-gray-900">Stop {{ $stop['sequence'] }} • {{ $stop['label'] }}
-                                        </p>
-                                        <p class="text-xs text-gray-500">{{ $stop['address'] ?? 'No address' }}</p>
-                                        <p class="text-xs text-gray-500">
-                                            {{ $stop['time'] ? 'ETA window: ' . $stop['time'] : 'ETA TBD' }}
-                                            {{ $stop['travel_minutes'] ? '• Travel ' . $stop['travel_minutes'] . ' min' : '' }}
-                                        </p>
-                                    </div>
-                                    @if ($stop['map_url'])
-                                        <a class="text-xs text-indigo-600" href="{{ $stop['map_url'] }}" target="_blank"
-                                            rel="noreferrer">Navigate</a>
-                                    @else
-                                        <span class="text-xs text-gray-400">No coords</span>
-                                    @endif
-                                </div>
-                            @empty
-                                <p class="text-sm text-gray-500">Route planning will appear once stops are scheduled with
-                                    locations.</p>
-                            @endforelse
-                        </div>
-                        <p class="mt-4 text-xs text-gray-500">Reorder stops from the schedule view if you need to optimize
-                            today's route.</p>
-                    </div>
-
-
-                    <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Time Tracking Summary</h2>
-                        <div class="space-y-3 text-sm text-gray-700">
-                            @if ($technicianData['timeSummary']['current'])
-                                <div class="rounded-md bg-indigo-50 p-3">
-                                    <p class="text-xs uppercase text-indigo-600">Active Job</p>
-                                    <p class="font-medium text-indigo-900">
-                                        {{ $technicianData['timeSummary']['current']['subject'] }}</p>
-                                    <p class="text-xs text-indigo-700">
-                                        Started {{ $technicianData['timeSummary']['current']['started_at']->format('H:i') }}
-                                        • {{ $technicianData['timeSummary']['current']['elapsed_minutes'] }} min elapsed
-                                        {{ $technicianData['timeSummary']['current']['estimated_minutes'] ? '• Est ' . $technicianData['timeSummary']['current']['estimated_minutes'] . ' min' : '' }}
-                                    </p>
-                                </div>
-                            @else
-                                <p class="text-sm text-gray-500">No active job right now.</p>
-                            @endif
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <p class="text-xs text-gray-500">Work Time</p>
-                                    <p class="text-base font-semibold text-gray-900">
-                                        {{ $technicianData['timeSummary']['labor_minutes'] }} min</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Travel Time</p>
-                                    <p class="text-base font-semibold text-gray-900">
-                                        {{ $technicianData['timeSummary']['travel_minutes'] }} min</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Break Time</p>
-                                    <p class="text-base font-semibold text-gray-900">
-                                        {{ $technicianData['timeSummary']['break_minutes'] !== null ? $technicianData['timeSummary']['break_minutes'] . ' min' : 'Not tracked' }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500">Billable</p>
-                                    <p class="text-base font-semibold text-gray-900">
-                                        {{ $technicianData['timeSummary']['billable_minutes'] }} min</p>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Communication Center</h2>
-                        <div class="space-y-3">
-                            @forelse ($technicianData['messages'] as $thread)
-                                @php
-                                    $lastMessage = $thread->messages->first();
-                                @endphp
-                                <div class="border border-gray-100 rounded-lg p-3">
-                                    <div class="flex items-center justify-between text-sm">
-                                        <p class="font-medium text-gray-900">{{ $thread->subject ?: 'Conversation' }}</p>
-                                        @if ($thread->is_unread)
-                                            <span class="text-xs text-red-600">Unread</span>
-                                        @endif
-                                    </div>
-                                    <p class="text-xs text-gray-500">
-                                        {{ $thread->workOrder ? 'WO #' . $thread->workOrder->id . ' • ' : '' }}
-                                        {{ $lastMessage?->user?->name ?? 'System' }} •
-                                        {{ $lastMessage?->created_at?->diffForHumans() ?? '—' }}
-                                    </p>
-                                    <p class="text-sm text-gray-700 mt-2">{{ $lastMessage?->body ?? 'No messages yet.' }}</p>
-                                    <form wire:submit.prevent="sendQuickReply({{ $thread->id }})" class="mt-3">
-                                        <textarea wire:model.defer="quickReplies.{{ $thread->id }}"
-                                            class="w-full rounded-md border-gray-300 text-sm" rows="2"
-                                            placeholder="Quick reply"></textarea>
-                                        @error('quickReplies.' . $thread->id) <p class="text-xs text-red-600">{{ $message }}</p>
-                                        @enderror
-                                        <div class="mt-2 flex items-center justify-between">
-                                            <a class="text-xs text-indigo-600" href="{{ route('messages.index') }}"
-                                                wire:navigate>Open thread</a>
-                                            <button class="px-3 py-1 text-xs bg-indigo-600 text-white rounded-md disabled:opacity-50" wire:loading.attr="disabled" wire:target="sendQuickReply({{ $thread->id }})">
-                                                <span wire:loading.remove wire:target="sendQuickReply({{ $thread->id }})">Send</span>
-                                                <span wire:loading wire:target="sendQuickReply({{ $thread->id }})">...</span>
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            @empty
-                                <p class="text-sm text-gray-500">No recent messages.</p>
-                            @endforelse
-                        </div>
-                    </div>
-
-                    <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
-                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Parts & Inventory Quick Access</h2>
-                        <div class="space-y-4">
-                            @error('reservePart')
-                                <p class="text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                            <div>
-                                <p class="text-xs uppercase text-gray-500">Parts Needed Today</p>
-                                @if ($technicianData['parts']['needed'])
-                                    <ul class="mt-2 text-sm text-gray-700 space-y-1">
-                                        @foreach ($technicianData['parts']['needed'] as $part)
-                                            <li class="flex items-center justify-between gap-2">
-                                                <span>
-                                                    {{ $part['name'] }}{{ $part['sku'] ? ' • ' . $part['sku'] : '' }} • Qty
-                                                    {{ $part['quantity'] }}
-                                                    <span class="text-xs text-gray-500">• Available {{ $part['available'] }}</span>
-                                                </span>
-                                                @if ($part['part_id'])
-                                                    <button type="button" class="inline-flex items-center px-2 py-1 text-xs border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                                                        wire:click="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
-                                                        wire:loading.attr="disabled"
-                                                        wire:target="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})"
-                                                        @disabled($part['available'] < 1)>
-                                                        <span wire:loading wire:target="reservePart({{ $part['part_id'] }}, {{ $part['quantity'] }})" class="mr-1">
-                                                            <svg class="animate-spin h-3 w-3 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                            </svg>
-                                                        </span>
-                                                        Reserve
-                                                    </button>
-                                                @endif
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @else
-                                    <p class="text-sm text-gray-500 mt-2">No parts assigned for today’s jobs.</p>
-                                @endif
-                            </div>
-                            <div>
-                                <p class="text-xs uppercase text-gray-500">Commonly Used Parts</p>
-                                @if ($technicianData['parts']['common'])
-                                    <div class="mt-2 space-y-2 text-sm text-gray-700">
-                                        @foreach ($technicianData['parts']['common'] as $part)
-                                            <div class="flex items-center justify-between">
-                                                <div>
-                                                    <p class="font-medium text-gray-900">{{ $part['name'] }}</p>
-                                                    <p class="text-xs text-gray-500">Usage: {{ $part['usage'] }} • SKU:
-                                                        {{ $part['sku'] ?? '—' }}</p>
-                                                </div>
-                                                <div class="text-xs text-gray-500 text-right">
-                                                    <p>Available: {{ $part['available'] }}</p>
-                                                    @if ($part['reorder_level'])
-                                                        <p>Reorder @ {{ $part['reorder_level'] }}</p>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <p class="text-sm text-gray-500 mt-2">No usage data available yet.</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             @endif
         @endif
 
@@ -871,273 +920,273 @@
             @endphp
             <div class="dispatch-scope space-y-6" wire:poll.20s>
                 @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
-                <div class="dispatch-shell p-6">
-                    <div class="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
-                        <div>
-                            <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Operations Control</p>
-                            <h2 class="dispatch-title text-3xl text-slate-900">Dispatch Manager Dashboard</h2>
-                            <p class="text-sm text-slate-600">Real-time coordination for field response, assignments, and
-                                coverage.</p>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <span class="dispatch-pill"><span class="dispatch-live-dot"></span>Live sync</span>
-                            <span class="dispatch-pill neutral">WebSocket ready</span>
-                            <span class="dispatch-pill neutral">Polling fallback 20s</span>
-                            <span class="dispatch-pill neutral">Updated {{ now()->format('H:i:s') }}</span>
-                            <button
-                                class="px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-300 rounded-full bg-white/70">
-                                Refresh
-                            </button>
-                        </div>
-                    </div>
-                    <div class="relative z-10 mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <div class="dispatch-stat">
-                            <p class="text-xs uppercase text-slate-500">Unassigned queue</p>
-                            <p class="text-2xl font-semibold text-slate-900">{{ $queueCount }}</p>
-                            <p class="text-xs text-slate-500">Priority score sorting</p>
-                        </div>
-                        <div class="dispatch-stat">
-                            <p class="text-xs uppercase text-slate-500">SLA at risk</p>
-                            <p class="text-2xl font-semibold text-slate-900">{{ $slaRisks }}</p>
-                            <p class="text-xs text-slate-500">{{ $slaBreaches }} breached</p>
-                        </div>
-                        <div class="dispatch-stat">
-                            <p class="text-xs uppercase text-slate-500">Active technicians</p>
-                            <p class="text-2xl font-semibold text-slate-900">{{ $techCards->count() }}</p>
-                            <p class="text-xs text-slate-500">{{ $availableCount }} available now</p>
-                        </div>
-                        <div class="dispatch-stat">
-                            <p class="text-xs uppercase text-slate-500">Coverage health</p>
-                            <p class="text-2xl font-semibold text-slate-900">{{ $coverageScore }}%</p>
-                            <p class="text-xs text-slate-500">{{ $overdueCount }} running late</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                    <div class="xl:col-span-7 dispatch-card p-6">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div class="dispatch-shell p-6">
+                        <div class="relative z-10 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
                             <div>
-                                <h2 class="text-xl font-semibold text-slate-900">Unassigned Work Request Queue</h2>
-                                <p class="text-sm text-slate-500">Prioritized by urgency, SLA, and customer history.</p>
+                                <p class="text-xs uppercase tracking-[0.3em] text-slate-500">Operations Control</p>
+                                <h2 class="dispatch-title text-3xl text-slate-900">Dispatch Manager Dashboard</h2>
+                                <p class="text-sm text-slate-600">Real-time coordination for field response, assignments, and
+                                    coverage.</p>
                             </div>
-                            <div class="flex flex-wrap items-center gap-2">
-                                <div class="dispatch-chip info">Bulk mode</div>
-                                <select class="text-xs rounded-full border-slate-300 bg-white px-3 py-2">
-                                    <option>Priority: All</option>
-                                    <option>Urgent first</option>
-                                    <option>High first</option>
-                                    <option>Standard first</option>
-                                </select>
-                                <select class="text-xs rounded-full border-slate-300 bg-white px-3 py-2">
-                                    <option>Service level: All</option>
-                                    <option>Platinum</option>
-                                    <option>Gold</option>
-                                    <option>Standard</option>
-                                </select>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span class="dispatch-pill"><span class="dispatch-live-dot"></span>Live sync</span>
+                                <span class="dispatch-pill neutral">WebSocket ready</span>
+                                <span class="dispatch-pill neutral">Polling fallback 20s</span>
+                                <span class="dispatch-pill neutral">Updated {{ now()->format('H:i:s') }}</span>
+                                <button
+                                    class="px-3 py-2 text-xs font-semibold uppercase tracking-wider border border-slate-300 rounded-full bg-white/70">
+                                    Refresh
+                                </button>
                             </div>
                         </div>
-                        <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-600">
-                            <label class="flex items-center gap-2">
-                                <input type="checkbox" class="rounded border-slate-300 text-teal-600" />
-                                Select all
-                            </label>
-                            <span class="dispatch-chip neutral">0 selected</span>
-                            <button class="px-3 py-2 rounded-full border border-slate-300 bg-white">Assign to tech</button>
-                            <button class="px-3 py-2 rounded-full border border-slate-300 bg-white">Escalate SLA</button>
-                            <button class="px-3 py-2 rounded-full border border-slate-300 bg-white">Send update</button>
-                        </div>
-                        <div class="mt-6 space-y-4">
-                            @forelse ($dispatchData['queue'] as $item)
-                                @php
-                                    $order = $item['order'];
-                                    $waitingMinutes = $item['waiting_minutes'];
-                                    $ageHours = intdiv($waitingMinutes, 60);
-                                    $ageMinutes = $waitingMinutes % 60;
-                                    $ageLabel = $ageHours > 0 ? $ageHours . 'h ' . $ageMinutes . 'm' : $ageMinutes . 'm';
-                                    $slaRemaining = $item['sla_minutes'] ? $item['sla_minutes'] - $item['waiting_minutes'] : null;
-                                    $slaLabel = $slaRemaining === null
-                                        ? 'No SLA'
-                                        : ($slaRemaining > 0 ? $slaRemaining . 'm left' : abs($slaRemaining) . 'm over');
-                                    $slaTone = $slaRemaining === null
-                                        ? 'dispatch-chip neutral'
-                                        : ($slaRemaining > 30 ? 'dispatch-chip good' : ($slaRemaining > 0 ? 'dispatch-chip warn' : 'dispatch-chip risk'));
-                                    $priorityTone = match ($order->priority) {
-                                        'urgent' => 'dispatch-chip risk',
-                                        'high' => 'dispatch-chip warn',
-                                        default => 'dispatch-chip info',
-                                    };
-                                    $serviceLevel = $order->organization?->serviceAgreement?->name ?? 'Standard';
-                                @endphp
-                                <div class="dispatch-card-muted p-4">
-                                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-                                        <div class="lg:col-span-1 flex items-center gap-3">
-                                            <input type="checkbox" class="rounded border-slate-300 text-teal-600" />
-                                            <div class="dispatch-score"
-                                                style="--score: {{ min(100, $item['priority_score']) }}%;">
-                                                <span>{{ $item['priority_score'] }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="lg:col-span-4">
-                                            <p class="text-sm font-semibold text-slate-900">
-                                                {{ $order->organization?->name ?? 'Customer' }}</p>
-                                            <p class="text-xs text-slate-500">Service level: {{ $serviceLevel }}</p>
-                                            <p class="text-xs text-slate-500">Problem:
-                                                {{ $order->category?->name ?? 'Service' }}</p>
-                                        </div>
-                                        <div class="lg:col-span-3 space-y-2 text-xs text-slate-600">
-                                            <div class="flex items-center gap-2">
-                                                <span class="dispatch-chip neutral">Age {{ $ageLabel }}</span>
-                                                <span class="{{ $priorityTone }}">{{ ucfirst($order->priority) }}</span>
-                                            </div>
-                                            <p>Requested timeframe: {{ $order->time_window ?? 'No window' }}</p>
-                                            <p>Customer history: {{ $item['history_count'] }} requests</p>
-                                        </div>
-                                        <div class="lg:col-span-2 space-y-2 text-xs text-slate-600">
-                                            <p class="text-xs uppercase text-slate-500">SLA countdown</p>
-                                            <span class="{{ $slaTone }}">{{ $slaLabel }}</span>
-                                            <p class="text-xs text-slate-500">Deadline
-                                                {{ $item['sla_minutes'] ? $item['sla_minutes'] . 'm' : 'N/A' }}</p>
-                                        </div>
-                                        <div class="lg:col-span-2 space-y-2 text-xs">
-                                            <select class="w-full rounded-full border-slate-300 bg-white px-3 py-2 text-xs">
-                                                <option>Assign to...</option>
-                                                @foreach ($dispatchData['technicians'] as $tech)
-                                                    <option>{{ $tech['user']->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <button
-                                                class="w-full rounded-full bg-teal-600 px-3 py-2 text-xs font-semibold text-white">
-                                                Assign now
-                                            </button>
-                                            <button
-                                                class="w-full rounded-full border border-slate-300 bg-white px-3 py-2 text-xs">
-                                                View details
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            @empty
-                                <p class="text-sm text-slate-500">No unassigned requests right now.</p>
-                            @endforelse
+                        <div class="relative z-10 mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div class="dispatch-stat">
+                                <p class="text-xs uppercase text-slate-500">Unassigned queue</p>
+                                <p class="text-2xl font-semibold text-slate-900">{{ $queueCount }}</p>
+                                <p class="text-xs text-slate-500">Priority score sorting</p>
+                            </div>
+                            <div class="dispatch-stat">
+                                <p class="text-xs uppercase text-slate-500">SLA at risk</p>
+                                <p class="text-2xl font-semibold text-slate-900">{{ $slaRisks }}</p>
+                                <p class="text-xs text-slate-500">{{ $slaBreaches }} breached</p>
+                            </div>
+                            <div class="dispatch-stat">
+                                <p class="text-xs uppercase text-slate-500">Active technicians</p>
+                                <p class="text-2xl font-semibold text-slate-900">{{ $techCards->count() }}</p>
+                                <p class="text-xs text-slate-500">{{ $availableCount }} available now</p>
+                            </div>
+                            <div class="dispatch-stat">
+                                <p class="text-xs uppercase text-slate-500">Coverage health</p>
+                                <p class="text-2xl font-semibold text-slate-900">{{ $coverageScore }}%</p>
+                                <p class="text-xs text-slate-500">{{ $overdueCount }} running late</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="xl:col-span-5 space-y-6">
-                        <div class="dispatch-card p-6">
-                            <div class="flex items-center justify-between">
-                                <h2 class="text-xl font-semibold text-slate-900">Real-time KPI Metrics</h2>
-                                <span class="dispatch-chip neutral">vs 30d avg</span>
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <div class="xl:col-span-7 dispatch-card p-6">
+                            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <h2 class="text-xl font-semibold text-slate-900">Unassigned Work Request Queue</h2>
+                                    <p class="text-sm text-slate-500">Prioritized by urgency, SLA, and customer history.</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <div class="dispatch-chip info">Bulk mode</div>
+                                    <select class="text-xs rounded-full border-slate-300 bg-white px-3 py-2">
+                                        <option>Priority: All</option>
+                                        <option>Urgent first</option>
+                                        <option>High first</option>
+                                        <option>Standard first</option>
+                                    </select>
+                                    <select class="text-xs rounded-full border-slate-300 bg-white px-3 py-2">
+                                        <option>Service level: All</option>
+                                        <option>Platinum</option>
+                                        <option>Gold</option>
+                                        <option>Standard</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                @foreach ($kpis as $kpi)
+                            <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" class="rounded border-slate-300 text-teal-600" />
+                                    Select all
+                                </label>
+                                <span class="dispatch-chip neutral">0 selected</span>
+                                <button class="px-3 py-2 rounded-full border border-slate-300 bg-white">Assign to tech</button>
+                                <button class="px-3 py-2 rounded-full border border-slate-300 bg-white">Escalate SLA</button>
+                                <button class="px-3 py-2 rounded-full border border-slate-300 bg-white">Send update</button>
+                            </div>
+                            <div class="mt-6 space-y-4">
+                                @forelse ($dispatchData['queue'] as $item)
                                     @php
-                                        $value = $kpi['value'];
-                                        $history = $kpi['history'];
-                                        $delta = $history && $value !== null ? (int) round((($value - $history) / max(1, $history)) * 100) : null;
-                                        $deltaLabel = $delta === null ? 'No baseline' : ($delta >= 0 ? '+' . $delta . '%' : $delta . '%');
-                                        $isGood = $delta !== null
-                                            ? ($kpi['good'] === 'higher' ? $delta >= 0 : $delta <= 0)
-                                            : null;
-                                        $deltaClass = $isGood === null ? 'dispatch-chip neutral' : ($isGood ? 'dispatch-chip good' : 'dispatch-chip risk');
-                                        $barValue = $history ? min(120, (int) round(($value / $history) * 100)) : 60;
-                                    @endphp
-                                    <div class="dispatch-card-muted p-4">
-                                        <div class="flex items-center justify-between">
-                                            <p class="text-xs uppercase text-slate-500">{{ $kpi['label'] }}</p>
-                                            <span class="{{ $deltaClass }}">{{ $deltaLabel }}</span>
-                                        </div>
-                                        <p class="mt-2 text-2xl font-semibold text-slate-900">
-                                            {{ $value !== null ? $value : 'N/A' }}<span class="text-xs text-slate-500">
-                                                {{ $kpi['unit'] }}</span>
-                                        </p>
-                                        <div class="mt-3 dispatch-kpi-bar" style="--value: {{ $barValue }}%;"><span></span>
-                                        </div>
-                                        <p class="mt-2 text-xs text-slate-500">
-                                            Historical avg
-                                            {{ $history !== null ? $history : 'N/A' }}{{ $history !== null ? $kpi['unit'] : '' }}
-                                        </p>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <div class="dispatch-card p-6">
-                            <div class="flex items-center justify-between">
-                                <h2 class="text-xl font-semibold text-slate-900">Alert & Exception Panel</h2>
-                                <span class="dispatch-chip warn">Priority alerts</span>
-                            </div>
-                            <div class="mt-4 space-y-3">
-                                @foreach ($dispatchData['alerts'] as $alert)
-                                    @php
-                                        $alertClass = match ($alert['severity']) {
-                                            'high' => 'dispatch-chip risk',
-                                            'medium' => 'dispatch-chip warn',
-                                            default => 'dispatch-chip good',
+                                        $order = $item['order'];
+                                        $waitingMinutes = $item['waiting_minutes'];
+                                        $ageHours = intdiv($waitingMinutes, 60);
+                                        $ageMinutes = $waitingMinutes % 60;
+                                        $ageLabel = $ageHours > 0 ? $ageHours . 'h ' . $ageMinutes . 'm' : $ageMinutes . 'm';
+                                        $slaRemaining = $item['sla_minutes'] ? $item['sla_minutes'] - $item['waiting_minutes'] : null;
+                                        $slaLabel = $slaRemaining === null
+                                            ? 'No SLA'
+                                            : ($slaRemaining > 0 ? $slaRemaining . 'm left' : abs($slaRemaining) . 'm over');
+                                        $slaTone = $slaRemaining === null
+                                            ? 'dispatch-chip neutral'
+                                            : ($slaRemaining > 30 ? 'dispatch-chip good' : ($slaRemaining > 0 ? 'dispatch-chip warn' : 'dispatch-chip risk'));
+                                        $priorityTone = match ($order->priority) {
+                                            'urgent' => 'dispatch-chip risk',
+                                            'high' => 'dispatch-chip warn',
+                                            default => 'dispatch-chip info',
                                         };
+                                        $serviceLevel = $order->organization?->serviceAgreement?->name ?? 'Standard';
                                     @endphp
                                     <div class="dispatch-card-muted p-4">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p class="text-sm font-semibold text-slate-900">{{ $alert['label'] }}</p>
-                                                <p class="text-xs text-slate-500">{{ $alert['detail'] }}</p>
+                                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+                                            <div class="lg:col-span-1 flex items-center gap-3">
+                                                <input type="checkbox" class="rounded border-slate-300 text-teal-600" />
+                                                <div class="dispatch-score"
+                                                    style="--score: {{ min(100, $item['priority_score']) }}%;">
+                                                    <span>{{ $item['priority_score'] }}</span>
+                                                </div>
                                             </div>
-                                            <span class="{{ $alertClass }}">{{ ucfirst($alert['severity']) }}</span>
-                                        </div>
-                                        <div class="mt-3 flex flex-wrap gap-2 text-xs">
-                                            <button class="px-3 py-1 rounded-full bg-slate-900 text-white">Resolve</button>
-                                            <button
-                                                class="px-3 py-1 rounded-full border border-slate-300 bg-white">Reassign</button>
-                                            <button
-                                                class="px-3 py-1 rounded-full border border-slate-300 bg-white">Notify</button>
+                                            <div class="lg:col-span-4">
+                                                <p class="text-sm font-semibold text-slate-900">
+                                                    {{ $order->organization?->name ?? 'Customer' }}
+                                                </p>
+                                                <p class="text-xs text-slate-500">Service level: {{ $serviceLevel }}</p>
+                                                <p class="text-xs text-slate-500">Problem:
+                                                    {{ $order->category?->name ?? 'Service' }}
+                                                </p>
+                                            </div>
+                                            <div class="lg:col-span-3 space-y-2 text-xs text-slate-600">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="dispatch-chip neutral">Age {{ $ageLabel }}</span>
+                                                    <span class="{{ $priorityTone }}">{{ ucfirst($order->priority) }}</span>
+                                                </div>
+                                                <p>Requested timeframe: {{ $order->time_window ?? 'No window' }}</p>
+                                                <p>Customer history: {{ $item['history_count'] }} requests</p>
+                                            </div>
+                                            <div class="lg:col-span-2 space-y-2 text-xs text-slate-600">
+                                                <p class="text-xs uppercase text-slate-500">SLA countdown</p>
+                                                <span class="{{ $slaTone }}">{{ $slaLabel }}</span>
+                                                <p class="text-xs text-slate-500">Deadline
+                                                    {{ $item['sla_minutes'] ? $item['sla_minutes'] . 'm' : 'N/A' }}
+                                                </p>
+                                            </div>
+                                            <div class="lg:col-span-2 space-y-2 text-xs">
+                                                <select class="w-full rounded-full border-slate-300 bg-white px-3 py-2 text-xs">
+                                                    <option>Assign to...</option>
+                                                    @foreach ($dispatchData['technicians'] as $tech)
+                                                        <option>{{ $tech['user']->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <button
+                                                    class="w-full rounded-full bg-teal-600 px-3 py-2 text-xs font-semibold text-white">
+                                                    Assign now
+                                                </button>
+                                                <button
+                                                    class="w-full rounded-full border border-slate-300 bg-white px-3 py-2 text-xs">
+                                                    View details
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                @endforeach
+                                @empty
+                                    <p class="text-sm text-slate-500">No unassigned requests right now.</p>
+                                @endforelse
                             </div>
-                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
-                                <div class="dispatch-card-muted p-3">
-                                    <p class="text-xs uppercase text-slate-500">Jobs over time</p>
-                                    <p class="text-lg font-semibold text-slate-900">{{ $overdueCount }}</p>
-                                    <button class="mt-2 text-xs text-teal-700">Open cases</button>
+                        </div>
+
+                        <div class="xl:col-span-5 space-y-6">
+                            <div class="dispatch-card p-6">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-xl font-semibold text-slate-900">Real-time KPI Metrics</h2>
+                                    <span class="dispatch-chip neutral">vs 30d avg</span>
                                 </div>
-                                <div class="dispatch-card-muted p-3">
-                                    <p class="text-xs uppercase text-slate-500">Missed check-ins</p>
-                                    <p class="text-lg font-semibold text-slate-900">0</p>
-                                    <button class="mt-2 text-xs text-teal-700">Ping crews</button>
+                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    @foreach ($kpis as $kpi)
+                                        @php
+                                            $value = $kpi['value'];
+                                            $history = $kpi['history'];
+                                            $delta = $history && $value !== null ? (int) round((($value - $history) / max(1, $history)) * 100) : null;
+                                            $deltaLabel = $delta === null ? 'No baseline' : ($delta >= 0 ? '+' . $delta . '%' : $delta . '%');
+                                            $isGood = $delta !== null
+                                                ? ($kpi['good'] === 'higher' ? $delta >= 0 : $delta <= 0)
+                                                : null;
+                                            $deltaClass = $isGood === null ? 'dispatch-chip neutral' : ($isGood ? 'dispatch-chip good' : 'dispatch-chip risk');
+                                            $barValue = $history ? min(120, (int) round(($value / $history) * 100)) : 60;
+                                        @endphp
+                                        <div class="dispatch-card-muted p-4">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-xs uppercase text-slate-500">{{ $kpi['label'] }}</p>
+                                                <span class="{{ $deltaClass }}">{{ $deltaLabel }}</span>
+                                            </div>
+                                            <p class="mt-2 text-2xl font-semibold text-slate-900">
+                                                {{ $value !== null ? $value : 'N/A' }}<span class="text-xs text-slate-500">
+                                                    {{ $kpi['unit'] }}</span>
+                                            </p>
+                                            <div class="mt-3 dispatch-kpi-bar" style="--value: {{ $barValue }}%;"><span></span>
+                                            </div>
+                                            <p class="mt-2 text-xs text-slate-500">
+                                                Historical avg
+                                                {{ $history !== null ? $history : 'N/A' }}{{ $history !== null ? $kpi['unit'] : '' }}
+                                            </p>
+                                        </div>
+                                    @endforeach
                                 </div>
-                                <div class="dispatch-card-muted p-3">
-                                    <p class="text-xs uppercase text-slate-500">SLA violations</p>
-                                    <p class="text-lg font-semibold text-slate-900">{{ $slaBreaches }}</p>
-                                    <button class="mt-2 text-xs text-teal-700">Escalate</button>
+                            </div>
+
+                            <div class="dispatch-card p-6">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-xl font-semibold text-slate-900">Alert & Exception Panel</h2>
+                                    <span class="dispatch-chip warn">Priority alerts</span>
                                 </div>
-                                <div class="dispatch-card-muted p-3">
-                                    <p class="text-xs uppercase text-slate-500">Parts unavailable</p>
-                                    <p class="text-lg font-semibold text-slate-900">N/A</p>
-                                    <button class="mt-2 text-xs text-teal-700">Notify inventory</button>
+                                <div class="mt-4 space-y-3">
+                                    @foreach ($dispatchData['alerts'] as $alert)
+                                        @php
+                                            $alertClass = match ($alert['severity']) {
+                                                'high' => 'dispatch-chip risk',
+                                                'medium' => 'dispatch-chip warn',
+                                                default => 'dispatch-chip good',
+                                            };
+                                        @endphp
+                                        <div class="dispatch-card-muted p-4">
+                                            <div class="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-slate-900">{{ $alert['label'] }}</p>
+                                                    <p class="text-xs text-slate-500">{{ $alert['detail'] }}</p>
+                                                </div>
+                                                <span class="{{ $alertClass }}">{{ ucfirst($alert['severity']) }}</span>
+                                            </div>
+                                            <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                                                <button class="px-3 py-1 rounded-full bg-slate-900 text-white">Resolve</button>
+                                                <button
+                                                    class="px-3 py-1 rounded-full border border-slate-300 bg-white">Reassign</button>
+                                                <button
+                                                    class="px-3 py-1 rounded-full border border-slate-300 bg-white">Notify</button>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
-                                <div class="dispatch-card-muted p-3">
-                                    <p class="text-xs uppercase text-slate-500">Customer complaints</p>
-                                    <p class="text-lg font-semibold text-slate-900">N/A</p>
-                                    <button class="mt-2 text-xs text-teal-700">Review tickets</button>
-                                </div>
-                                <div class="dispatch-card-muted p-3">
-                                    <p class="text-xs uppercase text-slate-500">Near-SLA alerts</p>
-                                    <p class="text-lg font-semibold text-slate-900">{{ $slaRisks }}</p>
-                                    <button class="mt-2 text-xs text-teal-700">Protect SLA</button>
+                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
+                                    <div class="dispatch-card-muted p-3">
+                                        <p class="text-xs uppercase text-slate-500">Jobs over time</p>
+                                        <p class="text-lg font-semibold text-slate-900">{{ $overdueCount }}</p>
+                                        <button class="mt-2 text-xs text-teal-700">Open cases</button>
+                                    </div>
+                                    <div class="dispatch-card-muted p-3">
+                                        <p class="text-xs uppercase text-slate-500">Missed check-ins</p>
+                                        <p class="text-lg font-semibold text-slate-900">0</p>
+                                        <button class="mt-2 text-xs text-teal-700">Ping crews</button>
+                                    </div>
+                                    <div class="dispatch-card-muted p-3">
+                                        <p class="text-xs uppercase text-slate-500">SLA violations</p>
+                                        <p class="text-lg font-semibold text-slate-900">{{ $slaBreaches }}</p>
+                                        <button class="mt-2 text-xs text-teal-700">Escalate</button>
+                                    </div>
+                                    <div class="dispatch-card-muted p-3">
+                                        <p class="text-xs uppercase text-slate-500">Parts unavailable</p>
+                                        <p class="text-lg font-semibold text-slate-900">N/A</p>
+                                        <button class="mt-2 text-xs text-teal-700">Notify inventory</button>
+                                    </div>
+                                    <div class="dispatch-card-muted p-3">
+                                        <p class="text-xs uppercase text-slate-500">Customer complaints</p>
+                                        <p class="text-lg font-semibold text-slate-900">N/A</p>
+                                        <button class="mt-2 text-xs text-teal-700">Review tickets</button>
+                                    </div>
+                                    <div class="dispatch-card-muted p-3">
+                                        <p class="text-xs uppercase text-slate-500">Near-SLA alerts</p>
+                                        <p class="text-lg font-semibold text-slate-900">{{ $slaRisks }}</p>
+                                        <button class="mt-2 text-xs text-teal-700">Protect SLA</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                @if($dashboardPreferences['visible_sections']['charts'] ?? true)
-                <div class="grid grid-cols-1 gap-6">
-                    <div class="dispatch-card p-6">
-                        <h2 class="text-xl font-semibold text-slate-900 mb-4">Daily Work Order Volume (30 Days)</h2>
-                        <x-apex-chart 
-                            type="bar" 
-                            :series="$charts['dispatch']['volume']['series']" 
-                            :options="[
+                    @if($dashboardPreferences['visible_sections']['charts'] ?? true)
+                        <div class="grid grid-cols-1 gap-6">
+                            <div class="dispatch-card p-6">
+                                <h2 class="text-xl font-semibold text-slate-900 mb-4">Daily Work Order Volume (30 Days)</h2>
+                                <x-apex-chart type="bar" :series="$charts['dispatch']['volume']['series']" :options="[
                                 'xaxis' => ['categories' => $charts['dispatch']['volume']['categories']],
                                 'colors' => ['#0ea5e9'],
                                 'plotOptions' => [
@@ -1146,192 +1195,191 @@
                                         'columnWidth' => '60%'
                                     ]
                                 ]
-                            ]"
-                        />
-                    </div>
-                </div>
-                @endif
-
-                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                    <div class="xl:col-span-7 dispatch-card p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 class="text-xl font-semibold text-slate-900">Live Technician Status Board</h2>
-                                <p class="text-sm text-slate-500">Availability, workload, and performance at a glance.</p>
+                            ]" />
                             </div>
-                            <div class="dispatch-chip neutral">Color-coded status</div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @foreach ($dispatchData['technicians'] as $tech)
-                                @php
-                                    $statusLabel = $tech['status']['label'];
-                                    $statusKey = match ($statusLabel) {
-                                        'Available' => 'available',
-                                        'Traveling' => 'traveling',
-                                        'Working' => 'working',
-                                        'Overdue' => 'overdue',
-                                        'Off duty' => 'off',
-                                        'Scheduled' => 'traveling',
-                                        default => 'traveling',
-                                    };
-                                    $capacityMinutes = max(0, 480 - $tech['scheduled_minutes']);
-                                    $capacityLabel = $capacityMinutes > 0 ? intdiv($capacityMinutes, 60) . 'h ' . ($capacityMinutes % 60) . 'm free' : 'Fully booked';
-                                    $currentAppointment = $tech['appointments']->first(function ($appointment) {
-                                        return $appointment->workOrder?->status === 'in_progress';
-                                    }) ?? $tech['appointments']->first();
-                                    $currentOrder = $currentAppointment?->workOrder;
-                                    $miniMapPos = $techPositions[$loop->index % count($techPositions)];
-                                @endphp
-                                <div class="dispatch-card-muted p-4 space-y-3">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-sm font-semibold text-slate-900">{{ $tech['user']->name }}</p>
-                                            <p class="text-xs text-slate-500">Utilization {{ $tech['utilization'] }}%</p>
-                                        </div>
-                                        <span class="dispatch-status {{ $statusKey }}">
-                                            <span class="dot"></span>{{ $statusLabel }}
-                                        </span>
-                                    </div>
-                                    <div class="dispatch-bar" style="--value: {{ $tech['utilization'] }}%;"><span></span></div>
-                                    <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
-                                        <div>
-                                            <p class="text-xs uppercase text-slate-500">Current job</p>
-                                            <p class="text-sm text-slate-900">{{ $currentOrder?->subject ?? 'No active job' }}
-                                            </p>
-                                            <p class="text-xs text-slate-500">
-                                                {{ $currentOrder?->location_name ?? $currentOrder?->organization?->name ?? 'Awaiting assignment' }}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p class="text-xs uppercase text-slate-500">Performance</p>
-                                            <p class="text-sm text-slate-900">
-                                                {{ $tech['avg_actual'] ? $tech['avg_actual'] . ' min' : 'N/A' }}
-                                                <span
-                                                    class="text-xs text-slate-500">{{ $tech['avg_estimated'] ? 'vs ' . $tech['avg_estimated'] . ' min' : '' }}</span>
-                                            </p>
-                                            <p class="text-xs text-slate-500">Capacity {{ $capacityLabel }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="dispatch-card-muted p-3">
-                                        <div class="flex items-center justify-between text-xs text-slate-500">
-                                            <span>Today schedule</span>
-                                            <span>{{ $tech['appointments']->count() }} jobs</span>
-                                        </div>
-                                        <div
-                                            class="mt-2 relative h-8 rounded-full bg-white/70 border border-slate-200 overflow-hidden">
-                                            @php
-                                                $slotMinutes = max(1, $tech['appointments']->sum(function ($appointment) {
-                                                    if ($appointment->scheduled_start_at && $appointment->scheduled_end_at) {
-                                                        return $appointment->scheduled_start_at->diffInMinutes($appointment->scheduled_end_at);
-                                                    }
+                    @endif
 
-                                                    return $appointment->workOrder?->estimated_minutes ?? 45;
-                                                }));
-                                                $offset = 0;
-                                            @endphp
-                                            @foreach ($tech['appointments'] as $appointment)
-                                                @php
-                                                    $minutes = $appointment->scheduled_start_at && $appointment->scheduled_end_at
-                                                        ? $appointment->scheduled_start_at->diffInMinutes($appointment->scheduled_end_at)
-                                                        : ($appointment->workOrder?->estimated_minutes ?? 45);
-                                                    $width = min(100, max(12, (int) round(($minutes / max(1, $tech['scheduled_minutes'])) * 100)));
-                                                    $left = $offset;
-                                                    $offset = min(100, $offset + $width);
-                                                @endphp
-                                                <span class="absolute top-1 bottom-1 rounded-full bg-teal-500/70"
-                                                    style="left: {{ $left }}%; width: {{ $width }}%;"></span>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <div class="text-xs text-slate-500">
-                                            @if ($tech['map_url'])
-                                                <a class="text-teal-700" href="{{ $tech['map_url'] }}" target="_blank"
-                                                    rel="noreferrer">
-                                                    Open map
-                                                </a>
-                                            @else
-                                                Location unavailable
-                                            @endif
-                                        </div>
-                                        <div
-                                            class="relative h-12 w-16 rounded-lg border border-slate-200 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
-                                            <span class="absolute h-2 w-2 rounded-full bg-teal-600"
-                                                style="top: {{ $miniMapPos['top'] }}; left: {{ $miniMapPos['left'] }};"></span>
-                                        </div>
-                                    </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <div class="xl:col-span-7 dispatch-card p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="text-xl font-semibold text-slate-900">Live Technician Status Board</h2>
+                                    <p class="text-sm text-slate-500">Availability, workload, and performance at a glance.</p>
                                 </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div class="xl:col-span-5 dispatch-card p-6">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h2 class="text-xl font-semibold text-slate-900">Geographic Heat Map</h2>
-                                <p class="text-sm text-slate-500">Demand clusters with active technician overlay.</p>
+                                <div class="dispatch-chip neutral">Color-coded status</div>
                             </div>
-                            <span class="dispatch-chip info">Coverage gaps highlighted</span>
-                        </div>
-                        <div class="mt-4 grid grid-cols-1 gap-4">
-                            <div class="dispatch-map">
-                                @foreach ($dispatchData['heatMap'] as $zone)
-                                    @php
-                                        $pos = $zonePositions[$loop->index % count($zonePositions)];
-                                        $size = 60 + min(80, $zone['count'] * 8);
-                                    @endphp
-                                    <div class="dispatch-heat"
-                                        style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }}; width: {{ $size }}px; height: {{ $size }}px;">
-                                    </div>
-                                @endforeach
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 @foreach ($dispatchData['technicians'] as $tech)
                                     @php
-                                        $pos = $techPositions[$loop->index % count($techPositions)];
-                                        $pinClass = $tech['status']['label'] === 'Available' ? 'available' : '';
+                                        $statusLabel = $tech['status']['label'];
+                                        $statusKey = match ($statusLabel) {
+                                            'Available' => 'available',
+                                            'Traveling' => 'traveling',
+                                            'Working' => 'working',
+                                            'Overdue' => 'overdue',
+                                            'Off duty' => 'off',
+                                            'Scheduled' => 'traveling',
+                                            default => 'traveling',
+                                        };
+                                        $capacityMinutes = max(0, 480 - $tech['scheduled_minutes']);
+                                        $capacityLabel = $capacityMinutes > 0 ? intdiv($capacityMinutes, 60) . 'h ' . ($capacityMinutes % 60) . 'm free' : 'Fully booked';
+                                        $currentAppointment = $tech['appointments']->first(function ($appointment) {
+                                            return $appointment->workOrder?->status === 'in_progress';
+                                        }) ?? $tech['appointments']->first();
+                                        $currentOrder = $currentAppointment?->workOrder;
+                                        $miniMapPos = $techPositions[$loop->index % count($techPositions)];
                                     @endphp
-                                    <div class="dispatch-map-pin {{ $pinClass }}"
-                                        style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }};"></div>
-                                @endforeach
-                            </div>
-                            <div class="dispatch-map-legend flex flex-wrap items-center gap-3">
-                                <span><span class="dot" style="background: #f59e0b;"></span>Pending demand</span>
-                                <span><span class="dot" style="background: #0ea5e9;"></span>Active techs</span>
-                                <span><span class="dot" style="background: #16a34a;"></span>Available techs</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 grid grid-cols-1 gap-3 text-xs text-slate-600">
-                            <div class="dispatch-card-muted p-3">
-                                <p class="text-xs uppercase text-slate-500">Hotspots</p>
-                                <div class="mt-2 space-y-1">
-                                    @forelse ($dispatchData['heatMap'] as $zone)
+                                    <div class="dispatch-card-muted p-4 space-y-3">
                                         <div class="flex items-center justify-between">
-                                            <span>{{ $zone['label'] }}</span>
-                                            <span class="font-semibold text-slate-900">{{ $zone['count'] }} requests</span>
+                                            <div>
+                                                <p class="text-sm font-semibold text-slate-900">{{ $tech['user']->name }}</p>
+                                                <p class="text-xs text-slate-500">Utilization {{ $tech['utilization'] }}%</p>
+                                            </div>
+                                            <span class="dispatch-status {{ $statusKey }}">
+                                                <span class="dot"></span>{{ $statusLabel }}
+                                            </span>
                                         </div>
-                                    @empty
-                                        <p class="text-xs text-slate-500">No demand clusters detected.</p>
-                                    @endforelse
-                                </div>
-                            </div>
-                            <div class="dispatch-card-muted p-3">
-                                <p class="text-xs uppercase text-slate-500">Coverage gaps</p>
-                                <p class="mt-2 text-sm text-slate-900">North corridor, Harbor zone, West loop</p>
-                                <p class="text-xs text-slate-500">Suggested: stage 2 technicians within 15 minutes.</p>
-                            </div>
-                            <div class="dispatch-card-muted p-3">
-                                <p class="text-xs uppercase text-slate-500">Suggested assignments</p>
-                                <div class="mt-2 space-y-1">
-                                    @foreach ($dispatchData['technicians']->take(3) as $tech)
-                                        <div class="flex items-center justify-between">
-                                            <span>{{ $tech['user']->name }}</span>
-                                            <span class="text-xs text-slate-500">Nearest to zone {{ $loop->iteration }}</span>
+                                        <div class="dispatch-bar" style="--value: {{ $tech['utilization'] }}%;"><span></span></div>
+                                        <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
+                                            <div>
+                                                <p class="text-xs uppercase text-slate-500">Current job</p>
+                                                <p class="text-sm text-slate-900">{{ $currentOrder?->subject ?? 'No active job' }}
+                                                </p>
+                                                <p class="text-xs text-slate-500">
+                                                    {{ $currentOrder?->location_name ?? $currentOrder?->organization?->name ?? 'Awaiting assignment' }}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p class="text-xs uppercase text-slate-500">Performance</p>
+                                                <p class="text-sm text-slate-900">
+                                                    {{ $tech['avg_actual'] ? $tech['avg_actual'] . ' min' : 'N/A' }}
+                                                    <span
+                                                        class="text-xs text-slate-500">{{ $tech['avg_estimated'] ? 'vs ' . $tech['avg_estimated'] . ' min' : '' }}</span>
+                                                </p>
+                                                <p class="text-xs text-slate-500">Capacity {{ $capacityLabel }}</p>
+                                            </div>
                                         </div>
+                                        <div class="dispatch-card-muted p-3">
+                                            <div class="flex items-center justify-between text-xs text-slate-500">
+                                                <span>Today schedule</span>
+                                                <span>{{ $tech['appointments']->count() }} jobs</span>
+                                            </div>
+                                            <div
+                                                class="mt-2 relative h-8 rounded-full bg-white/70 border border-slate-200 overflow-hidden">
+                                                @php
+                                                    $slotMinutes = max(1, $tech['appointments']->sum(function ($appointment) {
+                                                        if ($appointment->scheduled_start_at && $appointment->scheduled_end_at) {
+                                                            return $appointment->scheduled_start_at->diffInMinutes($appointment->scheduled_end_at);
+                                                        }
+
+                                                        return $appointment->workOrder?->estimated_minutes ?? 45;
+                                                    }));
+                                                    $offset = 0;
+                                                @endphp
+                                                @foreach ($tech['appointments'] as $appointment)
+                                                    @php
+                                                        $minutes = $appointment->scheduled_start_at && $appointment->scheduled_end_at
+                                                            ? $appointment->scheduled_start_at->diffInMinutes($appointment->scheduled_end_at)
+                                                            : ($appointment->workOrder?->estimated_minutes ?? 45);
+                                                        $width = min(100, max(12, (int) round(($minutes / max(1, $tech['scheduled_minutes'])) * 100)));
+                                                        $left = $offset;
+                                                        $offset = min(100, $offset + $width);
+                                                    @endphp
+                                                    <span class="absolute top-1 bottom-1 rounded-full bg-teal-500/70"
+                                                        style="left: {{ $left }}%; width: {{ $width }}%;"></span>
                                                 @endforeach
                                             </div>
-                                            @endif
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <div class="text-xs text-slate-500">
+                                                @if ($tech['map_url'])
+                                                    <a class="text-teal-700" href="{{ $tech['map_url'] }}" target="_blank"
+                                                        rel="noreferrer">
+                                                        Open map
+                                                    </a>
+                                                @else
+                                                    Location unavailable
+                                                @endif
+                                            </div>
+                                            <div
+                                                class="relative h-12 w-16 rounded-lg border border-slate-200 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                                                <span class="absolute h-2 w-2 rounded-full bg-teal-600"
+                                                    style="top: {{ $miniMapPos['top'] }}; left: {{ $miniMapPos['left'] }};"></span>
+                                            </div>
                                         </div>
                                     </div>
-                                    
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="xl:col-span-5 dispatch-card p-6">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-xl font-semibold text-slate-900">Geographic Heat Map</h2>
+                                    <p class="text-sm text-slate-500">Demand clusters with active technician overlay.</p>
+                                </div>
+                                <span class="dispatch-chip info">Coverage gaps highlighted</span>
+                            </div>
+                            <div class="mt-4 grid grid-cols-1 gap-4">
+                                <div class="dispatch-map">
+                                    @foreach ($dispatchData['heatMap'] as $zone)
+                                        @php
+                                            $pos = $zonePositions[$loop->index % count($zonePositions)];
+                                            $size = 60 + min(80, $zone['count'] * 8);
+                                        @endphp
+                                        <div class="dispatch-heat"
+                                            style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }}; width: {{ $size }}px; height: {{ $size }}px;">
+                                        </div>
+                                    @endforeach
+                                    @foreach ($dispatchData['technicians'] as $tech)
+                                        @php
+                                            $pos = $techPositions[$loop->index % count($techPositions)];
+                                            $pinClass = $tech['status']['label'] === 'Available' ? 'available' : '';
+                                        @endphp
+                                        <div class="dispatch-map-pin {{ $pinClass }}"
+                                            style="top: {{ $pos['top'] }}; left: {{ $pos['left'] }};"></div>
+                                    @endforeach
+                                </div>
+                                <div class="dispatch-map-legend flex flex-wrap items-center gap-3">
+                                    <span><span class="dot" style="background: #f59e0b;"></span>Pending demand</span>
+                                    <span><span class="dot" style="background: #0ea5e9;"></span>Active techs</span>
+                                    <span><span class="dot" style="background: #16a34a;"></span>Available techs</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 grid grid-cols-1 gap-3 text-xs text-slate-600">
+                                <div class="dispatch-card-muted p-3">
+                                    <p class="text-xs uppercase text-slate-500">Hotspots</p>
+                                    <div class="mt-2 space-y-1">
+                                        @forelse ($dispatchData['heatMap'] as $zone)
+                                            <div class="flex items-center justify-between">
+                                                <span>{{ $zone['label'] }}</span>
+                                                <span class="font-semibold text-slate-900">{{ $zone['count'] }} requests</span>
+                                            </div>
+                                        @empty
+                                            <p class="text-xs text-slate-500">No demand clusters detected.</p>
+                                        @endforelse
+                                    </div>
+                                </div>
+                                <div class="dispatch-card-muted p-3">
+                                    <p class="text-xs uppercase text-slate-500">Coverage gaps</p>
+                                    <p class="mt-2 text-sm text-slate-900">North corridor, Harbor zone, West loop</p>
+                                    <p class="text-xs text-slate-500">Suggested: stage 2 technicians within 15 minutes.</p>
+                                </div>
+                                <div class="dispatch-card-muted p-3">
+                                    <p class="text-xs uppercase text-slate-500">Suggested assignments</p>
+                                    <div class="mt-2 space-y-1">
+                                        @foreach ($dispatchData['technicians']->take(3) as $tech)
+                                            <div class="flex items-center justify-between">
+                                                <span>{{ $tech['user']->name }}</span>
+                                                <span class="text-xs text-slate-500">Nearest to zone {{ $loop->iteration }}</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                @endif
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -1453,7 +1501,8 @@
                             @if ($focusOrder)
                                 <p class="text-sm font-semibold text-slate-900 mt-1">{{ $focusOrder->subject }}</p>
                                 <p class="text-xs text-slate-500">{{ $focusOrder->organization?->name ?? 'Customer' }} •
-                                    {{ $focusOrder->category?->name ?? 'Service' }}</p>
+                                    {{ $focusOrder->category?->name ?? 'Service' }}
+                                </p>
                                 <p class="text-xs text-slate-500">Window: {{ $focusOrder->time_window ?? 'Flexible' }} •
                                     Priority: {{ ucfirst($focusOrder->priority) }}</p>
                             @else
@@ -1484,12 +1533,15 @@
                                         <div>
                                             <p class="text-sm font-semibold text-slate-900">{{ $tech['user']->name }}</p>
                                             <p class="text-xs text-slate-500">Skills:
-                                                {{ $skillSets[$index % count($skillSets)] }}</p>
+                                                {{ $skillSets[$index % count($skillSets)] }}
+                                            </p>
                                             <p class="text-xs text-slate-500">Proximity:
                                                 {{ $proximityBands[$index % count($proximityBands)] }} • Workload
-                                                {{ $tech['utilization'] }}%</p>
+                                                {{ $tech['utilization'] }}%
+                                            </p>
                                             <p class="text-xs text-slate-500">Customer pref:
-                                                {{ $focusOrder?->time_window ?? 'Flexible' }}</p>
+                                                {{ $focusOrder?->time_window ?? 'Flexible' }}
+                                            </p>
                                         </div>
                                         <span class="dispatch-chip info">Fit {{ $score }}</span>
                                     </div>
@@ -1501,7 +1553,8 @@
                                     </div>
                                     <div class="mt-3 flex items-center justify-between text-xs">
                                         <p class="text-slate-500">Impact: {{ $impact }} • Overtime risk
-                                            {{ $tech['utilization'] > 85 ? 'High' : 'Low' }}</p>
+                                            {{ $tech['utilization'] > 85 ? 'High' : 'Low' }}
+                                        </p>
                                         <button class="px-3 py-1 rounded-full bg-teal-600 text-white">Assign</button>
                                     </div>
                                 </div>
@@ -1517,8 +1570,8 @@
                         </div>
                     </div>
                 </div>
-                @endif
-            </div>
+        @endif
+        </div>
 
         @if ($roleKey === 'admin' && $adminData)
             @php
@@ -1605,366 +1658,366 @@
             @endphp
             <div class="space-y-6">
                 @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
-                <div
-                    class="rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
-                    <div class="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <p class="text-xs uppercase tracking-widest text-slate-500">Administrator dashboard</p>
-                            <h2 class="text-2xl font-semibold text-slate-900">System command center</h2>
-                            <p class="text-sm text-slate-500">Live observability, security, and business intelligence.</p>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <div class="flex items-center gap-2 text-xs text-slate-600">
-                                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                Live monitoring
+                    <div
+                        class="rounded-2xl border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-slate-100 p-6 shadow-sm">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs uppercase tracking-widest text-slate-500">Administrator dashboard</p>
+                                <h2 class="text-2xl font-semibold text-slate-900">System command center</h2>
+                                <p class="text-sm text-slate-500">Live observability, security, and business intelligence.</p>
                             </div>
-                            <div class="text-xs text-slate-500">Last refresh {{ now()->format('H:i') }}</div>
-                            <button
-                                class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-                                Export all
-                            </button>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <div class="flex items-center gap-2 text-xs text-slate-600">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                    Live monitoring
+                                </div>
+                                <div class="text-xs text-slate-500">Last refresh {{ now()->format('H:i') }}</div>
+                                <button
+                                    class="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                                    Export all
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-7">
-                        <label class="flex flex-col gap-1 text-xs text-slate-500">
-                            Start date
-                            <input type="date" class="rounded-md border-slate-200 text-sm text-slate-700" />
-                        </label>
-                        <label class="flex flex-col gap-1 text-xs text-slate-500">
-                            End date
-                            <input type="date" class="rounded-md border-slate-200 text-sm text-slate-700" />
-                        </label>
-                        <label class="flex flex-col gap-1 text-xs text-slate-500">
-                            Environment
-                            <select class="rounded-md border-slate-200 text-sm text-slate-700">
-                                <option>Production</option>
-                                <option>Staging</option>
-                                <option>Sandbox</option>
-                            </select>
-                        </label>
-                        <label class="flex flex-col gap-1 text-xs text-slate-500">
-                            Region
-                            <select class="rounded-md border-slate-200 text-sm text-slate-700">
-                                <option>EU West</option>
-                                <option>US Central</option>
-                                <option>APAC</option>
-                            </select>
-                        </label>
-                        <label class="flex flex-col gap-1 text-xs text-slate-500">
-                            Severity
-                            <select class="rounded-md border-slate-200 text-sm text-slate-700">
-                                <option>All</option>
-                                <option>Critical</option>
-                                <option>Warning+</option>
-                                <option>Healthy only</option>
-                            </select>
-                        </label>
-                        <label class="flex flex-col gap-1 text-xs text-slate-500">
-                            View
-                            <select class="rounded-md border-slate-200 text-sm text-slate-700">
-                                <option>All data</option>
-                                <option>System health</option>
-                                <option>Security</option>
-                                <option>Users</option>
-                                <option>Business</option>
-                            </select>
-                        </label>
-                        <label class="flex flex-col gap-1 text-xs text-slate-500">
-                            Search
-                            <input type="search" class="rounded-md border-slate-200 text-sm text-slate-700"
-                                placeholder="Filter by host, user, or ticket" />
-                        </label>
-                    </div>
-                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">Production</span>
-                            <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">EU West</span>
-                            <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">Critical+</span>
-                            <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">Last 30 days</span>
+                        <div class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-7">
+                            <label class="flex flex-col gap-1 text-xs text-slate-500">
+                                Start date
+                                <input type="date" class="rounded-md border-slate-200 text-sm text-slate-700" />
+                            </label>
+                            <label class="flex flex-col gap-1 text-xs text-slate-500">
+                                End date
+                                <input type="date" class="rounded-md border-slate-200 text-sm text-slate-700" />
+                            </label>
+                            <label class="flex flex-col gap-1 text-xs text-slate-500">
+                                Environment
+                                <select class="rounded-md border-slate-200 text-sm text-slate-700">
+                                    <option>Production</option>
+                                    <option>Staging</option>
+                                    <option>Sandbox</option>
+                                </select>
+                            </label>
+                            <label class="flex flex-col gap-1 text-xs text-slate-500">
+                                Region
+                                <select class="rounded-md border-slate-200 text-sm text-slate-700">
+                                    <option>EU West</option>
+                                    <option>US Central</option>
+                                    <option>APAC</option>
+                                </select>
+                            </label>
+                            <label class="flex flex-col gap-1 text-xs text-slate-500">
+                                Severity
+                                <select class="rounded-md border-slate-200 text-sm text-slate-700">
+                                    <option>All</option>
+                                    <option>Critical</option>
+                                    <option>Warning+</option>
+                                    <option>Healthy only</option>
+                                </select>
+                            </label>
+                            <label class="flex flex-col gap-1 text-xs text-slate-500">
+                                View
+                                <select class="rounded-md border-slate-200 text-sm text-slate-700">
+                                    <option>All data</option>
+                                    <option>System health</option>
+                                    <option>Security</option>
+                                    <option>Users</option>
+                                    <option>Business</option>
+                                </select>
+                            </label>
+                            <label class="flex flex-col gap-1 text-xs text-slate-500">
+                                Search
+                                <input type="search" class="rounded-md border-slate-200 text-sm text-slate-700"
+                                    placeholder="Filter by host, user, or ticket" />
+                            </label>
                         </div>
-                        <button class="text-xs font-semibold text-slate-600">Reset filters</button>
-                    </div>
-                </div>
-
-                <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                    <div class="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <h2 class="text-lg font-semibold text-slate-900">System Health Monitoring</h2>
-                            <p class="text-xs text-slate-500">Auto refresh every 60s • Range: last 24 hours</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <select class="rounded-md border-slate-200 text-xs text-slate-700">
-                                <option>Last 24h</option>
-                                <option>Last 7d</option>
-                                <option>Last 30d</option>
-                            </select>
-                            <button
-                                class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">Production</span>
+                                <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">EU West</span>
+                                <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">Critical+</span>
+                                <span class="rounded-full bg-white px-3 py-1 text-slate-600 shadow-sm">Last 30 days</span>
+                            </div>
+                            <button class="text-xs font-semibold text-slate-600">Reset filters</button>
                         </div>
                     </div>
 
-                    <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:col-span-2">
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-                                        <span class="h-2 w-2 rounded-full {{ $statusMeta[$uptimeStatus]['dot'] }}"></span>
-                                        Server uptime
-                                    </div>
-                                    <span
-                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$uptimeStatus]['pill'] }}">
-                                        {{ $statusMeta[$uptimeStatus]['label'] }}
-                                    </span>
-                                </div>
-                                <div class="mt-3 flex items-end justify-between gap-4">
-                                    <div>
-                                        <p class="text-2xl font-semibold text-slate-900">
-                                            {{ number_format($uptimePercent, 2) }}%</p>
-                                        <p class="text-xs text-slate-500">Historical trend: +0.04%</p>
-                                    </div>
-                                    <svg viewBox="0 0 120 40" class="h-10 w-24 text-emerald-500">
-                                        <polyline fill="none" stroke="currentColor" stroke-width="2"
-                                            points="0,30 20,28 40,20 60,22 80,15 100,18 120,10" />
-                                    </svg>
-                                </div>
+                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 class="text-lg font-semibold text-slate-900">System Health Monitoring</h2>
+                                <p class="text-xs text-slate-500">Auto refresh every 60s • Range: last 24 hours</p>
                             </div>
-
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-                                        <span class="h-2 w-2 rounded-full {{ $statusMeta[$responseStatus]['dot'] }}"></span>
-                                        Response time
-                                    </div>
-                                    <span
-                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$responseStatus]['pill'] }}">
-                                        {{ $statusMeta[$responseStatus]['label'] }}
-                                    </span>
-                                </div>
-                                <div class="mt-3">
-                                    <p class="text-2xl font-semibold text-slate-900">{{ $responseMs }} ms</p>
-                                    <p class="text-xs text-slate-500">P50 118 ms • P95 312 ms</p>
-                                </div>
-                            </div>
-
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-                                        <span class="h-2 w-2 rounded-full {{ $statusMeta[$dbStatus]['dot'] }}"></span>
-                                        Database performance
-                                    </div>
-                                    <span
-                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$dbStatus]['pill'] }}">
-                                        {{ $statusMeta[$dbStatus]['label'] }}
-                                    </span>
-                                </div>
-                                <div class="mt-3 space-y-1 text-sm text-slate-600">
-                                    <p><span class="font-semibold text-slate-900">{{ $dbMs ?? 0 }} ms</span> avg query
-                                        latency</p>
-                                    <p>Connection pool <span class="font-semibold text-slate-900">72%</span> • Writes 1.2k/s
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-                                        <span class="h-2 w-2 rounded-full {{ $statusMeta[$storageStatus]['dot'] }}"></span>
-                                        Storage utilization
-                                    </div>
-                                    <span
-                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$storageStatus]['pill'] }}">
-                                        {{ $statusMeta[$storageStatus]['label'] }}
-                                    </span>
-                                </div>
-                                <div class="mt-3">
-                                    <div class="flex items-center justify-between text-sm text-slate-600">
-                                        <span>Used {{ $storagePercent }}%</span>
-                                        <span>Projected {{ $storageProjected }}% in 30d</span>
-                                    </div>
-                                    <div class="relative mt-2 h-2 rounded-full bg-slate-200">
-                                        <div class="h-2 rounded-full bg-slate-700" style="width: {{ $storagePercent }}%;">
-                                        </div>
-                                        <span class="absolute top-[-6px] h-5 w-0.5 bg-amber-500"
-                                            style="left: {{ $storageProjected }}%;"></span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-                                        <span class="h-2 w-2 rounded-full {{ $statusMeta[$sessionStatus]['dot'] }}"></span>
-                                        Active sessions
-                                    </div>
-                                    <span
-                                        class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$sessionStatus]['pill'] }}">
-                                        {{ $statusMeta[$sessionStatus]['label'] }}
-                                    </span>
-                                </div>
-                                <div class="mt-3">
-                                    <p class="text-2xl font-semibold text-slate-900">{{ $sessions }}</p>
-                                    <p class="text-xs text-slate-500">Peak 620 • 5 min trend stable</p>
-                                </div>
-                            </div>
-
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
-                                        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                                        API health summary
-                                    </div>
-                                    <span
-                                        class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                                        12 healthy
-                                    </span>
-                                </div>
-                                <div class="mt-3 text-sm text-slate-600">
-                                    <p>Degraded endpoints: <span class="font-semibold text-slate-900">2</span></p>
-                                    <p>Queue backlog: <span class="font-semibold text-slate-900">{{ $queueBacklog }}</span>
-                                        • Failed jobs: <span class="font-semibold text-slate-900">{{ $failedJobs }}</span>
-                                    </p>
-                                </div>
+                            <div class="flex items-center gap-2">
+                                <select class="rounded-md border-slate-200 text-xs text-slate-700">
+                                    <option>Last 24h</option>
+                                    <option>Last 7d</option>
+                                    <option>Last 30d</option>
+                                </select>
+                                <button
+                                    class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
                             </div>
                         </div>
 
-                        <div class="rounded-xl border border-slate-100 p-4">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-sm font-semibold text-slate-900">API endpoint health status</h3>
-                                <button class="text-xs font-semibold text-slate-600">Export</button>
-                            </div>
-                            <div class="mt-4 space-y-3 text-sm">
-                                @foreach ($apiEndpoints as $endpoint)
-                                    @php
-                                        $endpointStatus = $endpoint['status'] ?? 'healthy';
-                                        $endpointMeta = $statusMeta[$endpointStatus] ?? $statusMeta['healthy'];
-                                    @endphp
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div>
-                                            <div class="flex items-center gap-2">
-                                                <span class="h-2 w-2 rounded-full {{ $endpointMeta['dot'] }}"></span>
-                                                <p class="font-medium text-slate-900">{{ $endpoint['name'] }}</p>
-                                            </div>
-                                            <p class="text-xs text-slate-500">Uptime {{ $endpoint['uptime'] }} •
-                                                {{ $endpoint['latency'] }} ms</p>
+                        <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:col-span-2">
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                                            <span class="h-2 w-2 rounded-full {{ $statusMeta[$uptimeStatus]['dot'] }}"></span>
+                                            Server uptime
                                         </div>
                                         <span
-                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $endpointMeta['pill'] }}">
-                                            {{ $endpointMeta['label'] }}
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$uptimeStatus]['pill'] }}">
+                                            {{ $statusMeta[$uptimeStatus]['label'] }}
                                         </span>
                                     </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                    <div class="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                            <h2 class="text-lg font-semibold text-slate-900">Security Monitoring</h2>
-                            <p class="text-xs text-slate-500">Multi-region anomaly detection • Range: last 7 days</p>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <select class="rounded-md border-slate-200 text-xs text-slate-700">
-                                <option>Last 7d</option>
-                                <option>Last 24h</option>
-                                <option>Last 30d</option>
-                            </select>
-                            <button
-                                class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
-                        </div>
-                    </div>
-
-                    <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs uppercase tracking-wide text-slate-500">Failed logins</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['failed_logins'] }}
-                                </p>
-                                <p class="text-xs text-slate-500">Spike detected in last 2 hours</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs uppercase tracking-wide text-slate-500">Geo anomalies</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['geo_anomalies'] }}
-                                </p>
-                                <p class="text-xs text-slate-500">Access from 3 new regions</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs uppercase tracking-wide text-slate-500">Unusual data access</p>
-                                <p class="text-2xl font-semibold text-slate-900">
-                                    {{ $securityOverview['data_access_flags'] }}</p>
-                                <p class="text-xs text-slate-500">Downloads above normal threshold</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs uppercase tracking-wide text-slate-500">Security alert flags</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['alert_flags'] }}</p>
-                                <p class="text-xs text-slate-500">5 alerts require review</p>
-                            </div>
-                            <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
-                                <p class="text-xs uppercase tracking-wide text-slate-500">Account lockouts</p>
-                                <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['account_lockouts'] }}
-                                </p>
-                                <p class="text-xs text-slate-500">Automatic lockout policy active</p>
-                            </div>
-                        </div>
-
-                        <div class="rounded-xl border border-slate-100 p-4 lg:col-span-2">
-                            <div class="flex items-center justify-between">
-                                <h3 class="text-sm font-semibold text-slate-900">Suspicious activity log</h3>
-                                <button class="text-xs font-semibold text-slate-600">Export</button>
-                            </div>
-                            <div class="mt-4 space-y-3 text-sm">
-                                @foreach ($securityLog as $log)
-                                    @php
-                                        $logStatus = $log['status'] ?? 'warning';
-                                        $logMeta = $statusMeta[$logStatus] ?? $statusMeta['warning'];
-                                    @endphp
-                                    <div
-                                        class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 p-3">
+                                    <div class="mt-3 flex items-end justify-between gap-4">
                                         <div>
-                                            <div class="flex items-center gap-2">
-                                                <span class="h-2 w-2 rounded-full {{ $logMeta['dot'] }}"></span>
-                                                <p class="font-medium text-slate-900">{{ $log['event'] }}</p>
-                                            </div>
-                                            <p class="text-xs text-slate-500">{{ $log['actor'] }} • {{ $log['location'] }} •
-                                                {{ $log['ip'] }}</p>
+                                            <p class="text-2xl font-semibold text-slate-900">
+                                                {{ number_format($uptimePercent, 2) }}%
+                                            </p>
+                                            <p class="text-xs text-slate-500">Historical trend: +0.04%</p>
                                         </div>
-                                        <div class="text-xs text-slate-500">{{ $log['time'] }}</div>
+                                        <svg viewBox="0 0 120 40" class="h-10 w-24 text-emerald-500">
+                                            <polyline fill="none" stroke="currentColor" stroke-width="2"
+                                                points="0,30 20,28 40,20 60,22 80,15 100,18 120,10" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                                            <span class="h-2 w-2 rounded-full {{ $statusMeta[$responseStatus]['dot'] }}"></span>
+                                            Response time
+                                        </div>
                                         <span
-                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $logMeta['pill'] }}">
-                                            {{ $logMeta['label'] }}
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$responseStatus]['pill'] }}">
+                                            {{ $statusMeta[$responseStatus]['label'] }}
                                         </span>
                                     </div>
-                                @endforeach
+                                    <div class="mt-3">
+                                        <p class="text-2xl font-semibold text-slate-900">{{ $responseMs }} ms</p>
+                                        <p class="text-xs text-slate-500">P50 118 ms • P95 312 ms</p>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                                            <span class="h-2 w-2 rounded-full {{ $statusMeta[$dbStatus]['dot'] }}"></span>
+                                            Database performance
+                                        </div>
+                                        <span
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$dbStatus]['pill'] }}">
+                                            {{ $statusMeta[$dbStatus]['label'] }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-3 space-y-1 text-sm text-slate-600">
+                                        <p><span class="font-semibold text-slate-900">{{ $dbMs ?? 0 }} ms</span> avg query
+                                            latency</p>
+                                        <p>Connection pool <span class="font-semibold text-slate-900">72%</span> • Writes 1.2k/s
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                                            <span class="h-2 w-2 rounded-full {{ $statusMeta[$storageStatus]['dot'] }}"></span>
+                                            Storage utilization
+                                        </div>
+                                        <span
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$storageStatus]['pill'] }}">
+                                            {{ $statusMeta[$storageStatus]['label'] }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="flex items-center justify-between text-sm text-slate-600">
+                                            <span>Used {{ $storagePercent }}%</span>
+                                            <span>Projected {{ $storageProjected }}% in 30d</span>
+                                        </div>
+                                        <div class="relative mt-2 h-2 rounded-full bg-slate-200">
+                                            <div class="h-2 rounded-full bg-slate-700" style="width: {{ $storagePercent }}%;">
+                                            </div>
+                                            <span class="absolute top-[-6px] h-5 w-0.5 bg-amber-500"
+                                                style="left: {{ $storageProjected }}%;"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                                            <span class="h-2 w-2 rounded-full {{ $statusMeta[$sessionStatus]['dot'] }}"></span>
+                                            Active sessions
+                                        </div>
+                                        <span
+                                            class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $statusMeta[$sessionStatus]['pill'] }}">
+                                            {{ $statusMeta[$sessionStatus]['label'] }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-3">
+                                        <p class="text-2xl font-semibold text-slate-900">{{ $sessions }}</p>
+                                        <p class="text-xs text-slate-500">Peak 620 • 5 min trend stable</p>
+                                    </div>
+                                </div>
+
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                                            API health summary
+                                        </div>
+                                        <span
+                                            class="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                            12 healthy
+                                        </span>
+                                    </div>
+                                    <div class="mt-3 text-sm text-slate-600">
+                                        <p>Degraded endpoints: <span class="font-semibold text-slate-900">2</span></p>
+                                        <p>Queue backlog: <span class="font-semibold text-slate-900">{{ $queueBacklog }}</span>
+                                            • Failed jobs: <span class="font-semibold text-slate-900">{{ $failedJobs }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rounded-xl border border-slate-100 p-4">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-sm font-semibold text-slate-900">API endpoint health status</h3>
+                                    <button class="text-xs font-semibold text-slate-600">Export</button>
+                                </div>
+                                <div class="mt-4 space-y-3 text-sm">
+                                    @foreach ($apiEndpoints as $endpoint)
+                                        @php
+                                            $endpointStatus = $endpoint['status'] ?? 'healthy';
+                                            $endpointMeta = $statusMeta[$endpointStatus] ?? $statusMeta['healthy'];
+                                        @endphp
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="h-2 w-2 rounded-full {{ $endpointMeta['dot'] }}"></span>
+                                                    <p class="font-medium text-slate-900">{{ $endpoint['name'] }}</p>
+                                                </div>
+                                                <p class="text-xs text-slate-500">Uptime {{ $endpoint['uptime'] }} •
+                                                    {{ $endpoint['latency'] }} ms
+                                                </p>
+                                            </div>
+                                            <span
+                                                class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $endpointMeta['pill'] }}">
+                                                {{ $endpointMeta['label'] }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <h2 class="text-lg font-semibold text-slate-900">Security Monitoring</h2>
+                                <p class="text-xs text-slate-500">Multi-region anomaly detection • Range: last 7 days</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select class="rounded-md border-slate-200 text-xs text-slate-700">
+                                    <option>Last 7d</option>
+                                    <option>Last 24h</option>
+                                    <option>Last 30d</option>
+                                </select>
+                                <button
+                                    class="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">Export</button>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <p class="text-xs uppercase tracking-wide text-slate-500">Failed logins</p>
+                                    <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['failed_logins'] }}
+                                    </p>
+                                    <p class="text-xs text-slate-500">Spike detected in last 2 hours</p>
+                                </div>
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <p class="text-xs uppercase tracking-wide text-slate-500">Geo anomalies</p>
+                                    <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['geo_anomalies'] }}
+                                    </p>
+                                    <p class="text-xs text-slate-500">Access from 3 new regions</p>
+                                </div>
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <p class="text-xs uppercase tracking-wide text-slate-500">Unusual data access</p>
+                                    <p class="text-2xl font-semibold text-slate-900">
+                                        {{ $securityOverview['data_access_flags'] }}
+                                    </p>
+                                    <p class="text-xs text-slate-500">Downloads above normal threshold</p>
+                                </div>
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <p class="text-xs uppercase tracking-wide text-slate-500">Security alert flags</p>
+                                    <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['alert_flags'] }}</p>
+                                    <p class="text-xs text-slate-500">5 alerts require review</p>
+                                </div>
+                                <div class="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <p class="text-xs uppercase tracking-wide text-slate-500">Account lockouts</p>
+                                    <p class="text-2xl font-semibold text-slate-900">{{ $securityOverview['account_lockouts'] }}
+                                    </p>
+                                    <p class="text-xs text-slate-500">Automatic lockout policy active</p>
+                                </div>
+                            </div>
+
+                            <div class="rounded-xl border border-slate-100 p-4 lg:col-span-2">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-sm font-semibold text-slate-900">Suspicious activity log</h3>
+                                    <button class="text-xs font-semibold text-slate-600">Export</button>
+                                </div>
+                                <div class="mt-4 space-y-3 text-sm">
+                                    @foreach ($securityLog as $log)
+                                        @php
+                                            $logStatus = $log['status'] ?? 'warning';
+                                            $logMeta = $statusMeta[$logStatus] ?? $statusMeta['warning'];
+                                        @endphp
+                                        <div
+                                            class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 p-3">
+                                            <div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="h-2 w-2 rounded-full {{ $logMeta['dot'] }}"></span>
+                                                    <p class="font-medium text-slate-900">{{ $log['event'] }}</p>
+                                                </div>
+                                                <p class="text-xs text-slate-500">{{ $log['actor'] }} • {{ $log['location'] }} •
+                                                    {{ $log['ip'] }}
+                                                </p>
+                                            </div>
+                                            <div class="text-xs text-slate-500">{{ $log['time'] }}</div>
+                                            <span
+                                                class="rounded-full border px-2 py-0.5 text-xs font-medium {{ $logMeta['pill'] }}">
+                                                {{ $logMeta['label'] }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 @endif
 
                 @if($dashboardPreferences['visible_sections']['charts'] ?? true)
-                <div class="grid grid-cols-1 gap-6">
-                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
-                        <h2 class="text-lg font-semibold text-slate-900 mb-4">Revenue Performance (30 Days)</h2>
-                        <x-apex-chart 
-                            type="area" 
-                            :series="$charts['admin']['revenue']['series']" 
-                            :options="[
-                                'xaxis' => ['categories' => $charts['admin']['revenue']['categories']],
-                                'colors' => ['#0f766e'],
-                                'stroke' => ['curve' => 'smooth'],
-                                'fill' => [
-                                    'type' => 'gradient',
-                                    'gradient' => [
-                                        'shadeIntensity' => 1,
-                                        'opacityFrom' => 0.7,
-                                        'opacityTo' => 0.3,
-                                    ]
-                                ]
-                            ]"
-                        />
+                    <div class="grid grid-cols-1 gap-6">
+                        <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                            <h2 class="text-lg font-semibold text-slate-900 mb-4">Revenue Performance (30 Days)</h2>
+                            <x-apex-chart type="area" :series="$charts['admin']['revenue']['series']" :options="[
+                        'xaxis' => ['categories' => $charts['admin']['revenue']['categories']],
+                        'colors' => ['#0f766e'],
+                        'stroke' => ['curve' => 'smooth'],
+                        'fill' => [
+                            'type' => 'gradient',
+                            'gradient' => [
+                                'shadeIntensity' => 1,
+                                'opacityFrom' => 0.7,
+                                'opacityTo' => 0.3,
+                            ]
+                        ]
+                    ]" />
+                        </div>
                     </div>
-                </div>
                 @endif
 
                 <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -2115,12 +2168,14 @@
                                     <div>
                                         <p class="text-xs text-slate-500">New customers</p>
                                         <p class="text-lg font-semibold text-slate-900">
-                                            {{ $business['new_customers'] ?? 0 }}</p>
+                                            {{ $business['new_customers'] ?? 0 }}
+                                        </p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-500">Churned customers</p>
                                         <p class="text-lg font-semibold text-slate-900">
-                                            {{ $business['inactive_customers'] ?? 0 }}</p>
+                                            {{ $business['inactive_customers'] ?? 0 }}
+                                        </p>
                                     </div>
                                     <div>
                                         <p class="text-xs text-slate-500">Net growth</p>
@@ -2199,7 +2254,8 @@
                             <div class="rounded-xl border border-slate-100 p-4">
                                 <p class="text-xs uppercase tracking-wide text-slate-500">Data backup status</p>
                                 <p class="mt-2 text-lg font-semibold text-slate-900">
-                                    {{ $compliance['backup_last_run'] ?? 'Not recorded' }}</p>
+                                    {{ $compliance['backup_last_run'] ?? 'Not recorded' }}
+                                </p>
                                 <p class="text-xs text-slate-500">Last backup time</p>
                             </div>
                             <div class="rounded-xl border border-slate-100 p-4">
@@ -2242,7 +2298,7 @@
                             </div>
                         </div>
                     </div>
-                                                        <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+                    <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
                                 <h2 class="text-lg font-semibold text-slate-900">System Configuration Quick Access</h2>
@@ -2324,45 +2380,46 @@
         @endif
 
         @if($dashboardPreferences['visible_sections']['main_content'] ?? true)
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach ($sections as $section)
-                <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-gray-900">{{ $section['title'] }}</h2>
-                        @if (!empty($section['action']))
-                            <a class="text-sm text-indigo-600" href="{{ $section['action']['href'] }}" wire:navigate>
-                                {{ $section['action']['label'] }}
-                            </a>
-                        @endif
-                    </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach ($sections as $section)
+                    <div class="bg-white shadow-sm rounded-lg p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-gray-900">{{ $section['title'] }}</h2>
+                            @if (!empty($section['action']))
+                                <a class="text-sm text-indigo-600" href="{{ $section['action']['href'] }}" wire:navigate>
+                                    {{ $section['action']['label'] }}
+                                </a>
+                            @endif
+                        </div>
 
-                    <div class="space-y-3">
-                        @forelse ($section['items'] as $item)
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <p class="text-sm font-medium text-gray-900">{{ $item['title'] }}</p>
-                                        @if (!empty($item['badges']))
-                                            @foreach ($item['badges'] as $badge)
-                                                <span
-                                                    class="inline-flex items-center rounded-full px-2 py-0.5 text-xs {{ $badge['class'] }}">
-                                                    {{ $badge['label'] }}
-                                                </span>
-                                            @endforeach
-                                        @endif
+                        <div class="space-y-3">
+                            @forelse ($section['items'] as $item)
+                                <div class="flex items-start justify-between gap-3">
+                                    <div>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <p class="text-sm font-medium text-gray-900">{{ $item['title'] }}</p>
+                                            @if (!empty($item['badges']))
+                                                @foreach ($item['badges'] as $badge)
+                                                    <span
+                                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-xs {{ $badge['class'] }}">
+                                                        {{ $badge['label'] }}
+                                                    </span>
+                                                @endforeach
+                                            @endif
+                                        </div>
+                                        <p class="text-xs text-gray-500">{{ $item['meta'] }}</p>
                                     </div>
-                                    <p class="text-xs text-gray-500">{{ $item['meta'] }}</p>
+                                    @if (!empty($item['href']))
+                                        <a class="text-xs text-indigo-600" href="{{ $item['href'] }}" wire:navigate>View</a>
+                                    @endif
                                 </div>
-                                @if (!empty($item['href']))
-                                    <a class="text-xs text-indigo-600" href="{{ $item['href'] }}" wire:navigate>View</a>
-                                @endif
-                            </div>
-                        @empty
-                            <p class="text-sm text-gray-500">{{ $section['empty'] }}</p>
-                        @endforelse
+                            @empty
+                                <p class="text-sm text-gray-500">{{ $section['empty'] }}</p>
+                            @endforelse
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 </div>

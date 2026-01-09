@@ -21,7 +21,7 @@ class WorkOrderFlowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Seed essential roles
         $this->seed(\Database\Seeders\RbacSeeder::class);
     }
@@ -32,7 +32,7 @@ class WorkOrderFlowTest extends TestCase
         $technician->assignRole(RoleCatalog::TECHNICIAN);
 
         $otherTech = User::factory()->create();
-        
+
         $myJob = WorkOrder::factory()->create(['assigned_to_user_id' => $technician->id]);
         $otherJob = WorkOrder::factory()->create(['assigned_to_user_id' => $otherTech->id]);
 
@@ -54,10 +54,12 @@ class WorkOrderFlowTest extends TestCase
 
         Livewire::actingAs($dispatcher)
             ->test('work-orders.create-wizard')
-            ->set('form.organization_id', $org->id)
-            ->set('form.subject', 'Broken Printer')
-            ->set('form.category_id', $category->id)
-            ->call('save');
+            ->set('selectedOrganizationId', $org->id)
+            ->set('subject', 'Broken Printer')
+            ->set('categoryId', $category->id)
+            ->set('description', 'The printer is not printing properly and needs to be checked.')
+            ->set('termsAccepted', true)
+            ->call('confirmSubmit');
 
         $this->assertDatabaseHas('work_orders', [
             'subject' => 'Broken Printer',

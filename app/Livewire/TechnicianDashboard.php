@@ -61,10 +61,12 @@ class TechnicianDashboard extends Component
         }
 
         $user = auth()->user();
-        $previousStatus = $user->availability_status;
+        $previousStatus = $user->availability_status ?? '';
 
-        // Track time for previous status
-        $this->trackStatusTime($previousStatus, $status);
+        // Track time for previous status (only if we have a valid previous status)
+        if ($previousStatus !== '' && $previousStatus !== $status) {
+            $this->trackStatusTime($previousStatus, $status);
+        }
 
         $user->update(['availability_status' => $status]);
         $this->currentStatus = $status;
@@ -81,7 +83,7 @@ class TechnicianDashboard extends Component
 
         $workOrder->update([
             'status' => 'in_progress',
-            'actual_start_at' => now(),
+            'started_at' => now(),
         ]);
 
         // Create event
@@ -103,7 +105,7 @@ class TechnicianDashboard extends Component
 
         $workOrder->update([
             'status' => 'completed',
-            'actual_end_at' => now(),
+            'completed_at' => now(),
             'labor_minutes' => $this->jobStartTime
                 ? now()->diffInMinutes($this->jobStartTime)
                 : null,

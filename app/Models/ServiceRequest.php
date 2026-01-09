@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\CacheService;
 
 /**
  * Class ServiceRequest
@@ -232,6 +233,19 @@ class ServiceRequest extends Model
     }
 
     /**
+     * Scope a query to include optimized eager loading with column selection.
+     * Reduces memory usage and improves query performance.
+     */
+    public function scopeWithRelations(Builder $query): Builder
+    {
+        return $query->with([
+            'customer' => fn($q) => $q->select('id', 'name', 'primary_contact_email'),
+            'equipment' => fn($q) => $q->select('id', 'model', 'serial_number', 'organization_id'),
+            'technician' => fn($q) => $q->select('id', 'name', 'avatar'),
+        ]);
+    }
+
+    /**
      * Accessors & Mutators
      */
 
@@ -296,5 +310,17 @@ class ServiceRequest extends Model
     protected static function booted(): void
     {
         static::observe(\App\Observers\ServiceRequestObserver::class);
+
+        // Cache invalidation on save
+        static::saved(function ($request) {
+            app(CacheService::class)->flushServiceRequests();
+            app(CacheService::class)->flushDashboard();
+        });
+
+        // Cache invalidation on delete
+        static::deleted(function ($request) {
+            app(CacheService::class)->flushServiceRequests();
+            app(CacheService::class)->flushDashboard();
+        });
     }
 }

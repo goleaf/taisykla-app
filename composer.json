@@ -7,12 +7,15 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "bacon/bacon-qr-code": "^3.0",
         "diglactic/laravel-breadcrumbs": "^10.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "laraveljutsu/zap": "^1.9",
         "livewire/livewire": "^3.6.4",
         "livewire/volt": "^1.7.0",
+        "pragmarx/google2fa-laravel": "^2.3",
+        "predis/predis": "^3.3",
         "spatie/laravel-data": "^4.18",
         "spatie/laravel-permission": "^6.24",
         "yediyuz/laravel-cloudflare-cache": "^2.1"

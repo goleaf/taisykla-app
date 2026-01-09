@@ -63,6 +63,33 @@ final class PermissionCatalog
     public const SUPPORT_MANAGE = 'support.manage';
     public const SUPPORT_ASSIGN = 'support.assign';
 
+    // Service Requests
+    public const SERVICE_REQUESTS_VIEW = 'service_requests.view';
+    public const SERVICE_REQUESTS_VIEW_ALL = 'service_requests.view_all';
+    public const SERVICE_REQUESTS_VIEW_OWN = 'service_requests.view_own';
+    public const SERVICE_REQUESTS_VIEW_ORG = 'service_requests.view_org';
+    public const SERVICE_REQUESTS_CREATE = 'service_requests.create';
+    public const SERVICE_REQUESTS_UPDATE = 'service_requests.update';
+    public const SERVICE_REQUESTS_UPDATE_OWN = 'service_requests.update_own';
+    public const SERVICE_REQUESTS_DELETE = 'service_requests.delete';
+    public const SERVICE_REQUESTS_ASSIGN = 'service_requests.assign';
+    public const SERVICE_REQUESTS_APPROVE = 'service_requests.approve';
+
+    // Technicians
+    public const TECHNICIANS_VIEW = 'technicians.view';
+    public const TECHNICIANS_CREATE = 'technicians.create';
+    public const TECHNICIANS_UPDATE = 'technicians.update';
+    public const TECHNICIANS_DELETE = 'technicians.delete';
+    public const TECHNICIANS_VIEW_SCHEDULE = 'technicians.view_schedule';
+    public const TECHNICIANS_IMPERSONATE = 'technicians.impersonate';
+
+    // Customers
+    public const CUSTOMERS_VIEW = 'customers.view';
+    public const CUSTOMERS_CREATE = 'customers.create';
+    public const CUSTOMERS_UPDATE = 'customers.update';
+    public const CUSTOMERS_DELETE = 'customers.delete';
+    public const CUSTOMERS_IMPERSONATE = 'customers.impersonate';
+
     public const SETTINGS_VIEW = 'settings.view';
     public const SETTINGS_MANAGE = 'settings.manage';
     public const USERS_MANAGE = 'users.manage';
@@ -86,6 +113,10 @@ final class PermissionCatalog
             self::knowledgeBasePermissions(),
             self::supportPermissions(),
             self::supportVisibilityPermissions(),
+            self::serviceRequestPermissions(),
+            self::serviceRequestVisibilityPermissions(),
+            self::technicianPermissions(),
+            self::customerPermissions(),
             self::settingsPermissions(),
         )));
     }
@@ -106,6 +137,18 @@ final class PermissionCatalog
                 self::BILLING_VIEW_ALL,
                 self::BILLING_MANAGE,
                 self::KNOWLEDGE_BASE_MANAGE,
+                    // Service Requests
+                self::SERVICE_REQUESTS_VIEW,
+                self::SERVICE_REQUESTS_VIEW_ALL,
+                self::SERVICE_REQUESTS_CREATE,
+                self::SERVICE_REQUESTS_UPDATE,
+                self::SERVICE_REQUESTS_ASSIGN,
+                self::SERVICE_REQUESTS_APPROVE,
+                self::SERVICE_REQUESTS_DELETE,
+                    // Technicians & Customers
+                self::TECHNICIANS_VIEW,
+                self::TECHNICIANS_VIEW_SCHEDULE,
+                self::CUSTOMERS_VIEW,
             ],
             RoleCatalog::DISPATCH => [
                 self::DASHBOARD_VIEW,
@@ -131,6 +174,15 @@ final class PermissionCatalog
                 self::SUPPORT_ASSIGN,
                 self::SUPPORT_CREATE,
                 self::KNOWLEDGE_BASE_VIEW,
+                    // Service Requests
+                self::SERVICE_REQUESTS_VIEW,
+                self::SERVICE_REQUESTS_VIEW_ALL,
+                self::SERVICE_REQUESTS_CREATE,
+                self::SERVICE_REQUESTS_UPDATE,
+                self::SERVICE_REQUESTS_ASSIGN,
+                    // Technicians
+                self::TECHNICIANS_VIEW,
+                self::TECHNICIANS_VIEW_SCHEDULE,
             ],
             RoleCatalog::TECHNICIAN => [
                 self::DASHBOARD_VIEW,
@@ -151,6 +203,10 @@ final class PermissionCatalog
                 self::SUPPORT_VIEW_OWN,
                 self::SUPPORT_CREATE,
                 self::KNOWLEDGE_BASE_VIEW,
+                    // Service Requests
+                self::SERVICE_REQUESTS_VIEW,
+                self::SERVICE_REQUESTS_VIEW_OWN,
+                self::SERVICE_REQUESTS_UPDATE_OWN,
             ],
             RoleCatalog::INVENTORY_SPECIALIST => [
                 self::DASHBOARD_VIEW,
@@ -412,6 +468,51 @@ final class PermissionCatalog
         return [
             self::SETTINGS_MANAGE,
             self::USERS_MANAGE,
+        ];
+    }
+
+    private static function serviceRequestPermissions(): array
+    {
+        return [
+            self::SERVICE_REQUESTS_VIEW,
+            self::SERVICE_REQUESTS_CREATE,
+            self::SERVICE_REQUESTS_UPDATE,
+            self::SERVICE_REQUESTS_UPDATE_OWN,
+            self::SERVICE_REQUESTS_DELETE,
+            self::SERVICE_REQUESTS_ASSIGN,
+            self::SERVICE_REQUESTS_APPROVE,
+        ];
+    }
+
+    private static function serviceRequestVisibilityPermissions(): array
+    {
+        return [
+            self::SERVICE_REQUESTS_VIEW_ALL,
+            self::SERVICE_REQUESTS_VIEW_OWN,
+            self::SERVICE_REQUESTS_VIEW_ORG,
+        ];
+    }
+
+    private static function technicianPermissions(): array
+    {
+        return [
+            self::TECHNICIANS_VIEW,
+            self::TECHNICIANS_CREATE,
+            self::TECHNICIANS_UPDATE,
+            self::TECHNICIANS_DELETE,
+            self::TECHNICIANS_VIEW_SCHEDULE,
+            self::TECHNICIANS_IMPERSONATE,
+        ];
+    }
+
+    private static function customerPermissions(): array
+    {
+        return [
+            self::CUSTOMERS_VIEW,
+            self::CUSTOMERS_CREATE,
+            self::CUSTOMERS_UPDATE,
+            self::CUSTOMERS_DELETE,
+            self::CUSTOMERS_IMPERSONATE,
         ];
     }
 }

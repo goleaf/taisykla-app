@@ -1,1303 +1,644 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'Taisykla Field Ops') }}</title>
-
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=space-grotesk:400,500,600,700|ibm-plex-sans:400,500,600&display=swap" rel="stylesheet" />
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <style>
-            :root {
-                color-scheme: only light;
-                --ink: #0c1b1a;
-                --muted: #4f5d5b;
-                --paper: #f7f3ea;
-                --panel: #ffffff;
-                --border: #e6dfd3;
-                --teal: #0f766e;
-                --teal-dark: #0b4f4a;
-                --amber: #f59e0b;
-                --rose: #ef4444;
-                --sky: #0ea5e9;
-                --mint: #dcf8f1;
-            }
-
-            * {
-                box-sizing: border-box;
-            }
-
-            body {
-                margin: 0;
-                font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-                color: var(--ink);
-                background:
-                    radial-gradient(900px 540px at 8% -10%, #ffe6c4 0%, transparent 60%),
-                    radial-gradient(900px 540px at 90% -5%, #c8f4ec 0%, transparent 55%),
-                    linear-gradient(180deg, #f7f3ea 0%, #f1efe7 100%);
-            }
-
-            body::before {
-                content: "";
-                position: fixed;
-                inset: 0;
-                background:
-                    linear-gradient(120deg, rgba(12, 27, 26, 0.05) 1px, transparent 1px),
-                    linear-gradient(0deg, rgba(12, 27, 26, 0.04) 1px, transparent 1px);
-                background-size: 32px 32px;
-                pointer-events: none;
-                opacity: 0.3;
-            }
-
-            h1, h2, h3, .display {
-                font-family: "Space Grotesk", "Segoe UI", sans-serif;
-            }
-
-            .page-shell {
-                position: relative;
-                max-width: 1200px;
-                margin: 0 auto;
-                padding: 48px 24px 88px;
-                z-index: 1;
-            }
-
-            .hero {
-                display: grid;
-                gap: 24px;
-                align-items: center;
-            }
-
-            .hero p {
-                color: var(--muted);
-                margin: 0;
-            }
-
-            .badge {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                padding: 6px 12px;
-                border-radius: 999px;
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.12em;
-                background: #0b4f4a;
-                color: #ffffff;
-            }
-
-            .hero-actions {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 12px;
-                margin-top: 18px;
-            }
-
-            .screen-grid {
-                margin-top: 36px;
-                display: grid;
-                gap: 28px;
-            }
-
-            .screen {
-                background: var(--panel);
-                border-radius: 28px;
-                border: 1px solid var(--border);
-                box-shadow: 0 24px 60px rgba(12, 27, 26, 0.16);
-                min-height: 720px;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-                overflow: hidden;
-                animation: lift 0.7s ease both;
-            }
-
-            .screen::after {
-                content: "";
-                position: absolute;
-                inset: 0;
-                border: 1px solid rgba(12, 27, 26, 0.05);
-                border-radius: 28px;
-                pointer-events: none;
-            }
-
-            .screen-header {
-                padding: 18px 20px 0;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-            }
-
-            .screen-title {
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.18em;
-                color: var(--muted);
-                font-weight: 600;
-            }
-
-            .screen-body {
-                padding: 16px 20px 20px;
-                display: flex;
-                flex-direction: column;
-                gap: 16px;
-            }
-
-            .screen-heading {
-                font-size: 20px;
-                margin: 0;
-            }
-
-            .muted {
-                color: var(--muted);
-                font-size: 13px;
-            }
-
-            .status-pill {
-                padding: 6px 10px;
-                border-radius: 999px;
-                font-size: 12px;
-                font-weight: 600;
-                background: #0b4f4a;
-                color: #ffffff;
-            }
-
-            .status-pill.offline {
-                background: #3b1d1d;
-                color: #ffd7d7;
-            }
-
-            .count-badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                min-width: 64px;
-                padding: 6px 12px;
-                border-radius: 14px;
-                background: #fef3c7;
-                color: #854d0e;
-                font-weight: 600;
-                font-size: 12px;
-            }
-
-            .pull-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                padding: 10px 12px;
-                border-radius: 14px;
-                background: #f9f7f2;
-                border: 1px dashed #e9e2d6;
-                font-size: 12px;
-            }
-
-            .segmented {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 6px;
-                padding: 6px;
-                border-radius: 14px;
-                background: #f3efe6;
-            }
-
-            .segmented button {
-                border: none;
-                background: transparent;
-                padding: 10px 12px;
-                border-radius: 10px;
-                font-weight: 600;
-                color: var(--muted);
-                cursor: pointer;
-            }
-
-            .segmented .active {
-                background: #ffffff;
-                color: var(--ink);
-                box-shadow: 0 6px 16px rgba(12, 27, 26, 0.08);
-            }
-
-            .job-card {
-                padding: 14px;
-                border-radius: 18px;
-                border: 1px solid #ece6da;
-                background: #ffffff;
-                border-left: 6px solid var(--amber);
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .job-card.priority-high {
-                border-left-color: var(--rose);
-            }
-
-            .job-card.priority-low {
-                border-left-color: #10b981;
-            }
-
-            .job-main {
-                display: flex;
-                justify-content: space-between;
-                gap: 16px;
-            }
-
-            .job-time {
-                font-weight: 700;
-                font-size: 18px;
-            }
-
-            .job-title {
-                font-weight: 600;
-                margin-top: 4px;
-            }
-
-            .job-desc {
-                font-size: 13px;
-                color: var(--muted);
-            }
-
-            .job-meta {
-                font-size: 12px;
-                color: var(--muted);
-                margin-top: 6px;
-            }
-
-            .job-swipe {
-                font-size: 12px;
-                text-transform: uppercase;
-                letter-spacing: 0.2em;
-                color: #9a8f80;
-                writing-mode: vertical-rl;
-            }
-
-            .chip-row {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
-                margin-top: 8px;
-            }
-
-            .chip {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                padding: 6px 10px;
-                border-radius: 999px;
-                font-size: 11px;
-                background: #f2f6f5;
-                color: #1f2937;
-                font-weight: 600;
-            }
-
-            .chip.high {
-                background: #fee2e2;
-                color: #991b1b;
-            }
-
-            .chip.medium {
-                background: #fef3c7;
-                color: #92400e;
-            }
-
-            .chip.low {
-                background: #dcfce7;
-                color: #166534;
-            }
-
-            .swipe-actions {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 8px;
-            }
-
-            .section {
-                padding: 14px;
-                border-radius: 18px;
-                background: #f9f6f0;
-                border: 1px solid #ece6da;
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .section-title {
-                font-size: 11px;
-                letter-spacing: 0.16em;
-                text-transform: uppercase;
-                color: var(--muted);
-                font-weight: 700;
-            }
-
-            .row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-            }
-
-            .btn {
-                border: none;
-                border-radius: 14px;
-                padding: 10px 14px;
-                font-weight: 600;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                cursor: pointer;
-                min-height: 44px;
-            }
-
-            .btn-primary {
-                background: var(--teal);
-                color: #ffffff;
-            }
-
-            .btn-secondary {
-                background: #ffffff;
-                border: 1px solid var(--border);
-                color: var(--ink);
-            }
-
-            .btn-danger {
-                background: var(--rose);
-                color: #ffffff;
-            }
-
-            .btn-ghost {
-                background: #f3efe6;
-                color: #3f4a48;
-            }
-
-            .icon-btn {
-                width: 44px;
-                height: 44px;
-                border-radius: 14px;
-                border: 1px solid var(--border);
-                background: #ffffff;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-            }
-
-            .icon-btn.primary {
-                background: var(--teal);
-                border-color: var(--teal);
-                color: #ffffff;
-            }
-
-            .select {
-                width: 100%;
-                padding: 10px 12px;
-                border-radius: 14px;
-                border: 1px solid var(--border);
-                background: #ffffff;
-                font-weight: 600;
-                min-height: 44px;
-            }
-
-            .photo-strip {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 8px;
-            }
-
-            .photo {
-                border-radius: 12px;
-                border: 1px dashed #d8d0c4;
-                background: #ffffff;
-                padding: 10px;
-                text-align: center;
-                font-size: 11px;
-                color: var(--muted);
-                min-height: 72px;
-            }
-
-            .camera-view {
-                border-radius: 18px;
-                border: 1px solid #d7d1c6;
-                background: linear-gradient(135deg, #1f2937, #0f172a);
-                color: #d1d5db;
-                padding: 16px;
-                min-height: 160px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                font-size: 13px;
-            }
-
-            .progress {
-                height: 8px;
-                border-radius: 999px;
-                background: #ebe6db;
-                overflow: hidden;
-            }
-
-            .progress span {
-                display: block;
-                height: 100%;
-                width: 68%;
-                background: linear-gradient(90deg, #0f766e, #14b8a6);
-            }
-
-            .note-entry {
-                border-radius: 14px;
-                padding: 12px;
-                border: 1px solid #e6dfd3;
-                background: #ffffff;
-            }
-
-            .note-meta {
-                font-size: 11px;
-                text-transform: uppercase;
-                letter-spacing: 0.12em;
-                color: #7a6f63;
-                font-weight: 600;
-            }
-
-            .input {
-                width: 100%;
-                border-radius: 14px;
-                border: 1px solid var(--border);
-                padding: 12px;
-                font-size: 14px;
-            }
-
-            .parts-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 12px;
-                padding: 12px;
-                border-radius: 14px;
-                border: 1px solid #e7e1d6;
-                background: #ffffff;
-            }
-
-            .qty-control {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                background: #f3efe6;
-                border-radius: 999px;
-                padding: 4px 8px;
-                font-weight: 600;
-            }
-
-            .timer {
-                font-size: 32px;
-                font-weight: 700;
-                letter-spacing: 0.08em;
-            }
-
-            .summary-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                font-size: 13px;
-                color: var(--muted);
-            }
-
-            .signature-pad {
-                height: 140px;
-                border-radius: 18px;
-                border: 2px dashed #d6cdbf;
-                background: #fffaf0;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #9a8f80;
-                font-size: 13px;
-            }
-
-            .rating {
-                display: grid;
-                grid-template-columns: repeat(5, minmax(0, 1fr));
-                gap: 8px;
-            }
-
-            .rating button {
-                border-radius: 12px;
-                border: 1px solid var(--border);
-                padding: 10px 0;
-                font-weight: 700;
-                background: #ffffff;
-                cursor: pointer;
-                min-height: 44px;
-            }
-
-            .bottom-nav {
-                margin-top: auto;
-                padding: 12px 16px 16px;
-                border-top: 1px solid #efe8dc;
-                background: rgba(255, 255, 255, 0.92);
-                display: grid;
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                gap: 8px;
-            }
-
-            .nav-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 4px;
-                font-size: 11px;
-                color: var(--muted);
-                font-weight: 600;
-                min-height: 44px;
-                justify-content: center;
-            }
-
-            .nav-item.active {
-                color: var(--ink);
-            }
-
-            .nav-icon {
-                width: 28px;
-                height: 28px;
-                border-radius: 10px;
-                background: #f1ede4;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: var(--ink);
-            }
-
-            .quick-actions {
-                position: absolute;
-                right: 16px;
-                bottom: 88px;
-                z-index: 2;
-                display: flex;
-                flex-direction: column-reverse;
-                align-items: flex-end;
-            }
-
-            .quick-actions summary {
-                list-style: none;
-            }
-
-            .quick-actions summary::-webkit-details-marker {
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ config('app.name', 'Taisykla') }} - Equipment Maintenance Management</title>
+    <meta name="description"
+        content="Streamline your field service operations with intelligent scheduling, real-time tracking, and comprehensive equipment management.">
+
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        :root {
+            --primary: #0f766e;
+            --primary-dark: #0d5e58;
+            --primary-light: #14b8a6;
+            --accent: #f59e0b;
+            --dark: #0f172a;
+            --muted: #64748b;
+            --light: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: var(--dark);
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 50%, #f0fdfa 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(20, 184, 166, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(245, 158, 11, 0.05) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navigation */
+        nav {
+            padding: 20px 0;
+            position: relative;
+            z-index: 100;
+        }
+
+        nav .inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 24px;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 18px;
+            box-shadow: 0 4px 14px rgba(15, 118, 110, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 15px;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--dark);
+        }
+
+        .nav-buttons {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--dark);
+        }
+
+        .btn-ghost:hover {
+            background: rgba(15, 118, 110, 0.08);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(15, 118, 110, 0.35);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(15, 118, 110, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--light);
+            border-color: var(--primary);
+        }
+
+        .btn-lg {
+            padding: 16px 32px;
+            font-size: 16px;
+            border-radius: 14px;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 80px 0 100px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(15, 118, 110, 0.1);
+            border: 1px solid rgba(15, 118, 110, 0.2);
+            border-radius: 999px;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .hero-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .hero h1 {
+            font-size: clamp(40px, 6vw, 64px);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--dark) 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--muted);
+            max-width: 640px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+
+        .hero-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 60px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* Features Grid */
+        .features {
+            padding: 100px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .section-desc {
+            font-size: 18px;
+            color: var(--muted);
+            max-width: 560px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+            border-color: var(--primary);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, rgba(15, 118, 110, 0.1) 0%, rgba(20, 184, 166, 0.15) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .feature-desc {
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta {
+            padding: 80px 0 120px;
+        }
+
+        .cta-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 32px;
+            padding: 64px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .cta-title {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .cta-desc {
+            font-size: 18px;
+            opacity: 0.9;
+            max-width: 480px;
+            margin: 0 auto 32px;
+        }
+
+        .cta .btn-secondary {
+            background: white;
+            color: var(--primary);
+        }
+
+        .cta .btn-secondary:hover {
+            background: var(--light);
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+            background: white;
+        }
+
+        .footer-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-copy {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
                 display: none;
             }
 
-            .fab {
-                width: 54px;
-                height: 54px;
-                border-radius: 18px;
-                background: var(--teal);
-                color: #ffffff;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 700;
-                box-shadow: 0 14px 30px rgba(15, 118, 110, 0.4);
+            .hero {
+                padding: 60px 0 80px;
             }
 
-            .quick-menu {
-                margin-bottom: 12px;
-                width: 210px;
-                background: #ffffff;
-                border-radius: 18px;
-                border: 1px solid #e5ded3;
-                padding: 10px;
-                display: grid;
-                gap: 8px;
+            .stats {
+                gap: 32px;
             }
 
-            .quick-menu button {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                gap: 8px;
-                border: 1px solid #ede7db;
-                background: #f9f7f2;
-                border-radius: 12px;
-                padding: 10px 12px;
-                font-size: 12px;
-                font-weight: 600;
-                min-height: 44px;
-                cursor: pointer;
+            .features {
+                padding: 60px 0;
             }
 
-            .screen-grid section:nth-child(1) {
-                animation-delay: 0.1s;
+            .cta-card {
+                padding: 40px 24px;
             }
-            .screen-grid section:nth-child(2) {
-                animation-delay: 0.2s;
-            }
-            .screen-grid section:nth-child(3) {
-                animation-delay: 0.3s;
-            }
-            .screen-grid section:nth-child(4) {
-                animation-delay: 0.4s;
-            }
-            .screen-grid section:nth-child(5) {
-                animation-delay: 0.5s;
-            }
-            .screen-grid section:nth-child(6) {
-                animation-delay: 0.6s;
-            }
-            .screen-grid section:nth-child(7) {
-                animation-delay: 0.7s;
-            }
-            .screen-grid section:nth-child(8) {
-                animation-delay: 0.8s;
-            }
+        }
+    </style>
+</head>
 
-            @keyframes lift {
-                from {
-                    opacity: 0;
-                    transform: translateY(18px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
+<body>
+    <div class="bg-pattern"></div>
 
-            @media (min-width: 900px) {
-                .hero {
-                    grid-template-columns: 1.2fr 1fr;
-                }
+    <!-- Navigation -->
+    <nav>
+        <div class="container inner">
+            <a href="/" class="logo">
+                <div class="logo-icon">T</div>
+                <span>Taisykla</span>
+            </a>
 
-                .screen-grid {
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                }
-            }
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#about">About</a>
+                <a href="#contact">Contact</a>
+            </div>
 
-            @media (min-width: 1200px) {
-                .screen-grid {
-                    grid-template-columns: repeat(3, minmax(0, 1fr));
-                }
-            }
-        </style>
-    </head>
-    <body class="antialiased">
-        <div class="page-shell">
-            <header class="hero">
-                <div>
-                    <span class="badge">Field Technician Mobile</span>
-                    <h1 class="display" style="font-size: 40px; margin: 16px 0 12px;">Work order control built for one-hand use.</h1>
-                    <p>High contrast, offline-first workflows, and large touch targets keep technicians moving without wasting data or time.</p>
-                    <div class="hero-actions">
-                        <a href="{{ route('login') }}" class="btn btn-primary">Launch Technician View</a>
-                        <a href="{{ route('register') }}" class="btn btn-secondary">Invite New Tech</a>
-                    </div>
-                </div>
-                <div class="section" style="background: #ffffff;">
-                    <div class="section-title">Quick Actions Menu</div>
-                    <div class="muted">Available from anywhere via the floating button.</div>
-                    <div class="quick-menu">
-                        <button type="button">Emergency support<span>Call</span></button>
-                        <button type="button">Report a problem<span>Log</span></button>
-                        <button type="button">Request parts delivery<span>ETA</span></button>
-                        <button type="button">Check inventory<span>Stock</span></button>
-                        <button type="button">View today schedule<span>Route</span></button>
-                    </div>
-                </div>
-            </header>
-
-            <main class="screen-grid">
-                <section class="screen">
-                    <div class="screen-header">
-                        <span class="screen-title">Job List</span>
-                        <span class="status-pill offline">Offline - 3 queued</span>
-                    </div>
-                    <div class="screen-body">
-                        <div class="row">
-                            <div>
-                                <h2 class="screen-heading">Today's Route</h2>
-                                <div class="muted">Wed, Zone East, data saver on</div>
-                            </div>
-                            <span class="count-badge">8 jobs</span>
-                        </div>
-                        <div class="pull-row">
-                            <span>Pull to refresh</span>
-                            <span class="muted">Auto-sync on reconnect</span>
-                        </div>
-                        <div class="segmented">
-                            <button class="active">Time order</button>
-                            <button>Route order</button>
-                        </div>
-                        <div class="job-card priority-high">
-                            <div class="job-main">
-                                <div>
-                                    <div class="job-time">08:30</div>
-                                    <div class="job-title">Arsenault Dental</div>
-                                    <div class="job-desc">AC down, waiting room 30C</div>
-                                    <div class="job-meta">12 Ridge St · 2.3 mi</div>
-                                    <div class="chip-row">
-                                        <span class="chip high">High</span>
-                                        <span class="chip">Waiting customer</span>
-                                    </div>
-                                </div>
-                                <div class="job-swipe">Swipe</div>
-                            </div>
-                            <div class="swipe-actions">
-                                <button class="btn btn-secondary">Call</button>
-                                <button class="btn btn-secondary">Navigate</button>
-                                <button class="btn btn-primary">Start</button>
-                            </div>
-                        </div>
-                        <div class="job-card">
-                            <div class="job-main">
-                                <div>
-                                    <div class="job-time">10:15</div>
-                                    <div class="job-title">Pinegrove Market</div>
-                                    <div class="job-desc">POS terminals reboot loop</div>
-                                    <div class="job-meta">88 Queen Ave · 4.9 mi</div>
-                                    <div class="chip-row">
-                                        <span class="chip medium">Medium</span>
-                                        <span class="chip">En route</span>
-                                    </div>
-                                </div>
-                                <div class="job-swipe">Swipe</div>
-                            </div>
-                            <div class="swipe-actions">
-                                <button class="btn btn-secondary">Call</button>
-                                <button class="btn btn-secondary">Navigate</button>
-                                <button class="btn btn-primary">Start</button>
-                            </div>
-                        </div>
-                        <div class="job-card priority-low">
-                            <div class="job-main">
-                                <div>
-                                    <div class="job-time">13:40</div>
-                                    <div class="job-title">Harbor Studios</div>
-                                    <div class="job-desc">Printer calibration and test print</div>
-                                    <div class="job-meta">21 Dock St · 6.1 mi</div>
-                                    <div class="chip-row">
-                                        <span class="chip low">Low</span>
-                                        <span class="chip">Scheduled</span>
-                                    </div>
-                                </div>
-                                <div class="job-swipe">Swipe</div>
-                            </div>
-                            <div class="swipe-actions">
-                                <button class="btn btn-secondary">Call</button>
-                                <button class="btn btn-secondary">Navigate</button>
-                                <button class="btn btn-primary">Start</button>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Offline mode</div>
-                            <div class="muted">Local job data stored on device. Sync queue auto-replays.</div>
-                            <div class="summary-row">
-                                <span>3 updates queued</span>
-                                <span>Conflicts: latest timestamp wins</span>
-                            </div>
-                        </div>
-                    </div>
-                    <details class="quick-actions">
-                        <summary class="fab">QA</summary>
-                        <div class="quick-menu">
-                            <button type="button">Emergency support<span>Call</span></button>
-                            <button type="button">Report a problem<span>Log</span></button>
-                            <button type="button">Request parts delivery<span>ETA</span></button>
-                            <button type="button">Check inventory<span>Stock</span></button>
-                            <button type="button">View today schedule<span>Route</span></button>
-                        </div>
-                    </details>
-                    <nav class="bottom-nav">
-                        <div class="nav-item active">
-                            <div class="nav-icon">J</div>
-                            Jobs
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">M</div>
-                            Map
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">N</div>
-                            Notes
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">P</div>
-                            Profile
-                        </div>
-                    </nav>
-                </section>
-
-                <section class="screen">
-                    <div class="screen-header">
-                        <span class="screen-title">Job Detail</span>
-                        <span class="status-pill">Live status</span>
-                    </div>
-                    <div class="screen-body">
-                        <div class="section" style="background: #ffffff;">
-                            <div class="row">
-                                <div>
-                                    <h2 class="screen-heading">Nova Labs</h2>
-                                    <button class="btn btn-ghost" type="button">742 Market Ave, Kaunas</button>
-                                    <div class="muted">Tap for maps and directions</div>
-                                </div>
-                                <div style="display: grid; gap: 10px;">
-                                    <button class="icon-btn primary" type="button" aria-label="Call customer">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .6 3a2 2 0 0 1-.4 2.1L8.2 10a16 16 0 0 0 6 6l1.2-1.1a2 2 0 0 1 2.1-.4c1 .3 2 .5 3 .6a2 2 0 0 1 1.7 2z"/>
-                                        </svg>
-                                    </button>
-                                    <button class="icon-btn" type="button" aria-label="Message customer">
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="section-title">Status</div>
-                                <select class="select">
-                                    <option>En route</option>
-                                    <option>Arrived</option>
-                                    <option>Working</option>
-                                    <option>Awaiting approval</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Problem Information</div>
-                            <div>Server room overheating, alarm triggered twice in 24 hours.</div>
-                            <div class="photo-strip">
-                                <div class="photo">Before 01</div>
-                                <div class="photo">Before 02</div>
-                                <div class="photo">During</div>
-                            </div>
-                            <div class="muted">Pinch to zoom any photo</div>
-                            <details>
-                                <summary style="cursor: pointer; font-weight: 600;">Equipment details</summary>
-                                <div class="muted" style="margin-top: 8px;">HVAC Model ZX-440, last serviced 3 months ago, filter warning active.</div>
-                            </details>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Navigation</div>
-                            <div class="row">
-                                <span class="muted">ETA 12 min · 4.2 mi</span>
-                                <button class="btn btn-ghost">Copy address</button>
-                            </div>
-                            <button class="btn btn-primary">Navigate Here</button>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Check-in and Status</div>
-                            <div class="row">
-                                <span class="muted">Timer</span>
-                                <span class="timer">00:12:45</span>
-                            </div>
-                            <div class="row">
-                                <button class="btn btn-primary" style="flex: 1;">Arrive at site</button>
-                                <button class="btn btn-secondary" style="flex: 1;">Start work</button>
-                            </div>
-                            <button class="btn btn-danger">Request help</button>
-                        </div>
-                    </div>
-                    <details class="quick-actions">
-                        <summary class="fab">QA</summary>
-                        <div class="quick-menu">
-                            <button type="button">Emergency support<span>Call</span></button>
-                            <button type="button">Report a problem<span>Log</span></button>
-                            <button type="button">Request parts delivery<span>ETA</span></button>
-                            <button type="button">Check inventory<span>Stock</span></button>
-                            <button type="button">View today schedule<span>Route</span></button>
-                        </div>
-                    </details>
-                    <nav class="bottom-nav">
-                        <div class="nav-item active">
-                            <div class="nav-icon">D</div>
-                            Detail
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">P</div>
-                            Photos
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">N</div>
-                            Notes
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">T</div>
-                            Timer
-                        </div>
-                    </nav>
-                </section>
-
-                <section class="screen">
-                    <div class="screen-header">
-                        <span class="screen-title">Photo Capture</span>
-                        <span class="status-pill">Upload 68%</span>
-                    </div>
-                    <div class="screen-body">
-                        <div class="camera-view">Camera ready. Tap to capture in-app.</div>
-                        <div class="row">
-                            <div class="chip-row">
-                                <span class="chip high">Before</span>
-                                <span class="chip">During</span>
-                                <span class="chip">After</span>
-                            </div>
-                            <button class="btn btn-secondary">Delete</button>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Annotation tools</div>
-                            <div class="row">
-                                <button class="btn btn-secondary">Draw</button>
-                                <button class="btn btn-secondary">Arrow</button>
-                                <button class="btn btn-secondary">Blur</button>
-                                <button class="btn btn-secondary">Text</button>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Captured Photos</div>
-                            <div class="photo-strip">
-                                <div class="photo">Before 01</div>
-                                <div class="photo">During 01</div>
-                                <div class="photo">After 01</div>
-                            </div>
-                            <div class="progress"><span></span></div>
-                            <div class="muted">Uploading 5 of 8, queued if offline</div>
-                        </div>
-                    </div>
-                    <details class="quick-actions">
-                        <summary class="fab">QA</summary>
-                        <div class="quick-menu">
-                            <button type="button">Emergency support<span>Call</span></button>
-                            <button type="button">Report a problem<span>Log</span></button>
-                            <button type="button">Request parts delivery<span>ETA</span></button>
-                            <button type="button">Check inventory<span>Stock</span></button>
-                            <button type="button">View today schedule<span>Route</span></button>
-                        </div>
-                    </details>
-                    <nav class="bottom-nav">
-                        <div class="nav-item">
-                            <div class="nav-icon">J</div>
-                            Jobs
-                        </div>
-                        <div class="nav-item active">
-                            <div class="nav-icon">P</div>
-                            Photos
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">N</div>
-                            Notes
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">S</div>
-                            Sync
-                        </div>
-                    </nav>
-                </section>
-
-                <section class="screen">
-                    <div class="screen-header">
-                        <span class="screen-title">Work Notes</span>
-                        <span class="status-pill">Voice ready</span>
-                    </div>
-                    <div class="screen-body">
-                        <div class="section">
-                            <div class="section-title">Voice to text</div>
-                            <div class="row">
-                                <textarea class="input" rows="3" placeholder="Dictate notes or type here."></textarea>
-                                <button class="icon-btn primary" type="button" aria-label="Start voice input">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 1 0 6 0V4a3 3 0 0 0-3-3z"/>
-                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                                        <path d="M12 19v4"/>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="chip-row">
-                                <span class="chip">Checked power supply</span>
-                                <span class="chip">Replaced filter</span>
-                                <span class="chip">Ran diagnostics</span>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Categories</div>
-                            <div class="segmented">
-                                <button class="active">Diagnosis</button>
-                                <button>Repair</button>
-                            </div>
-                            <div class="segmented">
-                                <button>Testing</button>
-                                <button>Travel</button>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Time-stamped entries</div>
-                            <div class="note-entry">
-                                <div class="note-meta">10:26 AM · Diagnosis</div>
-                                <div>Thermostat showing error E07, fan not spinning.</div>
-                            </div>
-                            <div class="note-entry">
-                                <div class="note-meta">11:02 AM · Repair</div>
-                                <div>Replaced fan relay and reseated control board.</div>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Attachments</div>
-                            <div class="row">
-                                <button class="btn btn-secondary">Add photo</button>
-                                <button class="btn btn-secondary">Attach PDF</button>
-                            </div>
-                        </div>
-                    </div>
-                    <details class="quick-actions">
-                        <summary class="fab">QA</summary>
-                        <div class="quick-menu">
-                            <button type="button">Emergency support<span>Call</span></button>
-                            <button type="button">Report a problem<span>Log</span></button>
-                            <button type="button">Request parts delivery<span>ETA</span></button>
-                            <button type="button">Check inventory<span>Stock</span></button>
-                            <button type="button">View today schedule<span>Route</span></button>
-                        </div>
-                    </details>
-                    <nav class="bottom-nav">
-                        <div class="nav-item">
-                            <div class="nav-icon">J</div>
-                            Jobs
-                        </div>
-                        <div class="nav-item active">
-                            <div class="nav-icon">N</div>
-                            Notes
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">P</div>
-                            Photos
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">T</div>
-                            Timer
-                        </div>
-                    </nav>
-                </section>
-
-                <section class="screen">
-                    <div class="screen-header">
-                        <span class="screen-title">Parts Usage</span>
-                        <span class="status-pill">Inventory live</span>
-                    </div>
-                    <div class="screen-body">
-                        <div class="section">
-                            <div class="section-title">Barcode Scanner</div>
-                            <button class="btn btn-primary">Scan part barcode</button>
-                            <div class="muted">Offline scan queues lookup for sync.</div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Favorites</div>
-                            <div class="chip-row">
-                                <span class="chip">Filter 24x24</span>
-                                <span class="chip">Relay Kit</span>
-                                <span class="chip">Thermo Sensor</span>
-                            </div>
-                            <input class="input" type="search" placeholder="Search parts catalog" />
-                        </div>
-                        <div class="parts-row">
-                            <div>
-                                <div style="font-weight: 600;">Fan Relay R-88</div>
-                                <div class="muted">In stock: 12</div>
-                            </div>
-                            <div class="qty-control">
-                                <button class="icon-btn" type="button">-</button>
-                                <span>2</span>
-                                <button class="icon-btn primary" type="button">+</button>
-                            </div>
-                        </div>
-                        <div class="parts-row">
-                            <div>
-                                <div style="font-weight: 600;">Filter Pack 24x24</div>
-                                <div class="muted">Low stock: 3</div>
-                            </div>
-                            <div class="qty-control">
-                                <button class="icon-btn" type="button">-</button>
-                                <span>1</span>
-                                <button class="icon-btn primary" type="button">+</button>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="row">
-                                <span class="section-title">Running total</span>
-                                <span style="font-weight: 700;">$148.00</span>
-                            </div>
-                            <button class="btn btn-secondary">Add to work order</button>
-                        </div>
-                    </div>
-                    <details class="quick-actions">
-                        <summary class="fab">QA</summary>
-                        <div class="quick-menu">
-                            <button type="button">Emergency support<span>Call</span></button>
-                            <button type="button">Report a problem<span>Log</span></button>
-                            <button type="button">Request parts delivery<span>ETA</span></button>
-                            <button type="button">Check inventory<span>Stock</span></button>
-                            <button type="button">View today schedule<span>Route</span></button>
-                        </div>
-                    </details>
-                    <nav class="bottom-nav">
-                        <div class="nav-item">
-                            <div class="nav-icon">J</div>
-                            Jobs
-                        </div>
-                        <div class="nav-item active">
-                            <div class="nav-icon">P</div>
-                            Parts
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">C</div>
-                            Cart
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">I</div>
-                            Inventory
-                        </div>
-                    </nav>
-                </section>
-
-                <section class="screen">
-                    <div class="screen-header">
-                        <span class="screen-title">Time Tracking</span>
-                        <span class="status-pill">Live timer</span>
-                    </div>
-                    <div class="screen-body">
-                        <div class="section">
-                            <div class="section-title">Activity</div>
-                            <div class="segmented">
-                                <button class="active">Diagnosis</button>
-                                <button>Repair</button>
-                            </div>
-                            <div class="segmented">
-                                <button>Travel</button>
-                                <button>Break</button>
-                            </div>
-                        </div>
-                        <div class="section" style="align-items: center; text-align: center;">
-                            <div class="timer">01:24:18</div>
-                            <div class="muted">Breaks auto-logged</div>
-                            <div class="row" style="width: 100%; margin-top: 12px;">
-                                <button class="btn btn-primary" style="flex: 1;">Start</button>
-                                <button class="btn btn-secondary" style="flex: 1;">Pause</button>
-                                <button class="btn btn-danger" style="flex: 1;">Stop</button>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Daily summary</div>
-                            <div class="summary-row">
-                                <span>Diagnosis</span>
-                                <span>1h 42m</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>Repair</span>
-                                <span>2h 18m</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>Travel</span>
-                                <span>52m</span>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Manual entry</div>
-                            <button class="btn btn-secondary">Add manual time</button>
-                        </div>
-                    </div>
-                    <details class="quick-actions">
-                        <summary class="fab">QA</summary>
-                        <div class="quick-menu">
-                            <button type="button">Emergency support<span>Call</span></button>
-                            <button type="button">Report a problem<span>Log</span></button>
-                            <button type="button">Request parts delivery<span>ETA</span></button>
-                            <button type="button">Check inventory<span>Stock</span></button>
-                            <button type="button">View today schedule<span>Route</span></button>
-                        </div>
-                    </details>
-                    <nav class="bottom-nav">
-                        <div class="nav-item">
-                            <div class="nav-icon">J</div>
-                            Jobs
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">N</div>
-                            Notes
-                        </div>
-                        <div class="nav-item active">
-                            <div class="nav-icon">T</div>
-                            Timer
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">S</div>
-                            Summary
-                        </div>
-                    </nav>
-                </section>
-
-                <section class="screen">
-                    <div class="screen-header">
-                        <span class="screen-title">Customer Sign-off</span>
-                        <span class="status-pill">Ready</span>
-                    </div>
-                    <div class="screen-body">
-                        <div class="section">
-                            <div class="section-title">Work summary</div>
-                            <div class="summary-row">
-                                <span>Replaced fan relay</span>
-                                <span>2 parts</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>Cleaned filters</span>
-                                <span>1.5h labor</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>System test</span>
-                                <span>Passed</span>
-                            </div>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Signature pad</div>
-                            <div class="signature-pad">Draw signature here</div>
-                            <button class="btn btn-secondary">Clear signature</button>
-                        </div>
-                        <div class="section">
-                            <div class="section-title">Satisfaction rating</div>
-                            <div class="rating">
-                                <button type="button">1</button>
-                                <button type="button">2</button>
-                                <button type="button">3</button>
-                                <button type="button">4</button>
-                                <button type="button">5</button>
-                            </div>
-                            <textarea class="input" rows="3" placeholder="Additional comments"></textarea>
-                        </div>
-                        <button class="btn btn-primary">Submit completion</button>
-                    </div>
-                    <details class="quick-actions">
-                        <summary class="fab">QA</summary>
-                        <div class="quick-menu">
-                            <button type="button">Emergency support<span>Call</span></button>
-                            <button type="button">Report a problem<span>Log</span></button>
-                            <button type="button">Request parts delivery<span>ETA</span></button>
-                            <button type="button">Check inventory<span>Stock</span></button>
-                            <button type="button">View today schedule<span>Route</span></button>
-                        </div>
-                    </details>
-                    <nav class="bottom-nav">
-                        <div class="nav-item">
-                            <div class="nav-icon">J</div>
-                            Jobs
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">S</div>
-                            Sign
-                        </div>
-                        <div class="nav-item active">
-                            <div class="nav-icon">C</div>
-                            Complete
-                        </div>
-                        <div class="nav-item">
-                            <div class="nav-icon">A</div>
-                            Archive
-                        </div>
-                    </nav>
-                </section>
-            </main>
+            <div class="nav-buttons">
+                <a href="{{ route('login') }}" class="btn btn-ghost">Sign In</a>
+                <a href="{{ route('register') }}" class="btn btn-primary">Get Started</a>
+            </div>
         </div>
-    </body>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Trusted by 500+ service companies
+            </div>
+
+            <h1>
+                Equipment maintenance<br>
+                <span>made simple</span>
+            </h1>
+
+            <p>
+                Streamline your field service operations with intelligent scheduling,
+                real-time technician tracking, and comprehensive equipment lifecycle management.
+            </p>
+
+            <div class="hero-buttons">
+                <a href="{{ route('register') }}" class="btn btn-primary btn-lg">
+                    Start Free Trial
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+                <a href="#demo" class="btn btn-secondary btn-lg">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Watch Demo
+                </a>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">98%</div>
+                    <div class="stat-label">Customer Satisfaction</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">40%</div>
+                    <div class="stat-label">Faster Response Times</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">25K+</div>
+                    <div class="stat-label">Work Orders Completed</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">24/7</div>
+                    <div class="stat-label">Monitoring & Support</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <div class="section-label">Features</div>
+                <h2 class="section-title">Everything you need to manage field operations</h2>
+                <p class="section-desc">Powerful tools designed for service companies of all sizes.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Work Order Management</h3>
+                    <p class="feature-desc">Create, assign, and track work orders from request to completion with
+                        real-time status updates.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Real-Time Tracking</h3>
+                    <p class="feature-desc">Track technician locations and job progress in real-time. Customers receive
+                        automatic ETA updates.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Smart Scheduling</h3>
+                    <p class="feature-desc">AI-powered scheduling optimizes routes and assigns the right technician
+                        based on skills and availability.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Equipment Lifecycle</h3>
+                    <p class="feature-desc">Track equipment from purchase to retirement. Manage warranties, maintenance
+                        schedules, and service history.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Inventory Control</h3>
+                    <p class="feature-desc">Manage parts inventory across locations. Automatic reorder alerts and usage
+                        tracking.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <h3 class="feature-title">Analytics & Reports</h3>
+                    <p class="feature-desc">Gain insights with comprehensive dashboards. Track KPIs, technician
+                        performance, and customer satisfaction.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <div class="container">
+            <div class="cta-card">
+                <h2 class="cta-title">Ready to transform your operations?</h2>
+                <p class="cta-desc">Join hundreds of service companies that trust Taisykla to manage their field
+                    operations.</p>
+                <div class="hero-buttons">
+                    <a href="{{ route('register') }}" class="btn btn-secondary btn-lg">Start Your Free Trial</a>
+                    <a href="{{ route('login') }}" class="btn btn-ghost btn-lg"
+                        style="color: white; border: 1px solid rgba(255,255,255,0.3);">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container footer-inner">
+            <div class="footer-copy">
+                © {{ date('Y') }} {{ config('app.name', 'Taisykla') }}. All rights reserved.
+            </div>
+            <div class="footer-links">
+                <a href="{{ route('privacy') }}">Privacy Policy</a>
+                <a href="{{ route('terms') }}">Terms of Service</a>
+                <a href="{{ route('support') }}">Support</a>
+            </div>
+        </div>
+    </footer>
+</body>
+
 </html>

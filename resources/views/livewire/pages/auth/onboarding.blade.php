@@ -5,22 +5,21 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.app')] class extends Component
-{
+new #[Layout('layouts.app')] class extends Component {
     public bool $mustChangePassword = false;
     public bool $mfaEnabled = false;
 
     public function mount(): void
     {
         $user = Auth::user();
-        if (! $user) {
+        if (!$user) {
             $this->redirectRoute('login', navigate: true);
             return;
         }
 
         $this->syncStatus($user);
 
-        if (! $this->mustChangePassword && $user->onboarded_at) {
+        if (!$this->mustChangePassword && $user->onboarded_at) {
             $this->redirectRoute('dashboard', navigate: true);
         }
     }
@@ -40,7 +39,7 @@ new #[Layout('layouts.app')] class extends Component
     public function finish(): void
     {
         $user = Auth::user();
-        if (! $user) {
+        if (!$user) {
             $this->redirectRoute('login', navigate: true);
             return;
         }
@@ -51,7 +50,7 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
-        if (! $user->onboarded_at) {
+        if (!$user->onboarded_at) {
             $user->forceFill(['onboarded_at' => now()])->save();
         }
 
@@ -61,7 +60,7 @@ new #[Layout('layouts.app')] class extends Component
     private function refreshUserStatus(): void
     {
         $user = Auth::user();
-        if (! $user) {
+        if (!$user) {
             return;
         }
 
@@ -114,7 +113,7 @@ new #[Layout('layouts.app')] class extends Component
 
         <div class="flex items-center justify-between">
             <x-input-error class="mt-2" :messages="$errors->get('finish')" />
-            <x-primary-button type="button" wire:click="finish" @disabled($mustChangePassword)>
+            <x-primary-button type="button" wire:click="finish" :disabled="$mustChangePassword">
                 Finish setup
             </x-primary-button>
         </div>

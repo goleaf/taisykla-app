@@ -14,10 +14,10 @@ class ServiceRequestPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can(PermissionCatalog::WORK_ORDERS_VIEW) || // Reusing Work Order perms as proxy if needed, or define specific ones
-            $user->hasRole(RoleCatalog::ADMIN) ||
-            $user->hasRole(RoleCatalog::OPERATIONS_MANAGER) ||
-            $user->hasRole(RoleCatalog::TECHNICIAN);
+        return $user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW)
+            || $user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW_ALL)
+            || $user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW_OWN)
+            || $user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW_ORG);
     }
 
     /**
@@ -25,16 +25,32 @@ class ServiceRequestPolicy
      */
     public function view(User $user, ServiceRequest $serviceRequest): bool
     {
-        if ($user->hasRole(RoleCatalog::ADMIN) || $user->hasRole(RoleCatalog::OPERATIONS_MANAGER)) {
+        // Full access to all service requests
+        if ($user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW_ALL)) {
             return true;
         }
 
-        if ($user->hasRole(RoleCatalog::TECHNICIAN) && $serviceRequest->technician_id === $user->id) {
+        // Technician can view assigned requests
+        if (
+            $user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW_OWN)
+            && $serviceRequest->technician_id === $user->id
+        ) {
             return true;
         }
 
-        // Check if user belongs to the customer organization
-        if ($serviceRequest->customer_id === $user->organization_id) {
+        // Customer can view their organization's requests
+        if (
+            $user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW_ORG)
+            && $serviceRequest->customer_id === $user->organization_id
+        ) {
+            return true;
+        }
+
+        // Consumer can view their own requests
+        if (
+            $user->can(PermissionCatalog::SERVICE_REQUESTS_VIEW_OWN)
+            && $serviceRequest->customer_id === $user->id
+        ) {
             return true;
         }
 
@@ -46,7 +62,7 @@ class ServiceRequestPolicy
      */
     public function create(User $user): bool
     {
-        return true; // Generally users can create requests, logic can be refined
+        return $user->can(PermissionCatalog::SERVICE_REQUESTS_CREATE);
     }
 
     /**
@@ -54,12 +70,15 @@ class ServiceRequestPolicy
      */
     public function update(User $user, ServiceRequest $serviceRequest): bool
     {
-        if ($user->hasRole(RoleCatalog::ADMIN) || $user->hasRole(RoleCatalog::OPERATIONS_MANAGER)) {
+        // Full update access
+        if ($user->can(PermissionCatalog::SERVICE_REQUESTS_UPDATE)) {
             return true;
         }
 
-        if ($user->hasRole(RoleCatalog::TECHNICIAN) && $serviceRequest->technician_id === $user->id) {
-            return true;
+        // Technician can update their own assigned requests (if not completed)
+        if ($user->can(PermissionCatalog::SERVICE_REQUESTS_UPDATE_OWN)) {
+            return $serviceRequest->technician_id === $user->id
+                && $serviceRequest->status !== ServiceRequest::STATUS_COMPLETED;
         }
 
         return false;
@@ -70,7 +89,7 @@ class ServiceRequestPolicy
      */
     public function delete(User $user, ServiceRequest $serviceRequest): bool
     {
-        return $user->hasRole(RoleCatalog::ADMIN);
+        return $user->can(PermissionCatalog::SERVICE_REQUESTS_DELETE);
     }
 
     /**
@@ -78,7 +97,7 @@ class ServiceRequestPolicy
      */
     public function assign(User $user, ServiceRequest $serviceRequest): bool
     {
-        return $user->hasRole(RoleCatalog::ADMIN) || $user->hasRole(RoleCatalog::OPERATIONS_MANAGER);
+        return $user->can(PermissionCatalog::SERVICE_REQUESTS_ASSIGN);
     }
 
     /**
@@ -86,7 +105,7 @@ class ServiceRequestPolicy
      */
     public function approve(User $user, ServiceRequest $serviceRequest): bool
     {
-        return $user->hasRole(RoleCatalog::ADMIN) || $user->hasRole(RoleCatalog::OPERATIONS_MANAGER);
+        return $user->can(PermissionCatalog::SERVICE_REQUESTS_APPROVE);
     }
 
     /**
@@ -94,6 +113,6 @@ class ServiceRequestPolicy
      */
     public function reject(User $user, ServiceRequest $serviceRequest): bool
     {
-        return $user->hasRole(RoleCatalog::ADMIN) || $user->hasRole(RoleCatalog::OPERATIONS_MANAGER);
+        return $user->can(PermissionCatalog::SERVICE_REQUESTS_APPROVE);
     }
 }

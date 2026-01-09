@@ -10,8 +10,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Spatie\Permission\Models\Role;
 
-new #[Layout('layouts.guest')] class extends Component
-{
+new #[Layout('layouts.guest')] class extends Component {
     public string $name = '';
     public string $email = '';
     public string $password = '';
@@ -24,7 +23,7 @@ new #[Layout('layouts.guest')] class extends Component
     {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
             'password' => ['required', 'string', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()->uncompromised()],
         ]);
 
@@ -42,52 +41,84 @@ new #[Layout('layouts.guest')] class extends Component
 }; ?>
 
 <div>
-    <form wire:submit="register">
-        <!-- Name -->
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input wire:model="name" id="name" class="block mt-1 w-full" type="text" name="name" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
-        </div>
+    <div class="auth-header">
+        <a href="/" class="mobile-logo">
+            <div class="mobile-logo-icon">T</div>
+            <span>Taisykla</span>
+        </a>
+        <h2>Create your account</h2>
+        <p>Start managing your equipment maintenance today</p>
+    </div>
 
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+    <div class="auth-card">
+        <form wire:submit="register">
+            <!-- Name -->
+            <div class="form-group">
+                <label for="name" class="form-label">Full name</label>
+                <input wire:model="name" id="name" type="text" name="name" class="form-input" placeholder="John Doe"
+                    required autofocus autocomplete="name">
+                @error('name')
+                    <div class="form-error">{{ $message }}</div>
+                @enderror
+            </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+            <!-- Email Address -->
+            <div class="form-group">
+                <label for="email" class="form-label">Email address</label>
+                <input wire:model="email" id="email" type="email" name="email" class="form-input"
+                    placeholder="you@example.com" required autocomplete="username">
+                @error('email')
+                    <div class="form-error">{{ $message }}</div>
+                @enderror
+            </div>
 
-            <x-text-input wire:model="password" id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input wire:model="password" id="password" type="password" name="password" class="form-input"
+                    placeholder="••••••••••••" required autocomplete="new-password">
+                @error('password')
+                    <div class="form-error">{{ $message }}</div>
+                @enderror
+                <div class="password-requirements">
+                    Password must include:
+                    <ul>
+                        <li>At least 12 characters</li>
+                        <li>Uppercase and lowercase letters</li>
+                        <li>At least one number</li>
+                        <li>At least one symbol</li>
+                    </ul>
+                </div>
+            </div>
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+            <!-- Confirm Password -->
+            <div class="form-group">
+                <label for="password_confirmation" class="form-label">Confirm password</label>
+                <input wire:model="password_confirmation" id="password_confirmation" type="password"
+                    name="password_confirmation" class="form-input" placeholder="••••••••••••" required
+                    autocomplete="new-password">
+                @error('password_confirmation')
+                    <div class="form-error">{{ $message }}</div>
+                @enderror
+            </div>
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
+            <!-- Submit Button -->
+            <button type="submit" class="btn-primary" wire:loading.attr="disabled" style="margin-top: 24px;">
+                <span wire:loading.remove>Create Account</span>
+                <span wire:loading>Creating account...</span>
+            </button>
+        </form>
 
-            <x-text-input wire:model="password_confirmation" id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
+        <!-- Terms Notice -->
+        <p style="margin-top: 16px; font-size: 12px; color: #64748b; text-align: center; line-height: 1.6;">
+            By creating an account, you agree to our
+            <a href="{{ route('terms') }}" class="link" style="font-size: 12px;">Terms of Service</a>
+            and
+            <a href="{{ route('privacy') }}" class="link" style="font-size: 12px;">Privacy Policy</a>.
+        </p>
+    </div>
 
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}" wire:navigate>
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
-        </div>
-    </form>
+    <div class="auth-footer">
+        Already have an account? <a href="{{ route('login') }}" wire:navigate>Sign in</a>
+    </div>
 </div>

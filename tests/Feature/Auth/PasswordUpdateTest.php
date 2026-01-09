@@ -18,17 +18,21 @@ class PasswordUpdateTest extends TestCase
 
         $this->actingAs($user);
 
+        // Password must meet requirements: min 12 chars, mixed case, numbers, symbols
+        // Using unique password to pass uncompromised() check
+        $newPassword = 'Xq7$kLm9#Np2@Vz!';
+
         $component = Volt::test('profile.update-password-form')
             ->set('current_password', 'password')
-            ->set('password', 'new-password')
-            ->set('password_confirmation', 'new-password')
+            ->set('password', $newPassword)
+            ->set('password_confirmation', $newPassword)
             ->call('updatePassword');
 
         $component
             ->assertHasNoErrors()
             ->assertNoRedirect();
 
-        $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
+        $this->assertTrue(Hash::check($newPassword, $user->refresh()->password));
     }
 
     public function test_correct_password_must_be_provided_to_update_password(): void

@@ -46,7 +46,7 @@ class PasswordResetTest extends TestCase
             ->call('sendPasswordResetLink');
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) {
-            $response = $this->get('/reset-password/'.$notification->token);
+            $response = $this->get('/reset-password/' . $notification->token);
 
             $response
                 ->assertSeeVolt('pages.auth.reset-password')
@@ -67,10 +67,14 @@ class PasswordResetTest extends TestCase
             ->call('sendPasswordResetLink');
 
         Notification::assertSentTo($user, ResetPassword::class, function ($notification) use ($user) {
+            // Password must meet requirements: min 12 chars, mixed case, numbers, symbols
+            // Using unique password to pass uncompromised() check
+            $newPassword = 'Xq7$kLm9#Np2@Vz!';
+
             $component = Volt::test('pages.auth.reset-password', ['token' => $notification->token])
                 ->set('email', $user->email)
-                ->set('password', 'password')
-                ->set('password_confirmation', 'password');
+                ->set('password', $newPassword)
+                ->set('password_confirmation', $newPassword);
 
             $component->call('resetPassword');
 

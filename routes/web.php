@@ -26,6 +26,9 @@ use App\Support\PermissionCatalog;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
+Route::view('/privacy', 'pages.privacy')->name('privacy');
+Route::view('/terms', 'pages.terms')->name('terms');
+Route::view('/support', 'pages.support')->name('support');
 
 Route::post('webhooks/messages/email', InboundEmailController::class)
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
@@ -35,6 +38,22 @@ Route::post('webhooks/messages/sms', InboundSmsController::class)
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class])
     ->middleware('throttle:60,1')
     ->name('webhooks.messages.sms');
+
+// Two-Factor Authentication Routes (verification during login)
+Route::middleware(['web'])->group(function () {
+    Route::get('2fa/verify', [\App\Http\Controllers\TwoFactorController::class, 'showVerifyForm'])
+        ->name('2fa.verify');
+    Route::post('2fa/verify', [\App\Http\Controllers\TwoFactorController::class, 'verify']);
+});
+
+// Two-Factor Authentication Routes (enable/disable - requires auth)
+Route::middleware(['auth'])->prefix('2fa')->name('2fa.')->group(function () {
+    Route::get('enable', [\App\Http\Controllers\TwoFactorController::class, 'showEnableForm'])->name('enable.show');
+    Route::post('enable', [\App\Http\Controllers\TwoFactorController::class, 'enable'])->name('enable');
+    Route::post('disable', [\App\Http\Controllers\TwoFactorController::class, 'disable'])->name('disable');
+    Route::get('backup-codes', [\App\Http\Controllers\TwoFactorController::class, 'regenerateBackupCodes'])->name('backup-codes');
+    Route::post('backup-codes', [\App\Http\Controllers\TwoFactorController::class, 'regenerateBackupCodes'])->name('backup-codes.regenerate');
+});
 
 Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('dashboard', Dashboard::class)
@@ -115,6 +134,19 @@ Route::middleware(['auth', EnsureAccountSetup::class])->group(function () {
     Route::get('settings', SettingsIndex::class)
         ->middleware('can:' . PermissionCatalog::SETTINGS_VIEW)
         ->name('settings.index');
+
+    // Admin Permission Management
+    Route::prefix('admin/permissions')
+        ->name('admin.permissions.')
+        ->middleware('can:' . PermissionCatalog::USERS_MANAGE)
+        ->controller(\App\Http\Controllers\Admin\PermissionManagementController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::put('/roles/{role}', 'updateRolePermissions')->name('roles.update');
+            Route::get('/users', 'users')->name('users');
+            Route::put('/users/{user}/roles', 'updateUserRoles')->name('users.roles.update');
+            Route::post('/sync', 'syncPermissions')->name('sync');
+        });
 
     // Customer Portal
     Route::get('my-portal', \App\Livewire\Customer\Portal::class)

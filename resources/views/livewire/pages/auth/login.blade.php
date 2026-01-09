@@ -8,8 +8,7 @@ use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
-new #[Layout('layouts.guest')] class extends Component
-{
+new #[Layout('layouts.guest')] class extends Component {
     public LoginForm $form;
     public array $demoUsers = [];
 
@@ -64,74 +63,94 @@ new #[Layout('layouts.guest')] class extends Component
 }; ?>
 
 <div>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    <div class="auth-header">
+        <a href="/" class="mobile-logo">
+            <div class="mobile-logo-icon">T</div>
+            <span>Taisykla</span>
+        </a>
+        <h2>Welcome back</h2>
+        <p>Sign in to continue to your dashboard</p>
+    </div>
 
-    <form wire:submit="login">
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="form.email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('form.email')" class="mt-2" />
-        </div>
+    <div class="auth-card">
+        <!-- Session Status -->
+        @if (session('status'))
+            <div class="status-message success">
+                {{ session('status') }}
+            </div>
+        @endif
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <form wire:submit="login">
+            <!-- Email Address -->
+            <div class="form-group">
+                <label for="email" class="form-label">Email address</label>
+                <input wire:model="form.email" id="email" type="email" name="email" class="form-input"
+                    placeholder="you@example.com" required autofocus autocomplete="username">
+                @error('form.email')
+                    <div class="form-error">{{ $message }}</div>
+                @enderror
+            </div>
 
-            <x-text-input wire:model="form.password" id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input wire:model="form.password" id="password" type="password" name="password" class="form-input"
+                    placeholder="••••••••••••" required autocomplete="current-password">
+                @error('form.password')
+                    <div class="form-error">{{ $message }}</div>
+                @enderror
+            </div>
 
-            <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
-        </div>
+            <!-- Remember Me & Forgot Password -->
+            <div class="form-row">
+                <label for="remember" class="checkbox-label">
+                    <input wire:model="form.remember" id="remember" type="checkbox" name="remember">
+                    <span>Remember me</span>
+                </label>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember" class="inline-flex items-center">
-                <input wire:model="form.remember" id="remember" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+                @if (Route::has('password.request'))
+                    <a class="link" href="{{ route('password.request') }}" wire:navigate>
+                        Forgot password?
+                    </a>
+                @endif
+            </div>
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}" wire:navigate>
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+            <button type="submit" class="btn-primary" wire:loading.attr="disabled">
+                <span wire:loading.remove>Sign In</span>
+                <span wire:loading>Signing in...</span>
+            </button>
+        </form>
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-
-    <div class="mt-6 border-t border-gray-200 pt-4">
-        <h2 class="text-sm font-semibold text-gray-700">Demo users</h2>
-        <p class="mt-1 text-xs text-gray-500">
-            All demo accounts use the password <span class="font-mono text-gray-700">password</span>.
-        </p>
-
-        <div class="mt-3 space-y-2">
-            @foreach ($demoUsers as $demoUser)
-                @continue($demoUser['missing'])
-                <div class="rounded-md border border-gray-200 px-3 py-2 text-xs text-gray-700">
-                    <div class="flex items-center justify-between">
-                        <span class="font-semibold">{{ RoleCatalog::label($demoUser['role']) }}</span>
-                    </div>
-                    <div class="mt-1 text-gray-600">
-                        Name: <span class="font-medium text-gray-700">{{ $demoUser['name'] }}</span>
-                    </div>
-                    <div class="text-gray-600">
-                        Email: <span class="font-mono text-gray-700">{{ $demoUser['email'] }}</span>
-                    </div>
-                    <div class="text-gray-600">
-                        Password: <span class="font-mono text-gray-700">{{ $demoUser['password'] }}</span>
-                    </div>
+        <!-- Demo Users Section -->
+        @if (count($demoUsers) > 0)
+            <div class="demo-section">
+                <div class="demo-header">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3>Demo Accounts</h3>
                 </div>
-            @endforeach
-        </div>
+                <p class="demo-note">
+                    All demo accounts use password: <code>password</code>
+                </p>
+                <div class="demo-grid">
+                    @foreach ($demoUsers as $demoUser)
+                        @continue($demoUser['missing'])
+                        <div class="demo-user">
+                            <div class="demo-user-role">{{ RoleCatalog::label($demoUser['role']) }}</div>
+                            <div class="demo-user-info">
+                                <div><span>{{ $demoUser['name'] }}</span></div>
+                                <div><code>{{ $demoUser['email'] }}</code></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <div class="auth-footer">
+        Don't have an account? <a href="{{ route('register') }}" wire:navigate>Create one</a>
     </div>
 </div>

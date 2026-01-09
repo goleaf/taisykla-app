@@ -2,8 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\Equipment;
-use App\Models\Organization;
 use App\Models\ServiceRequest;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -28,8 +26,8 @@ class ServiceRequestFactory extends Factory
     public function definition(): array
     {
         return [
-            'customer_id' => Organization::factory(),
-            'equipment_id' => Equipment::factory(),
+            'customer_id' => User::factory(),
+            'equipment_id' => null,
             'technician_id' => User::factory(),
             'priority' => $this->faker->randomElement([
                 ServiceRequest::PRIORITY_LOW,

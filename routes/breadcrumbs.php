@@ -198,3 +198,8 @@ Breadcrumbs::for('profile', function (BreadcrumbTrail $trail) {
     $trail->parent('dashboard');
     $trail->push('Profile', route('profile'));
 });
+
+// --- Onboarding ---
+Breadcrumbs::for('onboarding', function (BreadcrumbTrail $trail) {
+    $trail->push('Account Setup', route('onboarding'));
+});
