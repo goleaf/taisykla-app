@@ -1,19 +1,15 @@
-<div class="py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Work Orders</h1>
-                <p class="text-sm text-gray-500">Track service requests across the lifecycle.</p>
-            </div>
-            @if ($canCreate)
-            <a href="{{ route('work-orders.create') }}" wire:navigate
-                class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg shadow-lg shadow-indigo-200 hover:from-indigo-700 hover:to-purple-700 transition-all"
-            >
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                New Work Order
-            </a>
-        @endif
-        </div>
+<div class="animate-fade-in">
+    <div class="space-y-6">
+        <x-ui.page-header title="Work Orders" subtitle="Track service requests across the lifecycle.">
+            <x-slot:actions>
+                @if ($canCreate)
+                    <x-ui.button variant="primary" href="{{ route('work-orders.create') }}" wire:navigate>
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        New Work Order
+                    </x-ui.button>
+                @endif
+            </x-slot:actions>
+        </x-ui.page-header>
 
         @if (session('status'))
             <div class="rounded-md bg-green-50 p-3 text-sm text-green-700 border border-green-200 shadow-sm animate-pulse-once">
@@ -84,26 +80,11 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Total</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['total'] ?? 0 }}</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Active</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['active'] ?? 0 }}</p>
-                <p class="text-xs text-gray-500">{{ $summary['on_hold'] ?? 0 }} on hold</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Completed</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['completed'] ?? 0 }}</p>
-                <p class="text-xs text-gray-500">{{ $summary['closed'] ?? 0 }} closed</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Urgent</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['urgent'] ?? 0 }}</p>
-                <p class="text-xs text-gray-500">{{ $summary['canceled'] ?? 0 }} canceled</p>
-            </div>
+        <div class="stats-grid">
+            <x-ui.stat-card :value="$summary['total'] ?? 0" label="Total Work Orders" variant="primary" />
+            <x-ui.stat-card :value="$summary['active'] ?? 0" label="Active" :change="($summary['on_hold'] ?? 0) . ' on hold'" variant="info" />
+            <x-ui.stat-card :value="$summary['completed'] ?? 0" label="Completed" :change="($summary['closed'] ?? 0) . ' closed'" variant="success" />
+            <x-ui.stat-card :value="$summary['urgent'] ?? 0" label="Urgent" :change="($summary['canceled'] ?? 0) . ' canceled'" variant="danger" />
         </div>
 
         <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 relative overflow-hidden">

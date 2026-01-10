@@ -11,10 +11,31 @@ use Illuminate\Support\Facades\Cache;
 class ReferenceDataService
 {
     public const TAG_REFERENCE_DATA = 'reference_data';
-    
+
     public const KEY_EQUIPMENT_CATEGORIES = 'equipment_categories';
     public const KEY_WORK_ORDER_CATEGORIES = 'work_order_categories';
     public const KEY_SERVICE_AGREEMENTS = 'service_agreements';
+
+    /**
+     * Check if the cache driver supports tags.
+     */
+    protected function supportsTags(): bool
+    {
+        $driver = config('cache.default');
+        return in_array($driver, ['redis', 'memcached', 'array']);
+    }
+
+    /**
+     * Get the cache store, with tags if supported.
+     */
+    protected function cache(): \Illuminate\Contracts\Cache\Repository
+    {
+        if ($this->supportsTags()) {
+            return Cache::tags([self::TAG_REFERENCE_DATA]);
+        }
+
+        return Cache::store();
+    }
 
     /**
      * Get all equipment categories, cached.
@@ -23,7 +44,7 @@ class ReferenceDataService
      */
     public function getAllEquipmentCategories(): Collection
     {
-        return Cache::tags([self::TAG_REFERENCE_DATA])->rememberForever(self::KEY_EQUIPMENT_CATEGORIES, function () {
+        return $this->cache()->rememberForever(self::KEY_EQUIPMENT_CATEGORIES, function () {
             return EquipmentCategory::orderBy('name')->get();
         });
     }
@@ -40,7 +61,7 @@ class ReferenceDataService
      */
     public function getAllWorkOrderCategories(): Collection
     {
-        return Cache::tags([self::TAG_REFERENCE_DATA])->rememberForever(self::KEY_WORK_ORDER_CATEGORIES, function () {
+        return $this->cache()->rememberForever(self::KEY_WORK_ORDER_CATEGORIES, function () {
             return WorkOrderCategory::orderBy('name')->get();
         });
     }
@@ -57,7 +78,7 @@ class ReferenceDataService
      */
     public function getAllServiceAgreements(): Collection
     {
-        return Cache::tags([self::TAG_REFERENCE_DATA])->rememberForever(self::KEY_SERVICE_AGREEMENTS, function () {
+        return $this->cache()->rememberForever(self::KEY_SERVICE_AGREEMENTS, function () {
             return ServiceAgreement::orderBy('name')->get();
         });
     }
@@ -66,19 +87,31 @@ class ReferenceDataService
     {
         return $this->getAllServiceAgreements()->where('is_active', true)->values();
     }
-    
+
     public function clearEquipmentCategoriesCache(): void
     {
-        Cache::tags([self::TAG_REFERENCE_DATA])->forget(self::KEY_EQUIPMENT_CATEGORIES);
+        if ($this->supportsTags()) {
+            Cache::tags([self::TAG_REFERENCE_DATA])->forget(self::KEY_EQUIPMENT_CATEGORIES);
+        } else {
+            Cache::forget(self::KEY_EQUIPMENT_CATEGORIES);
+        }
     }
 
     public function clearWorkOrderCategoriesCache(): void
     {
-        Cache::tags([self::TAG_REFERENCE_DATA])->forget(self::KEY_WORK_ORDER_CATEGORIES);
+        if ($this->supportsTags()) {
+            Cache::tags([self::TAG_REFERENCE_DATA])->forget(self::KEY_WORK_ORDER_CATEGORIES);
+        } else {
+            Cache::forget(self::KEY_WORK_ORDER_CATEGORIES);
+        }
     }
 
     public function clearServiceAgreementsCache(): void
     {
-        Cache::tags([self::TAG_REFERENCE_DATA])->forget(self::KEY_SERVICE_AGREEMENTS);
+        if ($this->supportsTags()) {
+            Cache::tags([self::TAG_REFERENCE_DATA])->forget(self::KEY_SERVICE_AGREEMENTS);
+        } else {
+            Cache::forget(self::KEY_SERVICE_AGREEMENTS);
+        }
     }
 }

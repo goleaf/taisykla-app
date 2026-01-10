@@ -76,6 +76,24 @@
             font-size: 18px;
         }
 
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-link {
+            color: #475569;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
         .nav-buttons {
             display: flex;
             align-items: center;
@@ -258,6 +276,11 @@
                 <span>Taisykla</span>
             </a>
 
+            <div class="nav-menu">
+                <a href="{{ route('pricing') }}" class="nav-link">Pricing</a>
+                <a href="{{ route('support') }}" class="nav-link">Support</a>
+            </div>
+
             <div class="nav-buttons">
                 <a href="{{ route('login') }}" class="btn btn-ghost">Sign In</a>
                 <a href="{{ route('register') }}" class="btn btn-primary">Get Started</a>
@@ -279,6 +302,7 @@
                 © {{ date('Y') }} {{ config('app.name', 'Taisykla') }}. All rights reserved.
             </div>
             <div class="footer-links">
+                <a href="{{ route('pricing') }}">Pricing</a>
                 <a href="{{ route('privacy') }}">Privacy Policy</a>
                 <a href="{{ route('terms') }}">Terms of Service</a>
                 <a href="{{ route('support') }}">Support</a>

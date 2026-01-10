@@ -1,14 +1,15 @@
-<div class="py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Equipment</h1>
-                <p class="text-sm text-gray-500">Manage devices, warranties, and maintenance history.</p>
-            </div>
-            @if ($canManage)
-                <button class="px-4 py-2 bg-indigo-600 text-white rounded-md" wire:click="startCreate">Add Equipment</button>
-            @endif
-        </div>
+<div class="animate-fade-in">
+    <div class="space-y-6">
+        <x-ui.page-header title="Equipment" subtitle="Manage devices, warranties, and maintenance history.">
+            <x-slot:actions>
+                @if ($canManage)
+                    <x-ui.button variant="primary" wire:click="startCreate">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add Equipment
+                    </x-ui.button>
+                @endif
+            </x-slot:actions>
+        </x-ui.page-header>
 
         @if (session('status'))
             <div class="rounded-md bg-green-50 p-3 text-sm text-green-700">
@@ -16,27 +17,12 @@
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Total</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['total'] ?? 0 }}</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Operational</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['operational'] ?? 0 }}</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Needs Attention</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['needs_attention'] ?? 0 }}</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">In Repair</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['in_repair'] ?? 0 }}</p>
-            </div>
-            <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100">
-                <p class="text-xs text-gray-500 uppercase">Retired</p>
-                <p class="text-2xl font-semibold text-gray-900">{{ $summary['retired'] ?? 0 }}</p>
-            </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <x-ui.stat-card :value="$summary['total'] ?? 0" label="Total Equipment" variant="primary" />
+            <x-ui.stat-card :value="$summary['operational'] ?? 0" label="Operational" variant="success" />
+            <x-ui.stat-card :value="$summary['needs_attention'] ?? 0" label="Needs Attention" variant="warning" />
+            <x-ui.stat-card :value="$summary['in_repair'] ?? 0" label="In Repair" variant="info" />
+            <x-ui.stat-card :value="$summary['retired'] ?? 0" label="Retired" variant="neutral" />
         </div>
 
         <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-100 relative overflow-hidden">

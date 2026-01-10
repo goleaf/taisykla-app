@@ -95,9 +95,25 @@ class Equipment extends Model
         return $this->belongsTo(Organization::class, 'customer_id');
     }
 
+    /**
+     * Alias for customer() relationship.
+     */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class, 'customer_id');
+    }
+
     public function equipmentType(): BelongsTo
     {
         return $this->belongsTo(EquipmentType::class);
+    }
+
+    /**
+     * Alias for equipmentType() relationship.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(EquipmentType::class, 'equipment_type_id');
     }
 
     public function manufacturerRelationship(): BelongsTo // Renamed to avoid conflict with 'manufacturer' string attribute if it exists, but 'manufacturer' is in fillable as string? 
